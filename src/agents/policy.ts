@@ -6,6 +6,15 @@ import type { AgentType, CustomerMemoryProfile, RecoveryFrequencyRecord } from "
 // stopping rule and the payoff of gaming detection.
 export const MAX_DISCOUNT_ATTEMPTS_PER_AGENT = 3;
 
+// Cross-agent gaming: a customer who triggers cart abandonment twice,
+// subscription recovery twice, and a dispute once (5 events total) is
+// exploiting recovery flows just as much as one who triggers a single
+// agent's flow 3+ times — but per-agent gamingSuspected below would never
+// catch it, since no individual agent count crosses its own threshold.
+// Deliberately a different number from MAX_DISCOUNT_ATTEMPTS_PER_AGENT so
+// the two signals are distinguishable (and testable) as separate causes.
+export const MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS = 5;
+
 // Composite churn signal: 2+ agents' triggering-event windows within this
 // many days of each other. Matches how the synthetic generator plants the
 // churn_signal scenario (events spread across a ~10-day window).
@@ -15,19 +24,32 @@ export interface MemorySignals {
   disputeCautionWarranted: boolean;
   discountAttemptsForAgent: number;
   stoppingRuleHit: boolean;
+  // "This one flow is being farmed" — this agent's own recovery event has
+  // fired 3+ times for this customer.
   gamingSuspected: boolean;
+  // "This customer is farming recovery flows in general" — a different,
+  // broader signal: total recovery events summed across ALL agents, so a
+  // customer spreading triggers across cart/subscription/dispute rather
+  // than repeating one agent's flow still gets caught. Not a replacement
+  // for gamingSuspected — both are exposed, since they're legitimately
+  // different evidence.
+  crossAgentGamingSuspected: boolean;
   compositeChurnSignal: boolean;
 }
 
 export function computeMemorySignals(profile: CustomerMemoryProfile, agent: AgentType): MemorySignals {
   const discountAttemptsForAgent = profile.discount_usage_history.filter((d) => d.agent === agent).length;
   const recoveryForAgent = profile.recovery_frequency.find((r) => r.agent === agent);
+  // profile.recovery_frequency is already asOf-scoped (see profile.ts), so
+  // summing it here stays causal for free — no separate DB query needed.
+  const totalRecoveryEventsAcrossAgents = profile.recovery_frequency.reduce((sum, r) => sum + r.count, 0);
 
   return {
     disputeCautionWarranted: profile.dispute_count > 0,
     discountAttemptsForAgent,
     stoppingRuleHit: discountAttemptsForAgent >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
     gamingSuspected: (recoveryForAgent?.count ?? 0) >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
+    crossAgentGamingSuspected: totalRecoveryEventsAcrossAgents >= MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS,
     compositeChurnSignal: hasCompositeChurnSignal(profile),
   };
 }

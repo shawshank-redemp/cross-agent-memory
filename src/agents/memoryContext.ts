@@ -32,6 +32,13 @@ constraints, not suggestions:
   3+ times — a pattern consistent with exploiting the discount nudge rather
   than genuine difficulty paying. If true, you MUST NOT grant another
   discount and MUST set escalate_to_human=true, and say so explicitly.
+- cross_agent_gaming_suspected: this customer has triggered recovery flows
+  5+ times in TOTAL across any combination of agents (cart abandonment +
+  subscription recovery + dispute), even if no single agent's flow alone
+  hit the 3+ threshold above. Spreading triggers across agents instead of
+  repeating one is still farming recovery flows. If true, treat it exactly
+  like gaming_suspected: you MUST NOT grant another discount and MUST set
+  escalate_to_human=true, and name the cross-agent pattern explicitly.
 - composite_churn_signal: 2+ of this customer's recovery flows
   (cart/subscription/dispute) have fired within roughly a two-week window —
   a real churn risk that another automated nudge won't fix. If true, you
@@ -102,13 +109,18 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
 // overrides, applied here regardless of what the model returned, with the
 // original reasoning preserved and the override noted for the audit trail.
 function enforcePolicy<D extends MemoryDecisionShape>(decision: D, signals: MemorySignals, fallbackNonDiscountAction: D["action"]): D {
-  const mustBlockDiscount = (signals.stoppingRuleHit || signals.gamingSuspected) && decision.discount_amount != null;
-  const mustEscalate = (signals.gamingSuspected || signals.compositeChurnSignal) && !decision.escalate_to_human;
+  const mustBlockDiscount =
+    (signals.stoppingRuleHit || signals.gamingSuspected || signals.crossAgentGamingSuspected) &&
+    decision.discount_amount != null;
+  const mustEscalate =
+    (signals.gamingSuspected || signals.crossAgentGamingSuspected || signals.compositeChurnSignal) &&
+    !decision.escalate_to_human;
 
   if (!mustBlockDiscount && !mustEscalate) return decision;
 
   const notes: string[] = [];
   if (mustBlockDiscount) notes.push("stopping-rule/gaming signal forbids another discount here");
+  if (signals.crossAgentGamingSuspected) notes.push("cross-agent gaming signal (5+ recovery events total across agents)");
   if (mustEscalate) notes.push("gaming or composite-churn signal requires escalation");
 
   return {
