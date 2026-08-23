@@ -1,0 +1,81 @@
+:root {
+  --text: #3f3f46;
+  --text-h: #18181b;
+  --bg: #fafafa;
+  --card-bg: #ffffff;
+  --border: #e4e4e7;
+  --grid-line: #eceef1;
+  --muted: #71717a;
+
+  --baseline-color: #94a3b8;
+  --memory-color: #7c3aed;
+  --health-color: #059669;
+  --danger: #dc2626;
+
+  font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light dark;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text: #d4d4d8;
+    --text-h: #fafafa;
+    --bg: #121214;
+    --card-bg: #1c1c1f;
+    --border: #2e2e33;
+    --grid-line: #2a2a2e;
+    --muted: #a1a1aa;
+    --baseline-color: #64748b;
+    --memory-color: #a78bfa;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  width: 100%;
+  min-height: 100svh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 24px;
+}
+h2 {
+  font-size: 18px;
+}
+h3 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+h4 {
+  font-size: 13px;
+  margin: 0 0 4px;
+  color: var(--muted);
+}
+
+p {
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}

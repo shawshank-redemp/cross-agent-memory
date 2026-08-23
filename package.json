@@ -10,10 +10,13 @@
     "agents:baseline": "tsx --env-file-if-exists=.env src/agents/runBaseline.ts",
     "agents:memory": "tsx --env-file-if-exists=.env src/agents/runMemory.ts",
     "analyze:compare": "tsx src/analysis/compareRuns.ts",
+    "server:dev": "tsx watch src/server/index.ts",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.10.5",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
@@ -21,6 +24,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",
     "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "zod": "^4.4.3"
   }
 }
