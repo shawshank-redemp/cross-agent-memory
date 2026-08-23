@@ -16,7 +16,10 @@ function decisionSchema<T extends readonly [string, ...string[]]>(actions: T) {
     escalate_to_human: z.boolean(),
     reasoning: z
       .string()
-      .describe("Plain-language rationale: what was read from memory (if any) and why this action follows."),
+      .min(20, "reasoning must be a real explanation, not a placeholder")
+      .describe(
+        "Plain-language rationale, 2-4 sentences: what was read from memory (if any) and why this action follows. Keep it concise — this is an audit-log entry, not an essay.",
+      ),
   });
 }
 

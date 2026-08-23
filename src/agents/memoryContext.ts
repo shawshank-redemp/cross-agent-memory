@@ -37,8 +37,9 @@ constraints, not suggestions:
   a real churn risk that another automated nudge won't fix. If true, you
   MUST set escalate_to_human=true regardless of your other reasoning.
 
-In your reasoning, say what you read from memory and how it changed (or
-didn't change) your decision versus having no history at all.`;
+In your reasoning (2-4 sentences, per the schema), briefly name what from
+memory drove the decision — do not narrate the full profile or restate
+every field.`;
 
 interface MemoryDecisionShape {
   action: string;
