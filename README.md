@@ -9,37 +9,47 @@ informed by what the others already know about a customer. See
 
 ## Status
 
-Steps 1-3 of the build (synthetic data, data model, shared memory schema)
-are in place. Agent decision logic and the dashboard come next.
+All six build steps are in place: synthetic data, data model, shared memory
+schema, baseline + memory-informed agents, the baseline-vs-memory
+comparison, and a dashboard to visualize it.
 
 ## Setup
 
 ```bash
 npm install
+cp .env.example .env   # then add your ANTHROPIC_API_KEY
 ```
 
-## Generate the synthetic batch
+## Pipeline
+
+Run these in order — each depends on the previous step's output.
 
 ```bash
-npm run generate:data
+npm run generate:data     # synthetic batch -> data/generated/
+npm run load:data         # load it into SQLite -> data/db/
+npm run agents:baseline   # no-memory agents decide on every event
+npm run agents:memory     # memory-informed agents decide on every event
+npm run analyze:compare   # baseline vs memory numbers -> data/results/comparison_report.json
 ```
 
-Writes a deterministic (seeded) batch of 250 customers to
-`data/generated/`:
+`agents:baseline` and `agents:memory` call the real Claude API (defaults to
+`claude-opus-5`) once per event — 481 events takes roughly 50-60 minutes and
+makes real API calls. Use `--limit=N` to test on a slice first, e.g.
+`npm run agents:memory -- --limit=20`.
 
-- `customers.json`
-- `cart_abandonment_events.json`
-- `subscription_failure_events.json`
-- `dispute_events.json`
-- `scenario_labels.json` — ground-truth scenario tag per customer (not part
-  of the real data model; used to evaluate whether the memory layer actually
-  catches the planted cross-agent patterns)
-- `summary.json` — event/scenario counts for the batch
+### Generate the synthetic batch
+
+Writes a deterministic (seeded) batch of 250 customers to `data/generated/`:
+`customers.json`, `cart_abandonment_events.json`,
+`subscription_failure_events.json`, `dispute_events.json`,
+`scenario_labels.json` (ground-truth scenario tag per customer — not part of
+the real data model, used to evaluate whether the memory layer actually
+catches the planted patterns), and `summary.json`.
 
 Re-running with the same seed reproduces the same batch, so baseline-vs-memory
 comparison runs diff identical data.
 
-### Scenario distribution
+#### Scenario distribution
 
 | Scenario | Share | Purpose |
 | --- | --- | --- |
@@ -51,23 +61,47 @@ comparison runs diff identical data.
 | `churn_signal` | 10% | 2+ domains firing in a tight window — should escalate to a human |
 | `noise` | 5% | Edge cases (no events, zero-value cart, contradictory states, widely-spaced events) |
 
-## Load the batch into SQLite
+### Shared memory ([src/memory/profile.ts](src/memory/profile.ts))
+
+`dispute_count`, `recovery_frequency`, and `rolling_health_score` are
+computed on read from the raw event tables (never materialized, so there's
+no separate copy to drift out of sync), scoped to an `asOf` cutoff — a
+decision only ever sees events at or before its own timestamp, never a
+customer's future occurrences. `discount_usage_history` and `audit_log` are
+scoped to `mode` (`baseline` vs `memory`) so the two comparison runs stay
+independent hypotheticals over the same batch rather than one contaminated
+timeline. Every memory read and every agent decision is appended to
+`audit_log` with a reasoning string.
+
+### Agents ([src/agents/](src/agents/))
+
+Three agents (Cart Abandonment, Subscription Recovery, Dispute Responder),
+each with a baseline variant (sees only the single triggering event) and a
+memory variant (reads the shared profile plus precomputed policy signals —
+stopping rule, gaming detection, composite churn escalation — that Claude is
+instructed to treat as hard constraints, backed by a deterministic override
+in code as a safety net). `npm run agents:baseline` / `agents:memory` run
+the full batch and log every decision.
+
+### Comparison ([src/analysis/compareRuns.ts](src/analysis/compareRuns.ts))
+
+Joins the two decision logs by event, rolls up discount spend and
+escalations per scenario, and checks the `cross_domain_risk` scenario
+specifically: does the memory-informed agent suppress the discount on the
+exact "later cart" event that follows a dispute on the same order?
+
+### Dashboard ([src/server/](src/server/), [frontend/](frontend/))
+
+A thin read-only Express API over the batch data and SQLite, plus a
+React + Vite + Recharts frontend: an overview of the comparison numbers, and
+a customer explorer with an event-by-event baseline-vs-memory table
+(click a row for both agents' reasoning side by side) and a chart of memory
+accumulating over a customer's timeline.
 
 ```bash
-npm run load:data
+npm run server:dev          # API on :4000
+cd frontend && npm run dev  # dashboard on :5173 (proxies /api to :4000)
 ```
-
-Loads the JSON in `data/generated/` into `data/db/cross_agent_memory.sqlite`
-(better-sqlite3, gitignored — schema lives in
-[src/db/schema.sql](src/db/schema.sql)). Re-running clears and reloads, so
-it's always in sync with the last `generate:data` run.
-
-The shared memory profile ([src/memory/profile.ts](src/memory/profile.ts))
-is computed on read from the raw event and `discount_usage` tables rather
-than stored as a materialized row — `dispute_count`, `recovery_frequency`,
-and `rolling_health_score` are always derived fresh, so there's no separate
-copy that can drift out of sync. Every read (and, once agent logic lands,
-every decision) is appended to `audit_log` with a reasoning string.
 
 ## Type check
 
