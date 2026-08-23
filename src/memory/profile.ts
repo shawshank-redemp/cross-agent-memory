@@ -86,8 +86,8 @@ interface WindowAgg {
   window_end: string;
 }
 
-function aggWindow(db: Database.Database, sql: string, customerId: string): WindowAgg | null {
-  const row = db.prepare(sql).get(customerId) as
+function aggWindow(db: Database.Database, sql: string, customerId: string, asOf?: string): WindowAgg | null {
+  const row = db.prepare(sql).get(...(asOf ? [customerId, asOf] : [customerId])) as
     | { count: number; window_start: string | null; window_end: string | null }
     | undefined;
   if (!row || row.count === 0 || !row.window_start || !row.window_end) return null;
@@ -96,40 +96,56 @@ function aggWindow(db: Database.Database, sql: string, customerId: string): Wind
 
 // recovery_frequency only lists agents with at least one qualifying event —
 // a window with zero events has no meaningful start/end.
-function readRecoveryFrequency(db: Database.Database, customerId: string): RecoveryFrequencyRecord[] {
+//
+// `asOf`, when given, restricts every query to events at or before that
+// timestamp. This is what makes the profile causal: without it, a customer's
+// very first event would already see the count of ALL their eventual repeat
+// events (including ones that haven't happened yet), so gaming detection
+// would fire on event #1 instead of only once 3+ prior occurrences are real.
+function readRecoveryFrequency(db: Database.Database, customerId: string, asOf?: string): RecoveryFrequencyRecord[] {
   const records: RecoveryFrequencyRecord[] = [];
 
   const cart = aggWindow(
     db,
     `SELECT COUNT(*) AS count, MIN(timestamp) AS window_start, MAX(timestamp) AS window_end
-     FROM cart_abandonment_events WHERE customer_id = ? AND status != 'paid'`,
+     FROM cart_abandonment_events WHERE customer_id = ? AND status != 'paid' ${asOf ? "AND timestamp <= ?" : ""}`,
     customerId,
+    asOf,
   );
   if (cart) records.push({ agent: "cart_abandonment", ...cart });
 
   const subscription = aggWindow(
     db,
     `SELECT COUNT(*) AS count, MIN(timestamp) AS window_start, MAX(timestamp) AS window_end
-     FROM subscription_failure_events WHERE customer_id = ? AND status IN ('failed', 'halted')`,
+     FROM subscription_failure_events WHERE customer_id = ? AND status IN ('failed', 'halted') ${asOf ? "AND timestamp <= ?" : ""}`,
     customerId,
+    asOf,
   );
   if (subscription) records.push({ agent: "subscription_recovery", ...subscription });
 
   const dispute = aggWindow(
     db,
     `SELECT COUNT(*) AS count, MIN(dispute_created_at) AS window_start, MAX(dispute_created_at) AS window_end
-     FROM dispute_events WHERE customer_id = ?`,
+     FROM dispute_events WHERE customer_id = ? ${asOf ? "AND dispute_created_at <= ?" : ""}`,
     customerId,
+    asOf,
   );
   if (dispute) records.push({ agent: "dispute_responder", ...dispute });
 
   return records;
 }
 
-function readDisputeStats(db: Database.Database, customerId: string): { count: number; totalAmount: number } {
+function readDisputeStats(
+  db: Database.Database,
+  customerId: string,
+  asOf?: string,
+): { count: number; totalAmount: number } {
   const row = db
-    .prepare(`SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total FROM dispute_events WHERE customer_id = ?`)
-    .get(customerId) as { count: number; total: number };
+    .prepare(
+      `SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total FROM dispute_events
+       WHERE customer_id = ? ${asOf ? "AND dispute_created_at <= ?" : ""}`,
+    )
+    .get(...(asOf ? [customerId, asOf] : [customerId])) as { count: number; total: number };
   return { count: row.count, totalAmount: row.total };
 }
 
@@ -147,20 +163,24 @@ function computeRollingHealthScore(
   db: Database.Database,
   customerId: string,
   disputeCount: number,
+  asOf?: string,
 ): number {
   const failedCycles = (
     db
       .prepare(
         `SELECT COUNT(*) AS count FROM subscription_failure_events
-         WHERE customer_id = ? AND status IN ('failed', 'halted')`,
+         WHERE customer_id = ? AND status IN ('failed', 'halted') ${asOf ? "AND timestamp <= ?" : ""}`,
       )
-      .get(customerId) as { count: number }
+      .get(...(asOf ? [customerId, asOf] : [customerId])) as { count: number }
   ).count;
 
   const abandonedCarts = (
     db
-      .prepare(`SELECT COUNT(*) AS count FROM cart_abandonment_events WHERE customer_id = ? AND status != 'paid'`)
-      .get(customerId) as { count: number }
+      .prepare(
+        `SELECT COUNT(*) AS count FROM cart_abandonment_events
+         WHERE customer_id = ? AND status != 'paid' ${asOf ? "AND timestamp <= ?" : ""}`,
+      )
+      .get(...(asOf ? [customerId, asOf] : [customerId])) as { count: number }
   ).count;
 
   const score =
@@ -186,6 +206,35 @@ function readAuditLog(db: Database.Database, customerId: string, mode: "baseline
   return rows;
 }
 
+// Pure — no audit_log side effect. Use this for read-only inspection (the
+// dashboard API, ad-hoc queries); use getMemoryProfile below when an agent
+// is actually consulting memory as part of making a decision, since that
+// read itself is graded audit-trail material.
+//
+// `asOf` (ISO timestamp), when given, restricts dispute/recovery/health
+// computation to events at or before that point — pass the triggering
+// event's own timestamp so a decision only ever sees its own past, never
+// events that haven't happened yet. Omit it for a "final state" read (the
+// dashboard's overview of the whole batch).
+export function computeMemoryProfile(
+  db: Database.Database,
+  customerId: string,
+  mode: "baseline" | "memory",
+  asOf?: string,
+): CustomerMemoryProfile {
+  const { count: disputeCount, totalAmount: totalDisputedAmount } = readDisputeStats(db, customerId, asOf);
+
+  return {
+    customer_id: customerId,
+    dispute_count: disputeCount,
+    total_disputed_amount: totalDisputedAmount,
+    discount_usage_history: readDiscountUsageHistory(db, customerId, mode),
+    recovery_frequency: readRecoveryFrequency(db, customerId, asOf),
+    rolling_health_score: computeRollingHealthScore(db, customerId, disputeCount, asOf),
+    audit_log: readAuditLog(db, customerId, mode),
+  };
+}
+
 export interface GetMemoryProfileOptions {
   // Which agent is asking, and in what mode — logged on the read itself so
   // the audit trail shows who consulted memory before deciding, per
@@ -195,6 +244,8 @@ export interface GetMemoryProfileOptions {
   requestedBy: AgentType | "system";
   mode: "baseline" | "memory";
   reason: string;
+  // The triggering event's own timestamp — see computeMemoryProfile's asOf.
+  asOf: string;
 }
 
 export function getMemoryProfile(
@@ -202,17 +253,7 @@ export function getMemoryProfile(
   customerId: string,
   options: GetMemoryProfileOptions,
 ): CustomerMemoryProfile {
-  const { count: disputeCount, totalAmount: totalDisputedAmount } = readDisputeStats(db, customerId);
-
-  const profile: CustomerMemoryProfile = {
-    customer_id: customerId,
-    dispute_count: disputeCount,
-    total_disputed_amount: totalDisputedAmount,
-    discount_usage_history: readDiscountUsageHistory(db, customerId, options.mode),
-    recovery_frequency: readRecoveryFrequency(db, customerId),
-    rolling_health_score: computeRollingHealthScore(db, customerId, disputeCount),
-    audit_log: readAuditLog(db, customerId, options.mode),
-  };
+  const profile = computeMemoryProfile(db, customerId, options.mode, options.asOf);
 
   appendAuditLog(db, {
     customer_id: customerId,

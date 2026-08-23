@@ -53,6 +53,10 @@ export interface DecideWithMemoryParams<Schema extends z.ZodType<MemoryDecisionS
   customer: Customer;
   agent: AgentType;
   event: unknown;
+  // The triggering event's own timestamp — caps what memory this decision
+  // can see to that event's own past, so gaming/churn signals only fire
+  // once prior occurrences have actually happened (see profile.ts's asOf).
+  eventTimestamp: string;
   systemPrompt: string;
   schema: Schema;
   fallbackNonDiscountAction: z.infer<Schema>["action"];
@@ -66,6 +70,7 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     requestedBy: params.agent,
     mode: "memory",
     reason: params.memoryReadReason,
+    asOf: params.eventTimestamp,
   });
   const signals = computeMemorySignals(profile, params.agent);
 

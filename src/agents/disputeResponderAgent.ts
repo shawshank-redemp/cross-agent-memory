@@ -55,6 +55,7 @@ export async function decideDisputeResponderMemory(
     customer,
     agent: "dispute_responder",
     event,
+    eventTimestamp: event.dispute_created_at,
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: DisputeResponderDecisionSchema,
     fallbackNonDiscountAction: "escalate_to_human",

@@ -48,6 +48,7 @@ export async function decideCartAbandonmentMemory(
     customer,
     agent: "cart_abandonment",
     event,
+    eventTimestamp: event.timestamp,
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: CartAbandonmentDecisionSchema,
     fallbackNonDiscountAction: "send_reminder",

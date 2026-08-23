@@ -53,6 +53,7 @@ export async function decideSubscriptionRecoveryMemory(
     customer,
     agent: "subscription_recovery",
     event,
+    eventTimestamp: event.timestamp,
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: SubscriptionRecoveryDecisionSchema,
     fallbackNonDiscountAction: "escalate_to_human",
