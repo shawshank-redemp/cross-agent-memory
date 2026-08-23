@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { Scenario, ScenarioLabel } from "../data/generator.js";
-import type { AgentType } from "../types/index.js";
+import type { AgentType, CartAbandonmentEvent } from "../types/index.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RESULTS_DIR = join(__dirname, "..", "..", "data", "results");
@@ -46,6 +46,7 @@ function main(): void {
   const scenarioLabels = readJson<ScenarioLabel[]>(join(GENERATED_DIR, "scenario_labels.json"));
   const baseline = readJson<DecisionRecord[]>(join(RESULTS_DIR, "baseline_decisions.json"));
   const memory = readJson<DecisionRecord[]>(join(RESULTS_DIR, "memory_decisions.json"));
+  const cartEvents = readJson<CartAbandonmentEvent[]>(join(GENERATED_DIR, "cart_abandonment_events.json"));
 
   const scenarioByCustomer = new Map(scenarioLabels.map((l) => [l.customer_id, l.scenario]));
   const memoryByEvent = new Map(memory.map((d) => [d.event_id, d]));
@@ -109,7 +110,7 @@ function main(): void {
   // Targeted check: for cross_domain_risk customers, the generator plants a
   // paid order, then a dispute on it, then a LATER (non-paid) abandoned cart
   // that a memory-aware agent should treat more cautiously than baseline.
-  const crossDomainSuppression = checkCrossDomainSuppression(scenarioLabels, baseline, memory);
+  const crossDomainSuppression = checkCrossDomainSuppression(scenarioLabels, cartEvents, baseline, memory);
 
   const report = {
     overall: { ...overall, discountAvoidedPaise },
@@ -137,6 +138,7 @@ interface CrossDomainSuppressionResult {
 
 function checkCrossDomainSuppression(
   scenarioLabels: ScenarioLabel[],
+  cartEvents: CartAbandonmentEvent[],
   baseline: DecisionRecord[],
   memory: DecisionRecord[],
 ): CrossDomainSuppressionResult {
@@ -144,29 +146,30 @@ function checkCrossDomainSuppression(
     scenarioLabels.filter((l) => l.scenario === "cross_domain_risk").map((l) => l.customer_id),
   );
 
-  const baselineCartByCustomer = new Map<string, DecisionRecord[]>();
-  for (const b of baseline) {
-    if (b.agent !== "cart_abandonment" || !crossDomainCustomers.has(b.customer_id)) continue;
-    const list = baselineCartByCustomer.get(b.customer_id) ?? [];
-    list.push(b);
-    baselineCartByCustomer.set(b.customer_id, list);
+  // The generator plants exactly one non-paid cart event per
+  // cross_domain_risk customer — the "later" abandoned cart that follows a
+  // dispute on their earlier paid order. Pick it directly from the event
+  // data rather than guessing from decisions, which can pick the wrong
+  // (already-paid) event when neither run happened to discount it.
+  const targetEventByCustomer = new Map<string, string>();
+  for (const e of cartEvents) {
+    if (e.status !== "paid" && crossDomainCustomers.has(e.customer_id)) {
+      targetEventByCustomer.set(e.customer_id, e.event_id);
+    }
   }
 
+  const baselineByEvent = new Map(baseline.map((d) => [d.event_id, d]));
   const memoryByEvent = new Map(memory.map((d) => [d.event_id, d]));
 
   const details: CrossDomainSuppressionResult["details"] = [];
-  for (const [customerId, cartDecisions] of baselineCartByCustomer) {
-    // The later (non-paid-order) cart event is the one the discount cap
-    // should tighten on — pick the one baseline actually considered a
-    // discount for, or the last chronologically-processed one otherwise.
-    const target = cartDecisions.find((d) => d.discount_amount != null) ?? cartDecisions[cartDecisions.length - 1];
-    if (!target) continue;
-    const m = memoryByEvent.get(target.event_id);
-    if (!m) continue;
+  for (const [customerId, eventId] of targetEventByCustomer) {
+    const b = baselineByEvent.get(eventId);
+    const m = memoryByEvent.get(eventId);
+    if (!b || !m) continue;
     details.push({
       customer_id: customerId,
-      event_id: target.event_id,
-      baselineDiscount: target.discount_amount,
+      event_id: eventId,
+      baselineDiscount: b.discount_amount,
       memoryDiscount: m.discount_amount,
     });
   }
