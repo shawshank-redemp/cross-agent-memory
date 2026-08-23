@@ -9,8 +9,8 @@ informed by what the others already know about a customer. See
 
 ## Status
 
-Step 1 of the build (synthetic data + data model) is in place. Agent
-decision logic, the shared memory store, and the dashboard come next.
+Steps 1-3 of the build (synthetic data, data model, shared memory schema)
+are in place. Agent decision logic and the dashboard come next.
 
 ## Setup
 
@@ -50,6 +50,24 @@ comparison runs diff identical data.
 | `cross_domain_risk` | 10% | A dispute (shared `order_id`) should suppress a later cart discount |
 | `churn_signal` | 10% | 2+ domains firing in a tight window — should escalate to a human |
 | `noise` | 5% | Edge cases (no events, zero-value cart, contradictory states, widely-spaced events) |
+
+## Load the batch into SQLite
+
+```bash
+npm run load:data
+```
+
+Loads the JSON in `data/generated/` into `data/db/cross_agent_memory.sqlite`
+(better-sqlite3, gitignored — schema lives in
+[src/db/schema.sql](src/db/schema.sql)). Re-running clears and reloads, so
+it's always in sync with the last `generate:data` run.
+
+The shared memory profile ([src/memory/profile.ts](src/memory/profile.ts))
+is computed on read from the raw event and `discount_usage` tables rather
+than stored as a materialized row — `dispute_count`, `recovery_frequency`,
+and `rolling_health_score` are always derived fresh, so there's no separate
+copy that can drift out of sync. Every read (and, once agent logic lands,
+every decision) is appended to `audit_log` with a reasoning string.
 
 ## Type check
 
