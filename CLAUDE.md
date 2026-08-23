@@ -1,7 +1,6 @@
 # cross-agent-memory
 
 Razorpay AI Buildathon submission — Track 03: AI Revenue Recovery.
-Deadline: submit by Sept 1-2, 2026 (hard close Sept 5). Deliverables: public GitHub repo, 5-minute pitch video, architecture writeup.
 
 ## The idea
 
@@ -94,8 +93,3 @@ More event *types* is explicitly out of scope (stay at 3 — cart abandonment, s
 - ~10% "churn signal" — the composite pattern: 2+ domains firing in a tight time window, which should trigger escalation rather than more automated nudges.
 - ~5% pure noise/edge cases.
 
-## Working agreement
-
-- Repo is public — nothing confidential goes in it (no internal Razorpay specifics, even if sourced informally).
-- Builder (Sheshank) wants to review/give feedback as you go, not have the whole thing appear finished. Prefer incremental, reviewable commits over big-bang changes.
-- When a design decision has real trade-offs (e.g. schema shape, escalation thresholds), surface the trade-off and ask rather than silently picking one.
