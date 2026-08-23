@@ -6,7 +6,7 @@ Razorpay AI Buildathon submission — Track 03: AI Revenue Recovery.
 
 Razorpay's Agent Studio ships point-agents (Cart Abandonment, Subscription Recovery, Dispute Responder, RTO Shield, etc.) that each operate within their own boundaries and don't appear to share underlying customer state. We're building a **shared customer memory layer** that sits above point-agents so each one's decisions are informed by what the others already know about a customer.
 
-Core mechanisms this unlocks (this is the actual pitch — lead with these, not "avoid bombarding the customer"):
+Core mechanisms this unlocks :
 1. **Better decisions**: dispute history should make the Cart Abandonment agent more cautious about spending a discount.
 2. **Gaming detection**: recovery-frequency across cycles reveals a customer exploiting Subscription Recovery's discount nudge — invisible to any single agent looking at one cycle.
 3. **Agents not working against each other**: RTO Shield's return-risk score should suppress Cart Abandonment's discount spend on a high-return-risk customer *before* the discount is spent, not after.
@@ -14,16 +14,10 @@ Core mechanisms this unlocks (this is the actual pitch — lead with these, not 
 5. **Individual-level fraud lens**: repeated "recovery" triggers across agents forming a working-the-system pattern.
 6. **Compounding data moat**: every agent's decisions get better as the shared profile deepens.
 
-## Buildathon bar we're graded against (Track 03)
 
-Not just detection — **measured money recovered across a batch**, with:
-- **Compliant escalation** — defined handoff-to-human rules (e.g. composite churn signal above)
-- **Stopping rules** — bounded limits per customer (e.g. max discount attempts before an agent must stop and escalate; this is also literally the gaming-detection payoff)
-- **Audit trail** — every agent decision must log what it read from memory, what it decided, and why. Not optional — this is graded.
+## Scope: 3 agents
 
-## Scope: 3 agents, not 4
-
-Cart Abandonment, Subscription Recovery, Dispute Responder. (RTO Shield is a stretch goal only if time allows — richer 3-agent interaction beats shallow 4-agent interaction.)
+Cart Abandonment, Subscription Recovery, Dispute Responder.
 
 ## Tech stack
 
