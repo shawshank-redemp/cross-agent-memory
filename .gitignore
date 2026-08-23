@@ -1,0 +1,14 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.env.local
+
+# regenerate with `npm run generate:data` — deterministic (seeded), not committed
+data/generated/
+
+# SQLite db files (regenerated from generator + agent runs)
+*.sqlite
+*.sqlite3
+*.db
