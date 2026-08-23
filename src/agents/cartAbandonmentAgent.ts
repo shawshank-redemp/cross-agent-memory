@@ -1,5 +1,7 @@
+import type Database from "better-sqlite3";
 import type { CartAbandonmentEvent, Customer } from "../types/index.js";
 import { decide } from "./claudeClient.js";
+import { decideWithMemory } from "./memoryContext.js";
 import { CartAbandonmentDecisionSchema, type CartAbandonmentDecision } from "./schema.js";
 
 const BASELINE_SYSTEM_PROMPT = `You are Razorpay's Cart Abandonment recovery agent.
@@ -25,4 +27,30 @@ export async function decideCartAbandonmentBaseline(
 ): Promise<CartAbandonmentDecision> {
   const userContent = JSON.stringify({ customer, event }, null, 2);
   return decide(BASELINE_SYSTEM_PROMPT, userContent, CartAbandonmentDecisionSchema);
+}
+
+const MEMORY_SYSTEM_PROMPT = `You are Razorpay's Cart Abandonment recovery agent.
+
+Actions:
+- "send_discount": offer a discount to recover the cart. discount_amount is
+  paise, normally capped at 20% of cart_value (see policy_signals below for
+  when that cap tightens).
+- "send_reminder": a plain nudge, no discount.
+- "no_action": nothing to do (e.g. the order already shows status "paid").`;
+
+export async function decideCartAbandonmentMemory(
+  db: Database.Database,
+  customer: Customer,
+  event: CartAbandonmentEvent,
+): Promise<CartAbandonmentDecision> {
+  return decideWithMemory({
+    db,
+    customer,
+    agent: "cart_abandonment",
+    event,
+    systemPrompt: MEMORY_SYSTEM_PROMPT,
+    schema: CartAbandonmentDecisionSchema,
+    fallbackNonDiscountAction: "send_reminder",
+    memoryReadReason: `Cart abandonment agent evaluating order ${event.order_id} for discount eligibility`,
+  });
 }

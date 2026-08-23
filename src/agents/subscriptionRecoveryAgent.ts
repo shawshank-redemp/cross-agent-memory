@@ -1,5 +1,7 @@
+import type Database from "better-sqlite3";
 import type { Customer, SubscriptionFailureEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
+import { decideWithMemory } from "./memoryContext.js";
 import { SubscriptionRecoveryDecisionSchema, type SubscriptionRecoveryDecision } from "./schema.js";
 
 const BASELINE_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
@@ -28,4 +30,32 @@ export async function decideSubscriptionRecoveryBaseline(
 ): Promise<SubscriptionRecoveryDecision> {
   const userContent = JSON.stringify({ customer, event }, null, 2);
   return decide(BASELINE_SYSTEM_PROMPT, userContent, SubscriptionRecoveryDecisionSchema);
+}
+
+const MEMORY_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
+
+Actions:
+- "retry_payment": ask the customer to retry with a different payment
+  method, no discount.
+- "send_discount": offer a discount to retain the subscription.
+  discount_amount is paise, normally capped at 20% of plan_amount (see
+  policy_signals below for when that cap tightens).
+- "escalate_to_human": hand off instead of another automated nudge.
+- "no_action": nothing to do (e.g. status is "active").`;
+
+export async function decideSubscriptionRecoveryMemory(
+  db: Database.Database,
+  customer: Customer,
+  event: SubscriptionFailureEvent,
+): Promise<SubscriptionRecoveryDecision> {
+  return decideWithMemory({
+    db,
+    customer,
+    agent: "subscription_recovery",
+    event,
+    systemPrompt: MEMORY_SYSTEM_PROMPT,
+    schema: SubscriptionRecoveryDecisionSchema,
+    fallbackNonDiscountAction: "escalate_to_human",
+    memoryReadReason: `Subscription recovery agent evaluating cycle ${event.cycle_number}/${event.total_count} of ${event.subscription_id}`,
+  });
 }
