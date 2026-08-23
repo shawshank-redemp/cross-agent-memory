@@ -88,6 +88,7 @@ async function main(): Promise<void> {
       recordDiscountUsage(db, {
         customer_id: customer.customer_id,
         agent: item.agent,
+        mode: "baseline",
         amount: decision.discount_amount,
         order_id: "order_id" in item.event ? item.event.order_id : undefined,
         timestamp: item.timestamp,

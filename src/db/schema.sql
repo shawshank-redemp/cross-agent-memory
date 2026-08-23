@@ -52,10 +52,15 @@ CREATE INDEX IF NOT EXISTS idx_dispute_events_order ON dispute_events(order_id);
 
 -- Raw fact: a discount an agent actually granted. Part of the memory
 -- profile's discount_usage_history; populated by agent decision logic.
+-- `mode` scopes this to one comparison run (baseline vs memory) — without
+-- it, discounts granted during the no-memory baseline run would leak into
+-- the memory-informed run's profile reads, contaminating the step-5
+-- baseline-vs-memory comparison into one timeline instead of two.
 CREATE TABLE IF NOT EXISTS discount_usage (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   customer_id TEXT NOT NULL REFERENCES customers(customer_id),
   agent TEXT NOT NULL,
+  mode TEXT NOT NULL CHECK (mode IN ('baseline', 'memory')),
   amount INTEGER NOT NULL,
   order_id TEXT,
   timestamp TEXT NOT NULL

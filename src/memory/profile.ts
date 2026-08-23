@@ -35,6 +35,9 @@ export function appendAuditLog(db: Database.Database, entry: AppendAuditLogInput
 export interface RecordDiscountUsageInput {
   customer_id: string;
   agent: AgentType;
+  // Scopes this discount to one comparison run — see schema.sql's note on
+  // discount_usage. Must match the mode of the run recording it.
+  mode: "baseline" | "memory";
   amount: number;
   order_id?: string;
   timestamp?: string;
@@ -42,24 +45,32 @@ export interface RecordDiscountUsageInput {
 
 export function recordDiscountUsage(db: Database.Database, input: RecordDiscountUsageInput): void {
   db.prepare(
-    `INSERT INTO discount_usage (customer_id, agent, amount, order_id, timestamp)
-     VALUES (@customer_id, @agent, @amount, @order_id, @timestamp)`,
+    `INSERT INTO discount_usage (customer_id, agent, mode, amount, order_id, timestamp)
+     VALUES (@customer_id, @agent, @mode, @amount, @order_id, @timestamp)`,
   ).run({
     customer_id: input.customer_id,
     agent: input.agent,
+    mode: input.mode,
     amount: input.amount,
     order_id: input.order_id ?? null,
     timestamp: input.timestamp ?? new Date().toISOString(),
   });
 }
 
-function readDiscountUsageHistory(db: Database.Database, customerId: string): DiscountUsageRecord[] {
+// Scoped to `mode` — a memory-informed read must never see discounts the
+// baseline run granted (or vice versa); the two runs are independent
+// hypotheticals over the same event batch, not one real timeline.
+function readDiscountUsageHistory(
+  db: Database.Database,
+  customerId: string,
+  mode: "baseline" | "memory",
+): DiscountUsageRecord[] {
   const rows = db
     .prepare(
       `SELECT agent, amount, order_id, timestamp FROM discount_usage
-       WHERE customer_id = ? ORDER BY timestamp ASC`,
+       WHERE customer_id = ? AND mode = ? ORDER BY timestamp ASC`,
     )
-    .all(customerId) as { agent: AgentType; amount: number; order_id: string | null; timestamp: string }[];
+    .all(customerId, mode) as { agent: AgentType; amount: number; order_id: string | null; timestamp: string }[];
 
   return rows.map((r) => ({
     agent: r.agent,
@@ -161,19 +172,28 @@ function computeRollingHealthScore(
   return Math.max(0, Math.min(100, score));
 }
 
-function readAuditLog(db: Database.Database, customerId: string): AuditLogEntry[] {
+// Scoped to (mode OR NULL) for the same reason as discount_usage — a
+// memory-informed read must not see the baseline run's decisions as if they
+// were its own history. NULL-mode rows (system-level, not agent decisions)
+// are cross-cutting and always included.
+function readAuditLog(db: Database.Database, customerId: string, mode: "baseline" | "memory"): AuditLogEntry[] {
   const rows = db
-    .prepare(`SELECT timestamp, agent, action, reasoning FROM audit_log WHERE customer_id = ? ORDER BY timestamp ASC`)
-    .all(customerId) as AuditLogEntry[];
+    .prepare(
+      `SELECT timestamp, agent, action, reasoning FROM audit_log
+       WHERE customer_id = ? AND (mode = ? OR mode IS NULL) ORDER BY timestamp ASC`,
+    )
+    .all(customerId, mode) as AuditLogEntry[];
   return rows;
 }
 
 export interface GetMemoryProfileOptions {
   // Which agent is asking, and in what mode — logged on the read itself so
   // the audit trail shows who consulted memory before deciding, per
-  // CLAUDE.md's "log what it read from memory, and why" requirement.
+  // CLAUDE.md's "log what it read from memory, and why" requirement. Also
+  // scopes discount_usage_history/audit_log so this run only sees its own
+  // mode's prior decisions, never the other comparison run's.
   requestedBy: AgentType | "system";
-  mode?: "baseline" | "memory";
+  mode: "baseline" | "memory";
   reason: string;
 }
 
@@ -188,10 +208,10 @@ export function getMemoryProfile(
     customer_id: customerId,
     dispute_count: disputeCount,
     total_disputed_amount: totalDisputedAmount,
-    discount_usage_history: readDiscountUsageHistory(db, customerId),
+    discount_usage_history: readDiscountUsageHistory(db, customerId, options.mode),
     recovery_frequency: readRecoveryFrequency(db, customerId),
     rolling_health_score: computeRollingHealthScore(db, customerId, disputeCount),
-    audit_log: readAuditLog(db, customerId),
+    audit_log: readAuditLog(db, customerId, options.mode),
   };
 
   appendAuditLog(db, {
