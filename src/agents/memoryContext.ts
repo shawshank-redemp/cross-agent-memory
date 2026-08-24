@@ -42,7 +42,8 @@ constraints, not suggestions:
 - composite_churn_signal: 2+ of this customer's recovery flows
   (cart/subscription/dispute) have fired within roughly a two-week window —
   a real churn risk that another automated nudge won't fix. If true, you
-  MUST set escalate_to_human=true regardless of your other reasoning.
+  MUST NOT grant another discount and MUST set escalate_to_human=true
+  regardless of your other reasoning.
 
 In your reasoning (2-4 sentences, per the schema), briefly name what from
 memory drove the decision — do not narrate the full profile or restate
@@ -110,7 +111,7 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
 // original reasoning preserved and the override noted for the audit trail.
 function enforcePolicy<D extends MemoryDecisionShape>(decision: D, signals: MemorySignals, fallbackNonDiscountAction: D["action"]): D {
   const mustBlockDiscount =
-    (signals.stoppingRuleHit || signals.gamingSuspected || signals.crossAgentGamingSuspected) &&
+    (signals.stoppingRuleHit || signals.gamingSuspected || signals.crossAgentGamingSuspected || signals.compositeChurnSignal) &&
     decision.discount_amount != null;
   const mustEscalate =
     (signals.gamingSuspected || signals.crossAgentGamingSuspected || signals.compositeChurnSignal) &&
@@ -119,7 +120,10 @@ function enforcePolicy<D extends MemoryDecisionShape>(decision: D, signals: Memo
   if (!mustBlockDiscount && !mustEscalate) return decision;
 
   const notes: string[] = [];
-  if (mustBlockDiscount) notes.push("stopping-rule/gaming signal forbids another discount here");
+  if (mustBlockDiscount && (signals.stoppingRuleHit || signals.gamingSuspected || signals.crossAgentGamingSuspected)) {
+    notes.push("stopping-rule/gaming signal forbids another discount here");
+  }
+  if (mustBlockDiscount && signals.compositeChurnSignal) notes.push("composite churn signal forbids another discount here");
   if (signals.crossAgentGamingSuspected) notes.push("cross-agent gaming signal (5+ recovery events total across agents)");
   if (mustEscalate) notes.push("gaming or composite-churn signal requires escalation");
 
