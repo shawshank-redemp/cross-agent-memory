@@ -3,6 +3,7 @@ import type { CartAbandonmentEvent, Customer } from "../types/index.js";
 import { decide } from "./claudeClient.js";
 import { decideWithMemory } from "./memoryContext.js";
 import { CartAbandonmentDecisionSchema, type CartAbandonmentDecision } from "./schema.js";
+import { emitTrace } from "./trace.js";
 
 const BASELINE_SYSTEM_PROMPT = `You are Razorpay's Cart Abandonment recovery agent.
 
@@ -22,11 +23,27 @@ like it needs a human (e.g. an unusually large cart_value you're not
 confident about) — you have no basis here to detect patterns across events.`;
 
 export async function decideCartAbandonmentBaseline(
+  db: Database.Database,
   customer: Customer,
   event: CartAbandonmentEvent,
 ): Promise<CartAbandonmentDecision> {
   const userContent = JSON.stringify({ customer, event }, null, 2);
-  return decide(BASELINE_SYSTEM_PROMPT, userContent, CartAbandonmentDecisionSchema);
+  const stepStart = Date.now();
+  const decision = await decide(BASELINE_SYSTEM_PROMPT, userContent, CartAbandonmentDecisionSchema);
+  emitTrace(
+    {
+      db,
+      customerId: customer.customer_id,
+      eventId: event.event_id,
+      agent: "cart_abandonment",
+      mode: "baseline",
+      stepOrder: 1,
+    },
+    "agent_reasoning",
+    decision.reasoning,
+    Date.now() - stepStart,
+  );
+  return decision;
 }
 
 const MEMORY_SYSTEM_PROMPT = `You are Razorpay's Cart Abandonment recovery agent.
@@ -48,6 +65,7 @@ export async function decideCartAbandonmentMemory(
     customer,
     agent: "cart_abandonment",
     event,
+    eventId: event.event_id,
     eventTimestamp: event.timestamp,
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: CartAbandonmentDecisionSchema,

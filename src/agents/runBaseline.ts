@@ -6,14 +6,14 @@ import { decideSubscriptionRecoveryBaseline } from "./subscriptionRecoveryAgent.
 runAgentBatch({
   mode: "baseline",
   outputFile: "baseline_decisions.json",
-  decide: (item, customer) => {
+  decide: (item, customer, db) => {
     switch (item.agent) {
       case "cart_abandonment":
-        return decideCartAbandonmentBaseline(customer, item.event);
+        return decideCartAbandonmentBaseline(db, customer, item.event);
       case "subscription_recovery":
-        return decideSubscriptionRecoveryBaseline(customer, item.event);
+        return decideSubscriptionRecoveryBaseline(db, customer, item.event);
       case "dispute_responder":
-        return decideDisputeResponderBaseline(customer, item.event);
+        return decideDisputeResponderBaseline(db, customer, item.event);
     }
   },
 }).catch((err) => {

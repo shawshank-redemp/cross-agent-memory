@@ -3,6 +3,7 @@ import type { Customer, DisputeEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
 import { decideWithMemory } from "./memoryContext.js";
 import { DisputeResponderDecisionSchema, type DisputeResponderDecision } from "./schema.js";
+import { emitTrace } from "./trace.js";
 
 const BASELINE_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
 
@@ -23,11 +24,27 @@ looks ambiguous enough that an automated call is risky — you have no basis
 here to detect a pattern across disputes.`;
 
 export async function decideDisputeResponderBaseline(
+  db: Database.Database,
   customer: Customer,
   event: DisputeEvent,
 ): Promise<DisputeResponderDecision> {
   const userContent = JSON.stringify({ customer, event }, null, 2);
-  return decide(BASELINE_SYSTEM_PROMPT, userContent, DisputeResponderDecisionSchema);
+  const stepStart = Date.now();
+  const decision = await decide(BASELINE_SYSTEM_PROMPT, userContent, DisputeResponderDecisionSchema);
+  emitTrace(
+    {
+      db,
+      customerId: customer.customer_id,
+      eventId: event.event_id,
+      agent: "dispute_responder",
+      mode: "baseline",
+      stepOrder: 1,
+    },
+    "agent_reasoning",
+    decision.reasoning,
+    Date.now() - stepStart,
+  );
+  return decision;
 }
 
 const MEMORY_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
@@ -55,6 +72,7 @@ export async function decideDisputeResponderMemory(
     customer,
     agent: "dispute_responder",
     event,
+    eventId: event.event_id,
     eventTimestamp: event.dispute_created_at,
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: DisputeResponderDecisionSchema,

@@ -3,6 +3,7 @@ import type { Customer, SubscriptionFailureEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
 import { decideWithMemory } from "./memoryContext.js";
 import { SubscriptionRecoveryDecisionSchema, type SubscriptionRecoveryDecision } from "./schema.js";
+import { emitTrace } from "./trace.js";
 
 const BASELINE_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
 
@@ -25,11 +26,27 @@ unusual enough on its own to warrant it — you have no basis here to detect a
 pattern across cycles.`;
 
 export async function decideSubscriptionRecoveryBaseline(
+  db: Database.Database,
   customer: Customer,
   event: SubscriptionFailureEvent,
 ): Promise<SubscriptionRecoveryDecision> {
   const userContent = JSON.stringify({ customer, event }, null, 2);
-  return decide(BASELINE_SYSTEM_PROMPT, userContent, SubscriptionRecoveryDecisionSchema);
+  const stepStart = Date.now();
+  const decision = await decide(BASELINE_SYSTEM_PROMPT, userContent, SubscriptionRecoveryDecisionSchema);
+  emitTrace(
+    {
+      db,
+      customerId: customer.customer_id,
+      eventId: event.event_id,
+      agent: "subscription_recovery",
+      mode: "baseline",
+      stepOrder: 1,
+    },
+    "agent_reasoning",
+    decision.reasoning,
+    Date.now() - stepStart,
+  );
+  return decision;
 }
 
 const MEMORY_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
@@ -53,6 +70,7 @@ export async function decideSubscriptionRecoveryMemory(
     customer,
     agent: "subscription_recovery",
     event,
+    eventId: event.event_id,
     eventTimestamp: event.timestamp,
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: SubscriptionRecoveryDecisionSchema,

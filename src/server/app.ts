@@ -101,5 +101,15 @@ export function createApp(db: Database.Database) {
     });
   });
 
+  app.get("/api/customers/:id/trace", (req: Request, res: Response) => {
+    const rows = db
+      .prepare(
+        `SELECT event_id, agent, mode, step_order, step_name, detail, duration_ms, started_at
+         FROM agent_trace_events WHERE customer_id = ? ORDER BY event_id, mode, step_order`,
+      )
+      .all(req.params.id);
+    res.json(rows);
+  });
+
   return app;
 }

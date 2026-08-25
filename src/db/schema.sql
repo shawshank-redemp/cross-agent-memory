@@ -84,3 +84,21 @@ CREATE TABLE IF NOT EXISTS audit_log (
 );
 CREATE INDEX IF NOT EXISTS idx_audit_log_customer ON audit_log(customer_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_agent ON audit_log(agent);
+
+-- Stage 1 live-replay trace: granular step-by-step record of what a
+-- decideWithMemory (or baseline decide()) call actually did, separate from
+-- audit_log's one-row-per-decision summary. Powers the frontend's
+-- step-by-step replay view.
+CREATE TABLE IF NOT EXISTS agent_trace_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+  event_id TEXT NOT NULL,
+  agent TEXT NOT NULL,
+  mode TEXT NOT NULL CHECK (mode IN ('baseline', 'memory')),
+  step_order INTEGER NOT NULL,
+  step_name TEXT NOT NULL,
+  detail TEXT NOT NULL,
+  duration_ms INTEGER NOT NULL,
+  started_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_trace_events_lookup ON agent_trace_events(customer_id, event_id, mode);

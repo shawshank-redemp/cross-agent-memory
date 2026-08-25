@@ -1,9 +1,10 @@
 import type Database from "better-sqlite3";
 import type { z } from "zod";
 import { getMemoryProfile } from "../memory/profile.js";
-import type { AgentType, Customer } from "../types/index.js";
+import type { AgentType, Customer, CustomerMemoryProfile } from "../types/index.js";
 import { decide } from "./claudeClient.js";
 import { computeMemorySignals, type MemorySignals } from "./policy.js";
+import { emitTrace, type TraceContext } from "./trace.js";
 
 export const MEMORY_POLICY_BLOCK = `
 You also have this customer's shared memory profile, aggregated across ALL
@@ -61,6 +62,9 @@ export interface DecideWithMemoryParams<Schema extends z.ZodType<MemoryDecisionS
   customer: Customer;
   agent: AgentType;
   event: unknown;
+  // The triggering event's own id — keys this decision's trace steps
+  // (agent_trace_events) alongside customer_id/mode.
+  eventId: string;
   // The triggering event's own timestamp — caps what memory this decision
   // can see to that event's own past, so gaming/churn signals only fire
   // once prior occurrences have actually happened (see profile.ts's asOf).
@@ -71,16 +75,57 @@ export interface DecideWithMemoryParams<Schema extends z.ZodType<MemoryDecisionS
   memoryReadReason: string;
 }
 
+function describeProfileForTrace(profile: CustomerMemoryProfile): string {
+  const entries = profile.discount_usage_history.length;
+  return `dispute_count: ${profile.dispute_count}, recovery_frequency: ${profile.recovery_frequency.length} agents, discount_history: ${entries} entr${entries === 1 ? "y" : "ies"}`;
+}
+
+function describeSignalsForTrace(signals: MemorySignals): string {
+  const active: string[] = [];
+  if (signals.disputeCautionWarranted) active.push("dispute_caution_warranted");
+  if (signals.stoppingRuleHit) active.push("stopping_rule_hit");
+  if (signals.gamingSuspected) active.push("gaming_suspected");
+  if (signals.crossAgentGamingSuspected) active.push("cross_agent_gaming_suspected");
+  if (signals.compositeChurnSignal) active.push("composite_churn_signal");
+  return active.length > 0 ? active.join(", ") : "none";
+}
+
 export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionShape>>(
   params: DecideWithMemoryParams<Schema>,
 ): Promise<z.infer<Schema>> {
+  const traceBase: Omit<TraceContext, "stepOrder"> = {
+    db: params.db,
+    customerId: params.customer.customer_id,
+    eventId: params.eventId,
+    agent: params.agent,
+    mode: "memory",
+  };
+  let stepOrder = 0;
+
+  let stepStart = Date.now();
   const profile = getMemoryProfile(params.db, params.customer.customer_id, {
     requestedBy: params.agent,
     mode: "memory",
     reason: params.memoryReadReason,
     asOf: params.eventTimestamp,
   });
+  stepOrder += 1;
+  emitTrace(
+    { ...traceBase, stepOrder },
+    "read_memory_profile",
+    describeProfileForTrace(profile),
+    Date.now() - stepStart,
+  );
+
+  stepStart = Date.now();
   const signals = computeMemorySignals(profile, params.agent);
+  stepOrder += 1;
+  emitTrace(
+    { ...traceBase, stepOrder },
+    "evaluate_policy_signals",
+    describeSignalsForTrace(signals),
+    Date.now() - stepStart,
+  );
 
   const recentDecisions = profile.audit_log.filter((e) => e.action !== "read_memory_profile").slice(-5);
   const userContent = JSON.stringify(
@@ -101,15 +146,27 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     2,
   );
 
+  stepStart = Date.now();
   const decision = await decide(`${params.systemPrompt}\n${MEMORY_POLICY_BLOCK}`, userContent, params.schema);
-  return enforcePolicy(decision, signals, params.fallbackNonDiscountAction);
+  stepOrder += 1;
+  emitTrace({ ...traceBase, stepOrder }, "agent_reasoning", decision.reasoning, Date.now() - stepStart);
+
+  stepOrder += 1;
+  return enforcePolicy(decision, signals, params.fallbackNonDiscountAction, traceBase, stepOrder);
 }
 
 // Safety net: an LLM call is not a reliable place to enforce a hard, bounded
 // limit — the stopping rule and churn escalation are deterministic
 // overrides, applied here regardless of what the model returned, with the
 // original reasoning preserved and the override noted for the audit trail.
-function enforcePolicy<D extends MemoryDecisionShape>(decision: D, signals: MemorySignals, fallbackNonDiscountAction: D["action"]): D {
+function enforcePolicy<D extends MemoryDecisionShape>(
+  decision: D,
+  signals: MemorySignals,
+  fallbackNonDiscountAction: D["action"],
+  traceBase: Omit<TraceContext, "stepOrder">,
+  stepOrder: number,
+): D {
+  const stepStart = Date.now();
   const mustBlockDiscount =
     (signals.stoppingRuleHit || signals.gamingSuspected || signals.crossAgentGamingSuspected || signals.compositeChurnSignal) &&
     decision.discount_amount != null;
@@ -127,11 +184,21 @@ function enforcePolicy<D extends MemoryDecisionShape>(decision: D, signals: Memo
   if (signals.crossAgentGamingSuspected) notes.push("cross-agent gaming signal (5+ recovery events total across agents)");
   if (mustEscalate) notes.push("gaming or composite-churn signal requires escalation");
 
+  const preOverrideDiscountAmount = decision.discount_amount;
+  const notesJoined = notes.join("; ");
+
+  emitTrace(
+    { ...traceBase, stepOrder },
+    "policy_override",
+    `${notesJoined}; pre_override_discount_amount: ${preOverrideDiscountAmount ?? "null"}`,
+    Date.now() - stepStart,
+  );
+
   return {
     ...decision,
     action: mustBlockDiscount ? fallbackNonDiscountAction : decision.action,
     discount_amount: mustBlockDiscount ? null : decision.discount_amount,
     escalate_to_human: true,
-    reasoning: `${decision.reasoning}\n\n[POLICY OVERRIDE] ${notes.join("; ")}.`,
+    reasoning: `${decision.reasoning}\n\n[POLICY OVERRIDE] ${notesJoined}.`,
   };
 }
