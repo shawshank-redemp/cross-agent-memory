@@ -30,7 +30,9 @@
       "escalationCostPaise": 35820000,
       "netRevenuePaise": 222001850
     },
-    "discountAvoidedPaise": 0,
+    "discountReducedPaise": 5799500,
+    "discountIncreasedPaise": 7310920,
+    "netDiscountChangePaise": 1511420,
     "netRevenueLiftPaise": 55408700
   },
   "byScenario": [
@@ -40,7 +42,9 @@
       "events": 1288,
       "baselineDiscountPaise": 12846000,
       "memoryDiscountPaise": 15882500,
-      "discountAvoidedPaise": 3212500,
+      "discountReducedPaise": 3212500,
+      "discountIncreasedPaise": 6249000,
+      "netDiscountChangePaise": 3036500,
       "baselineEscalations": 1,
       "memoryEscalations": 699,
       "revenue": {
@@ -77,7 +81,9 @@
       "events": 239,
       "baselineDiscountPaise": 0,
       "memoryDiscountPaise": 0,
-      "discountAvoidedPaise": 0,
+      "discountReducedPaise": 0,
+      "discountIncreasedPaise": 0,
+      "netDiscountChangePaise": 0,
       "baselineEscalations": 239,
       "memoryEscalations": 196,
       "revenue": {
@@ -114,7 +120,9 @@
       "events": 480,
       "baselineDiscountPaise": 0,
       "memoryDiscountPaise": 0,
-      "discountAvoidedPaise": 0,
+      "discountReducedPaise": 0,
+      "discountIncreasedPaise": 0,
+      "netDiscountChangePaise": 0,
       "baselineEscalations": 154,
       "memoryEscalations": 14,
       "revenue": {
@@ -151,7 +159,9 @@
       "events": 58,
       "baselineDiscountPaise": 45000,
       "memoryDiscountPaise": 363000,
-      "discountAvoidedPaise": 0,
+      "discountReducedPaise": 0,
+      "discountIncreasedPaise": 318000,
+      "netDiscountChangePaise": 318000,
       "baselineEscalations": 15,
       "memoryEscalations": 15,
       "revenue": {
@@ -188,7 +198,9 @@
       "events": 283,
       "baselineDiscountPaise": 1174000,
       "memoryDiscountPaise": 1109000,
-      "discountAvoidedPaise": 749000,
+      "discountReducedPaise": 749000,
+      "discountIncreasedPaise": 684000,
+      "netDiscountChangePaise": -65000,
       "baselineEscalations": 94,
       "memoryEscalations": 194,
       "revenue": {
@@ -225,7 +237,9 @@
       "events": 540,
       "baselineDiscountPaise": 1838000,
       "memoryDiscountPaise": 12000,
-      "discountAvoidedPaise": 1838000,
+      "discountReducedPaise": 1838000,
+      "discountIncreasedPaise": 12000,
+      "netDiscountChangePaise": -1826000,
       "baselineEscalations": 182,
       "memoryEscalations": 184,
       "revenue": {
@@ -262,7 +276,9 @@
       "events": 294,
       "baselineDiscountPaise": 0,
       "memoryDiscountPaise": 47920,
-      "discountAvoidedPaise": 0,
+      "discountReducedPaise": 0,
+      "discountIncreasedPaise": 47920,
+      "netDiscountChangePaise": 47920,
       "baselineEscalations": 1,
       "memoryEscalations": 174,
       "revenue": {

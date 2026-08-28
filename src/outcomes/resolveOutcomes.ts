@@ -40,6 +40,29 @@ export interface DecisionOutcome {
   net_revenue: number; // paise; money_collected - discount_redeemed - dispute_cost - recurrence_cost - escalation_cost
 }
 
+// The escalation model is the single most load-bearing assumption in this
+// scoring layer, and the most attackable: the default makes escalation
+// strictly dominant (a discount's conversion for a flat fee and no margin
+// spent), and the memory arm escalates roughly ten times as often as
+// baseline. Parameterising it lets the same recorded decisions be re-scored
+// under alternative assumptions without re-running a batch, so the claim can
+// be tested rather than argued about. See analysis/escalationSensitivity.ts.
+export interface EscalationModel {
+  // Which pay probability an escalated RECOVERY decision draws against.
+  // "with_discount" models a human as at least as effective as an automated
+  // discount; "without_discount" models human outreach as adding nothing
+  // over doing nothing. Has no meaning for dispute decisions, which have no
+  // pays/not-pays outcome.
+  convertsAt: "with_discount" | "without_discount";
+  // Flat cost charged whenever a decision escalates, in either model.
+  handlingCostPaise: number;
+}
+
+export const DEFAULT_ESCALATION_MODEL: EscalationModel = {
+  convertsAt: "with_discount",
+  handlingCostPaise: ESCALATION_HANDLING_COST_PAISE,
+};
+
 export interface EventRolls {
   paidRoll: number;
   disputeRoll: number;
@@ -71,13 +94,20 @@ export function resolveRecoveryOutcome(
   grossAmount: number,
   decision: DecisionInput,
   rolls: EventRolls,
+  escalationModel: EscalationModel = DEFAULT_ESCALATION_MODEL,
 ): DecisionOutcome {
   const probs = OUTCOME_PROBABILITIES[scenario];
   const escalated = decision.escalate_to_human;
   const hasDiscount = !escalated && decision.discount_amount != null;
-  const payProbability = escalated || hasDiscount ? probs.paysWithDiscount : probs.paysWithoutDiscount;
+  const escalatedPayProbability =
+    escalationModel.convertsAt === "with_discount" ? probs.paysWithDiscount : probs.paysWithoutDiscount;
+  const payProbability = escalated
+    ? escalatedPayProbability
+    : hasDiscount
+      ? probs.paysWithDiscount
+      : probs.paysWithoutDiscount;
   const paid = rolls.paidRoll < payProbability;
-  const escalationCost = escalated ? ESCALATION_HANDLING_COST_PAISE : 0;
+  const escalationCost = escalated ? escalationModel.handlingCostPaise : 0;
 
   if (!paid) {
     return {
@@ -136,11 +166,14 @@ export function resolveDisputeResponseOutcome(
   scenario: Scenario,
   disputeAmount: number,
   decision: { action: string; escalate_to_human: boolean },
+  escalationModel: EscalationModel = DEFAULT_ESCALATION_MODEL,
 ): DecisionOutcome {
   const escalated = decision.escalate_to_human;
   const conceded = !escalated && decision.action === "accept_dispute";
   const disputeCost = conceded ? disputeAmount + DISPUTE_HANDLING_FEE_PAISE : 0;
-  const escalationCost = escalated ? ESCALATION_HANDLING_COST_PAISE : 0;
+  // Only handlingCostPaise applies here — convertsAt has no meaning for a
+  // dispute decision, which resolves deterministically by action.
+  const escalationCost = escalated ? escalationModel.handlingCostPaise : 0;
 
   return {
     event_id: eventId,

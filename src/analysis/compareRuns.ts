@@ -1,7 +1,14 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
-import { MAX_DISCOUNT_ATTEMPTS_PER_AGENT } from "../agents/policy.js";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import {
+  buildDisputeAmountByEvent,
+  buildDisputeGamingThresholdEvents,
+  buildGrossAmountByEvent,
+  readJson,
+  GENERATED_DIR,
+  RESULTS_DIR,
+  type DecisionRecord,
+} from "./scoringInputs.js";
 import type { Scenario, ScenarioLabel } from "../data/generator.js";
 import {
   DISPUTE_HANDLING_FEE_PAISE,
@@ -13,23 +20,10 @@ import {
 import { resolveDisputeResponseOutcome, resolveRecoveryOutcome, rollsForEvent, type DecisionOutcome } from "../outcomes/resolveOutcomes.js";
 import type { AgentType, CartAbandonmentEvent, DisputeEvent, SubscriptionFailureEvent } from "../types/index.js";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const RESULTS_DIR = join(__dirname, "..", "..", "data", "results");
-const GENERATED_DIR = join(__dirname, "..", "..", "data", "generated");
 
-interface DecisionRecord {
-  agent: AgentType;
-  customer_id: string;
-  event_id: string;
-  action: string;
-  discount_amount: number | null;
-  escalate_to_human: boolean;
-  reasoning: string;
-}
 
-function readJson<T>(path: string): T {
-  return JSON.parse(readFileSync(path, "utf-8")) as T;
-}
+
+
 
 // Sums of DecisionOutcome fields across many decisions — one instance per
 // arm at the customer/scenario/overall rollup level. Nothing is excluded
@@ -110,7 +104,8 @@ interface ScenarioRollup {
   events: number;
   baselineDiscountPaise: number;
   memoryDiscountPaise: number;
-  discountAvoidedPaise: number;
+  discountReducedPaise: number;
+  discountIncreasedPaise: number;
   baselineEscalations: number;
   memoryEscalations: number;
   baselineRevenue: RevenueAccumulator;
@@ -119,47 +114,7 @@ interface ScenarioRollup {
 
 // cart_abandonment / subscription_recovery events carry a "gross amount at
 // stake" for the recovery-outcome model (resolveRecoveryOutcome).
-function buildGrossAmountByEvent(
-  cartEvents: CartAbandonmentEvent[],
-  subEvents: SubscriptionFailureEvent[],
-): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const e of cartEvents) map.set(e.event_id, e.cart_value);
-  for (const e of subEvents) map.set(e.event_id, e.plan_amount);
-  return map;
-}
 
-// dispute_events carry the disputed amount for the dispute-response outcome
-// model (resolveDisputeResponseOutcome).
-function buildDisputeAmountByEvent(disputeEvents: DisputeEvent[]): Map<string, number> {
-  return new Map(disputeEvents.map((e) => [e.event_id, e.amount]));
-}
-
-// Dispute-response cost is only scored for a customer's 3rd-and-later
-// dispute event — the exact same threshold policy.ts already uses for
-// gamingSuspected on the dispute_responder agent. This isn't a new rule:
-// it confines the (deterministic, accept-vs-contest) dispute-cost model to
-// precisely the repeat-offender pattern the memory system is meant to
-// catch, rather than scoring every one-off dispute's LLM judgment call —
-// which would swamp the comparison with case-by-case reasoning variance
-// that has nothing to do with cross-agent memory (see the "normal" scenario
-// regression this threshold fixes).
-function buildDisputeGamingThresholdEvents(disputeEvents: DisputeEvent[]): Set<string> {
-  const byCustomer = new Map<string, DisputeEvent[]>();
-  for (const e of disputeEvents) {
-    const arr = byCustomer.get(e.customer_id) ?? [];
-    arr.push(e);
-    byCustomer.set(e.customer_id, arr);
-  }
-  const eligible = new Set<string>();
-  for (const events of byCustomer.values()) {
-    const sorted = [...events].sort((a, b) => a.dispute_created_at.localeCompare(b.dispute_created_at));
-    sorted.forEach((e, idx) => {
-      if (idx + 1 >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT) eligible.add(e.event_id);
-    });
-  }
-  return eligible;
-}
 
 function main(): void {
   const scenarioLabels = readJson<ScenarioLabel[]>(join(GENERATED_DIR, "scenario_labels.json"));
@@ -231,7 +186,8 @@ function main(): void {
       events: 0,
       baselineDiscountPaise: 0,
       memoryDiscountPaise: 0,
-      discountAvoidedPaise: 0,
+      discountReducedPaise: 0,
+      discountIncreasedPaise: 0,
       baselineEscalations: 0,
       memoryEscalations: 0,
       baselineRevenue: emptyRevenue(),
@@ -241,7 +197,16 @@ function main(): void {
     existing.events += r.events;
     existing.baselineDiscountPaise += r.baselineDiscount;
     existing.memoryDiscountPaise += r.memoryDiscount;
-    existing.discountAvoidedPaise += Math.max(0, r.baselineDiscount - r.memoryDiscount);
+    // Gross per-customer movements, kept as two separate one-sided sums.
+    // A single netted figure hides that memory spends LESS on some customers
+    // and MORE on others; reporting only the reduction overstates the saving,
+    // and reporting only the net (which is what the headline used to do)
+    // silently cancelled a real ₹57,995 of avoided spend against increases
+    // elsewhere and printed ₹0. Both are now published, and
+    // netDiscountChangePaise below is exactly increased - reduced, so the
+    // headline and the per-scenario rows reconcile by construction.
+    existing.discountReducedPaise += Math.max(0, r.baselineDiscount - r.memoryDiscount);
+    existing.discountIncreasedPaise += Math.max(0, r.memoryDiscount - r.baselineDiscount);
     existing.baselineEscalations += r.baselineEscalations;
     existing.memoryEscalations += r.memoryEscalations;
     existing.baselineRevenue = mergeRevenue(existing.baselineRevenue, r.baselineRevenue);
@@ -259,7 +224,18 @@ function main(): void {
     baselineRevenue: [...rollups.values()].reduce((acc, r) => mergeRevenue(acc, r.baselineRevenue), emptyRevenue()),
     memoryRevenue: [...rollups.values()].reduce((acc, r) => mergeRevenue(acc, r.memoryRevenue), emptyRevenue()),
   };
-  const discountAvoidedPaise = Math.max(0, overall.baselineDiscountPaise - overall.memoryDiscountPaise);
+  // Same three definitions at the overall level, summed from the same
+  // per-customer movements the scenario rows use — so overall.discountReducedPaise
+  // equals the sum of byScenario[].discountReducedPaise exactly.
+  const discountReducedPaise = [...rollups.values()].reduce(
+    (sum, r) => sum + Math.max(0, r.baselineDiscount - r.memoryDiscount),
+    0,
+  );
+  const discountIncreasedPaise = [...rollups.values()].reduce(
+    (sum, r) => sum + Math.max(0, r.memoryDiscount - r.baselineDiscount),
+    0,
+  );
+  const netDiscountChangePaise = overall.memoryDiscountPaise - overall.baselineDiscountPaise;
   const overallNetRevenueLiftPaise = overall.memoryRevenue.netRevenuePaise - overall.baselineRevenue.netRevenuePaise;
 
   // Targeted check: for cross_domain_risk customers, the generator plants a
@@ -274,7 +250,9 @@ function main(): void {
       events: r.events,
       baselineDiscountPaise: r.baselineDiscountPaise,
       memoryDiscountPaise: r.memoryDiscountPaise,
-      discountAvoidedPaise: r.discountAvoidedPaise,
+      discountReducedPaise: r.discountReducedPaise,
+      discountIncreasedPaise: r.discountIncreasedPaise,
+      netDiscountChangePaise: r.memoryDiscountPaise - r.baselineDiscountPaise,
       baselineEscalations: r.baselineEscalations,
       memoryEscalations: r.memoryEscalations,
       revenue: {
@@ -288,7 +266,9 @@ function main(): void {
   const report = {
     overall: {
       ...overall,
-      discountAvoidedPaise,
+      discountReducedPaise,
+      discountIncreasedPaise,
+      netDiscountChangePaise,
       netRevenueLiftPaise: overallNetRevenueLiftPaise,
     },
     byScenario,

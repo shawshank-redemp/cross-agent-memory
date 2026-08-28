@@ -37,17 +37,23 @@ export function OverviewSection({ report }: { report: ComparisonReport }) {
     "Memory-informed": s.memoryEscalations,
   }));
 
-  const discountAvoidedPct = overall.baselineDiscountPaise
-    ? Math.round((overall.discountAvoidedPaise / overall.baselineDiscountPaise) * 100)
+  // Memory both cuts spend on some customers and raises it on others, so the
+  // reduction alone is not the whole story — the net is shown alongside it
+  // rather than letting a one-sided figure stand as the headline.
+  const discountReducedPct = overall.baselineDiscountPaise
+    ? Math.round((overall.discountReducedPaise / overall.baselineDiscountPaise) * 100)
     : 0;
+  const netChange = overall.netDiscountChangePaise;
 
   return (
     <section>
       <div className="kpi-row">
         <KpiCard
           label="Discount spend avoided"
-          value={formatPaise(overall.discountAvoidedPaise)}
-          sub={`${discountAvoidedPct}% reduction vs. baseline`}
+          value={formatPaise(overall.discountReducedPaise)}
+          sub={`${discountReducedPct}% cut where memory spent less; net ${
+            netChange > 0 ? "+" : ""
+          }${formatPaise(netChange)} overall`}
         />
         <KpiCard
           label="Baseline discount spend"

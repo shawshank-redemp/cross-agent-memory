@@ -2,7 +2,7 @@
   "name": "cross-agent-memory",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared customer memory layer for Razorpay point-agents (Cart Abandonment, Subscription Recovery, Dispute Responder) — Razorpay AI Buildathon Track 03.",
+  "description": "Shared customer memory layer for Razorpay point-agents (Cart Abandonment, Subscription Recovery, Dispute Responder) \u2014 Razorpay AI Buildathon Track 03.",
   "type": "module",
   "scripts": {
     "generate:data": "tsx src/data/index.ts",
@@ -11,7 +11,8 @@
     "agents:memory": "tsx --env-file-if-exists=.env src/agents/runMemory.ts",
     "analyze:compare": "tsx src/analysis/compareRuns.ts",
     "server:dev": "tsx watch src/server/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "analyze:escalation": "tsx src/analysis/escalationSensitivity.ts"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

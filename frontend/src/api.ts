@@ -22,7 +22,9 @@ export interface ScenarioRollup {
   events: number;
   baselineDiscountPaise: number;
   memoryDiscountPaise: number;
-  discountAvoidedPaise: number;
+  discountReducedPaise: number;
+  discountIncreasedPaise: number;
+  netDiscountChangePaise: number;
   baselineEscalations: number;
   memoryEscalations: number;
 }
@@ -35,7 +37,9 @@ export interface ComparisonReport {
     memoryDiscountPaise: number;
     baselineEscalations: number;
     memoryEscalations: number;
-    discountAvoidedPaise: number;
+    discountReducedPaise: number;
+    discountIncreasedPaise: number;
+    netDiscountChangePaise: number;
   };
   byScenario: ScenarioRollup[];
   crossDomainSuppression: {
