@@ -7,44 +7,74 @@ CREATE TABLE IF NOT EXISTS customers (
   plan_tier TEXT NOT NULL
 );
 
+-- Mirrors a row of Razorpay's ORDERS report. One identifier per order, as a
+-- real export has. amount/amount_paid/amount_due/attempts/notes/status are
+-- all literal orders-report columns.
+--
+-- last_method / last_error_code / last_error_description are NOT orders
+-- columns: they are the payments-report fields for this order's most recent
+-- payment attempt, denormalised onto the order row. Real data Razorpay
+-- already holds, one join away — recorded here as a flattened read model, not
+-- invented. Invariants the generator upholds:
+--   attempts = 0 (status 'created')   -> all three are NULL
+--   attempts >= 1, status 'attempted' -> all three populated
+--   attempts >= 1, status 'paid'      -> method set, both error fields NULL
 CREATE TABLE IF NOT EXISTS cart_abandonment_events (
-  event_id TEXT PRIMARY KEY,
+  order_id TEXT PRIMARY KEY,
   customer_id TEXT NOT NULL REFERENCES customers(customer_id),
-  order_id TEXT NOT NULL,
   amount INTEGER NOT NULL,
+  amount_paid INTEGER NOT NULL,
+  amount_due INTEGER NOT NULL,
   currency TEXT NOT NULL,
   status TEXT NOT NULL,
-  cart_value INTEGER NOT NULL,
-  items INTEGER NOT NULL,
-  channel TEXT NOT NULL,
-  timestamp TEXT NOT NULL
+  attempts INTEGER NOT NULL,
+  last_method TEXT,
+  last_error_code TEXT,
+  last_error_description TEXT,
+  notes TEXT NOT NULL,
+  created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_cart_events_customer ON cart_abandonment_events(customer_id);
-CREATE INDEX IF NOT EXISTS idx_cart_events_order ON cart_abandonment_events(order_id);
 
+-- A subscription charge failure IS a failed payment, so the primary key is
+-- the charge attempt (payment_id). subscription_id legitimately repeats
+-- across billing cycles and could never be a key. paid_count/total_count are
+-- Razorpay's own subscription columns (paid_count replaces the invented
+-- `cycle_number`); method/error_code/error_description are the payments-report
+-- fields, replacing the free-text `failure_reason`.
 CREATE TABLE IF NOT EXISTS subscription_failure_events (
-  event_id TEXT PRIMARY KEY,
-  customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+  payment_id TEXT PRIMARY KEY,
   subscription_id TEXT NOT NULL,
+  customer_id TEXT NOT NULL REFERENCES customers(customer_id),
   plan_id TEXT NOT NULL,
   plan_amount INTEGER NOT NULL,
-  cycle_number INTEGER NOT NULL,
+  plan_period TEXT NOT NULL,
+  plan_interval INTEGER NOT NULL,
+  paid_count INTEGER NOT NULL,
   total_count INTEGER NOT NULL,
-  failure_reason TEXT,
   status TEXT NOT NULL,
-  timestamp TEXT NOT NULL
+  method TEXT NOT NULL,
+  error_code TEXT,
+  error_description TEXT,
+  created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_sub_events_customer ON subscription_failure_events(customer_id);
 CREATE INDEX IF NOT EXISTS idx_sub_events_subscription ON subscription_failure_events(subscription_id);
 
+-- resolved_at is the "when did we learn the outcome" timestamp. Without it,
+-- reading `status` alone leaks a future ruling backwards into a past
+-- decision: a dispute filed before an event and won after it would make the
+-- earlier decision look informed by an outcome that had not happened yet.
+-- NULL while open/under_review; strictly after dispute_created_at otherwise.
 CREATE TABLE IF NOT EXISTS dispute_events (
-  event_id TEXT PRIMARY KEY,
+  dispute_id TEXT PRIMARY KEY,
   customer_id TEXT NOT NULL REFERENCES customers(customer_id),
   payment_id TEXT NOT NULL,
   order_id TEXT NOT NULL,
   amount INTEGER NOT NULL,
   dispute_reason TEXT NOT NULL,
   dispute_created_at TEXT NOT NULL,
+  resolved_at TEXT,
   status TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_dispute_events_customer ON dispute_events(customer_id);
@@ -62,28 +92,51 @@ CREATE TABLE IF NOT EXISTS discount_usage (
   agent TEXT NOT NULL,
   mode TEXT NOT NULL CHECK (mode IN ('baseline', 'memory')),
   amount INTEGER NOT NULL,
+  -- The triggering event's own id, whatever table it came from (order_id /
+  -- payment_id / dispute_id, normalised at the TaggedEvent boundary).
+  -- order_id below is NULL for subscription and dispute events, so without
+  -- this a discount could not be traced back to its cause in two of the
+  -- three domains.
+  event_id TEXT NOT NULL,
   order_id TEXT,
   timestamp TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_discount_usage_customer ON discount_usage(customer_id);
 
--- Every memory read and every agent decision, graded requirement per
--- CLAUDE.md: what was read, what was decided, and why. `mode` distinguishes
--- baseline (no-memory) runs from memory-informed runs for the comparison in
--- step 5; `metadata` is a free-form JSON blob for decision-specific detail
--- (discount amount, triggering event_id, escalation flag, ...).
+-- Graded requirement per CLAUDE.md. `mode` distinguishes baseline
+-- (no-memory) runs from memory-informed runs for the comparison in step 5.
+-- Every memory read and every agent decision: what was read, what was
+-- decided, and why. The rule for what is a column vs what lives in
+-- `metadata`: columns for what gets filtered or joined on, JSON for what is
+-- only ever displayed.
+--
+-- entry_type replaces the `action != 'read_memory_profile'` string
+-- comparison the recent-decisions view used to rely on.
+--
+-- signals is the MemorySignals snapshot the decision was made against, and
+-- policy_override records what the model originally wanted plus which signals
+-- overrode it. Together they make "the LLM proposes, deterministic code
+-- disposes" readable straight off the data instead of merely asserted.
 CREATE TABLE IF NOT EXISTS audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   timestamp TEXT NOT NULL,
   customer_id TEXT NOT NULL REFERENCES customers(customer_id),
   agent TEXT NOT NULL,
   mode TEXT CHECK (mode IN ('baseline', 'memory')),
+  entry_type TEXT NOT NULL CHECK (entry_type IN ('memory_read', 'decision')),
+  event_id TEXT,
   action TEXT NOT NULL,
   reasoning TEXT NOT NULL,
+  -- NULL on a memory_read row: reading memory decides nothing.
+  escalate_to_human INTEGER CHECK (escalate_to_human IN (0, 1)),
+  signals TEXT,
+  policy_override TEXT,
   metadata TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_audit_log_customer ON audit_log(customer_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_agent ON audit_log(agent);
+CREATE INDEX IF NOT EXISTS idx_audit_log_event ON audit_log(event_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_entry_type ON audit_log(entry_type);
 
 -- Stage 1 live-replay trace: granular step-by-step record of what a
 -- decideWithMemory (or baseline decide()) call actually did, separate from

@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 import type { Customer, SubscriptionFailureEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
-import { decideWithMemory } from "./memoryContext.js";
+import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import { SubscriptionRecoveryDecisionSchema, type SubscriptionRecoveryDecision } from "./schema.js";
 import { emitTrace } from "./trace.js";
 
@@ -11,7 +11,7 @@ You see a single customer and a single billing-cycle event. You have NO other
 history on this customer — no dispute record, no cart-abandonment record, no
 record of how many times this same subscription has already failed, and no
 record of past discounts already given. Decide based only on what's in this
-event, including its own cycle_number/total_count.
+event, including its own paid_count/total_count.
 
 Actions:
 - "retry_payment": ask the customer to retry with a different payment method,
@@ -37,7 +37,7 @@ export async function decideSubscriptionRecoveryBaseline(
     {
       db,
       customerId: customer.customer_id,
-      eventId: event.event_id,
+      eventId: event.payment_id,
       agent: "subscription_recovery",
       mode: "baseline",
       stepOrder: 1,
@@ -64,17 +64,17 @@ export async function decideSubscriptionRecoveryMemory(
   db: Database.Database,
   customer: Customer,
   event: SubscriptionFailureEvent,
-): Promise<SubscriptionRecoveryDecision> {
+): Promise<WithMemoryAudit<SubscriptionRecoveryDecision>> {
   return decideWithMemory({
     db,
     customer,
     agent: "subscription_recovery",
     event,
-    eventId: event.event_id,
-    eventTimestamp: event.timestamp,
+    eventId: event.payment_id,
+    eventTimestamp: event.created_at,
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: SubscriptionRecoveryDecisionSchema,
     fallbackNonDiscountAction: "escalate_to_human",
-    memoryReadReason: `Subscription recovery agent evaluating cycle ${event.cycle_number}/${event.total_count} of ${event.subscription_id}`,
+    memoryReadReason: `Subscription recovery agent evaluating cycle ${event.paid_count}/${event.total_count} of ${event.subscription_id}`,
   });
 }

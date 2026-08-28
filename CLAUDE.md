@@ -41,53 +41,147 @@ Cart Abandonment, Subscription Recovery, Dispute Responder.
 
 Pulled from Razorpay's actual sample report exports (payments, subscriptions, refunds, orders, settlements-recon). Match these conventions for realism — a judge who's seen these reports will recognize them:
 
+The event tables are a **read model that mirrors data Razorpay already has**.
+Every column should correspond to something in Razorpay's real reports —
+invented fields weaken the deployability argument. A field earns its place if
+a signal reads it, an agent's decision depends on it, or it's a real Razorpay
+column kept for fidelity, in that priority order.
+
 - **ID prefixes are entity-typed**: `pay_...`, `order_...`, `rfnd_...`, `sub_...`, `plan_...`, `setl_...`.
+- **One identifier per row, and it is the natural one.** Each event table's primary key is the entity's own Razorpay id (`order_id`, `payment_id`, `dispute_id`), because a real export has exactly one `id` per row. Downstream layers (runner, audit log, trace, comparison) are deliberately agent-agnostic and keep a generic `event_id`; the two vocabularies meet exactly once, at the `TaggedEvent` boundary in `runner.ts`.
 - **Amounts are in the smallest currency unit** (paise, not rupees).
 - **Status enums are specific**: payments use `captured`/`refunded`/`failed`; orders use `created`/`attempted`/`paid`; refunds carry `refund_status` of `full`/`partial`.
 - **Disputes are an annotation on a payment/order**, not a standalone entity — `dispute_id`, `dispute_created_at`, `dispute_reason` live alongside the underlying `payment_id`/`order_id` (this is real Razorpay structure and it fits our shared-memory pitch: disputes were never siloed at the data layer, only at the decisioning layer).
-- **Subscriptions carry `paid_count`/`total_count`** — use this as the natural `cycle_number` for tracking repeat subscription failures.
+- **Subscriptions carry `paid_count`/`total_count`** — `paid_count` is the cycle counter for tracking repeat subscription failures.
+- **Trust event time, not processing time.** Anything with a "when did we learn this" dimension needs its own timestamp and must be filtered as-of. This system has already had two temporal-leakage bugs.
 
 ### Customer
 ```
 customer_id, name, email, contact, signup_date, plan_tier
 ```
 
-### CartAbandonmentEvent (models Order + Payment attempt)
+### CartAbandonmentEvent (mirrors a row of the ORDERS report)
 ```
-event_id (order_...), customer_id, order_id, amount, currency, status (created/attempted),
-cart_value, items, channel, timestamp
+order_id (PK, order_...), customer_id, amount, amount_paid, amount_due, currency,
+status (created/attempted/paid), attempts, last_method, last_error_code,
+last_error_description, notes (JSON), created_at
 ```
 
-### SubscriptionFailureEvent (models Subscription)
+`attempts` is the field that matters: `0` means the customer never tried to
+pay (intent drop-off), `>= 1` means they tried and the payment failed
+(friction drop-off). No agent branches on it yet — it is the groundwork for
+failure-reason branching. Coherence invariants the generator upholds:
+
+| status | attempts | `last_method` | `last_error_*` |
+| --- | --- | --- | --- |
+| `created` | 0 | null | null |
+| `attempted` | >= 1 | set | set |
+| `paid` | >= 1 | set | null (the last attempt succeeded) |
+
+`notes` is Razorpay's free-form key/value bag on an order — item count and
+acquisition channel live there rather than as promoted columns, which is where
+a real integration would put them. `last_method` / `last_error_code` /
+`last_error_description` are **payments**-report fields denormalised onto the
+order row, not orders-report columns: real data one join away, flattened into
+a read model.
+
+### SubscriptionFailureEvent (a failed subscription CHARGE = a failed payment)
 ```
-event_id (sub_...), customer_id, subscription_id, plan_id, plan_amount,
-cycle_number (maps to paid_count/total_count), failure_reason, status, timestamp
+payment_id (PK, pay_...), subscription_id (FK, repeats across cycles), customer_id,
+plan_id, plan_amount, plan_period, plan_interval, paid_count, total_count,
+status, method, error_code, error_description, created_at
 ```
+
+`subscription_id` cannot be a primary key: one subscription legitimately fails
+across many cycles. The row's identity is the charge attempt.
+`error_code`/`error_description` are the real payments-report fields, replacing
+the free-text `failure_reason`. `plan_period`/`plan_interval` are real Razorpay
+plan columns carried for fidelity; every plan in this batch is monthly/1
+because the generator spaces cycles ~20-30 days apart.
 
 ### DisputeEvent (models settlements-recon dispute fields, tied to a payment)
 ```
-event_id (dispute_...), customer_id, payment_id, order_id, amount,
-dispute_reason, dispute_created_at, status
+dispute_id (PK, dispute_...), customer_id, payment_id, order_id, amount,
+dispute_reason, dispute_created_at, resolved_at, status
 ```
+
+`resolved_at` is null for `open`/`under_review` and strictly after
+`dispute_created_at` for `won`/`lost`/`closed`. It is not a literal Razorpay
+column (their API exposes status transitions via webhooks); it exists because
+the outcome of a dispute has a "when did we learn this" dimension. Without it,
+reading `status` alone leaks a future ruling backwards into a past decision.
+A resolution may fall beyond the batch's observation window — that is a dispute
+this batch never sees resolve, and it correctly reads as unresolved throughout.
 
 ### Shared memory profile (the core artifact)
 ```
-dispute_count, total_disputed_amount, discount_usage_history,
+dispute_count, total_disputed_amount,
+dispute_breakdown: { unresolved, won, adverse, closed_undetermined },
+adverse_disputed_amount, discount_usage_history,
 recovery_frequency (per agent type, over time), rolling_health_score,
-audit_log[]: { timestamp, agent, action, reasoning }
+audit_log[]: { timestamp, agent, entry_type, action, reasoning }
 ```
+
+### Audit log
+
+Columns for what gets filtered or joined on, JSON for what is only displayed:
+`timestamp, customer_id, agent, mode, entry_type ('memory_read'|'decision'),
+event_id, action, reasoning, escalate_to_human, signals (JSON),
+policy_override (JSON), metadata (JSON)`.
+
+`signals` is the `MemorySignals` snapshot the decision was made against;
+`policy_override` records what the model originally wanted and which signals
+overrode it. Together they make "the LLM proposes, deterministic code
+disposes" a query rather than a claim. `discount_usage` carries `event_id`
+alongside the cart-only `order_id`, so a discount is traceable back to its
+triggering event in all three domains.
 
 ### Synthetic data generation — volume and pattern, not more event types
 
 More event *types* is explicitly out of scope (stay at 3 — cart abandonment, subscription failure, dispute). What's needed instead is deliberately engineered patterns across the customer batch, because the cross-agent value (gaming detection, composite churn, dispute-informed discounting) only shows up when a customer has multiple, related events over time:
 
 - ~60% "normal" customers — one clean event, resolves fine.
-- ~15% "repeat offenders" per agent — multiple cycles of the same event (use `cycle_number` for subscription failures) to trigger gaming detection + stopping rules.
-- ~10% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) that should suppress a later cart-abandonment discount.
+- ~15% "repeat offenders" per agent — multiple cycles of the same event (use `paid_count` for subscription failures) to trigger gaming detection + stopping rules.
+- ~10% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is: the first two should suppress the later discount, `won` should NOT. The `won` arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`.
 - ~10% "churn signal" — the composite pattern: 2+ domains firing in a tight time window, which should trigger escalation rather than more automated nudges.
 - ~5% pure noise/edge cases.
 
 
+
+## Dispute signals are outcome-aware
+
+`disputeCautionWarranted` used to be `profile.dispute_count > 0`, firing on any
+dispute regardless of how it turned out. That suppressed the next discount for
+a customer who filed a legitimate dispute and **won** it. A merchant who failed
+to deliver and lost the chargeback is not evidence about the customer; it is
+evidence about the merchant.
+
+The as-of rules in `readDisputeStats`, which are the correctness core:
+
+- **Visible** if `dispute_created_at <= asOf`.
+- **Resolved** only if `resolved_at IS NOT NULL AND resolved_at <= asOf`.
+- A visible-but-unresolved dispute counts as `unresolved` **regardless of its
+  stored `status`**. The eventual outcome has not happened yet and must not
+  leak backwards. This is the whole point of the change.
+- Once resolved: `won` → won, `lost` → adverse, `closed` → neither.
+
+`closed` gets its own bucket rather than being grouped with `lost`. In
+Razorpay it generally means withdrawn or ended without a chargeback ruling, so
+it is neither exoneration nor fault; grouping it with `lost` would charge the
+customer for a decision nobody made. The only producer of `closed` in the
+generator is `generateNoise()`'s deliberately weird edge case, so this is a
+correctness position, not a numbers-moving one.
+
+`disputeCautionLevel` is `"none" | "unresolved" | "adverse"`, adverse
+outranking unresolved, and a won-only history yielding `"none"`. It drives
+three different discount caps in `MEMORY_POLICY_BLOCK`: 20% (and an explicit
+statement that a customer who was right to complain is not a risk), 15%
+(genuine uncertainty, not established fault), and 10% plus a preference for a
+plain nudge. `computeRollingHealthScore` mirrors the split —
+`adverse * 12 + unresolved * 6`, with won disputes free.
+
+`dispute_count` / `total_disputed_amount` still count every dispute filed as
+of the read, any status: the dashboard reads them.
 
 ## Experimentation layer (recovery incrementality)
 

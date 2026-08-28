@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import { openDb } from "../db/connection.js";
 import type { Scenario, ScenarioLabel } from "../data/generator.js";
-import { appendAuditLog, recordDiscountUsage } from "../memory/profile.js";
+import { appendAuditLog, recordDiscountUsage, type PolicyOverrideRecord } from "../memory/profile.js";
+import type { MemorySignals } from "./policy.js";
 import type {
   AgentType,
   CartAbandonmentEvent,
@@ -27,16 +28,27 @@ const ALL_SCENARIOS: Scenario[] = [
   "noise",
 ];
 
+// The normalisation seam for event identity. Each event table now has its own
+// natural primary key — order_id, payment_id, dispute_id — because that is
+// what a real Razorpay export has. Everything downstream of here (audit_log,
+// agent_trace_events, discount_usage, the decisions JSON, compareRuns) is
+// deliberately agent-agnostic and keeps a generic `event_id`, so the two
+// vocabularies meet exactly once: right here, where an event is tagged with
+// the agent that will handle it.
 export type TaggedEvent =
-  | { agent: "cart_abandonment"; timestamp: string; event: CartAbandonmentEvent }
-  | { agent: "subscription_recovery"; timestamp: string; event: SubscriptionFailureEvent }
-  | { agent: "dispute_responder"; timestamp: string; event: DisputeEvent };
+  | { agent: "cart_abandonment"; event_id: string; timestamp: string; event: CartAbandonmentEvent }
+  | { agent: "subscription_recovery"; event_id: string; timestamp: string; event: SubscriptionFailureEvent }
+  | { agent: "dispute_responder"; event_id: string; timestamp: string; event: DisputeEvent };
 
 export interface DecisionLike {
   action: string;
   discount_amount: number | null;
   escalate_to_human: boolean;
   reasoning: string;
+  // Memory path only. The baseline path has no memory to compute signals
+  // from, so these are absent there by construction rather than by omission.
+  signals?: MemorySignals;
+  policy_override?: PolicyOverrideRecord | null;
 }
 
 interface DecisionRecord extends DecisionLike {
@@ -167,19 +179,45 @@ function describeSelection(selection: EventSelection): string {
   return parts.length > 0 ? ` (${parts.join(" ")})` : "";
 }
 
+// `notes` is a JSON TEXT column in SQLite but a structured object everywhere
+// in TypeScript, so the raw row shape differs from the event shape by exactly
+// that one field.
+type CartEventRow = Omit<CartAbandonmentEvent, "notes"> & { notes: string };
+
 function loadTaggedEvents(db: Database.Database): { customerById: Map<string, Customer>; tagged: TaggedEvent[] } {
   const customers = db.prepare("SELECT * FROM customers").all() as Customer[];
   const customerById = new Map(customers.map((c) => [c.customer_id, c]));
 
-  const cartEvents = db.prepare("SELECT * FROM cart_abandonment_events").all() as CartAbandonmentEvent[];
+  const cartEvents = (db.prepare("SELECT * FROM cart_abandonment_events").all() as CartEventRow[]).map(
+    (row): CartAbandonmentEvent => ({ ...row, notes: JSON.parse(row.notes) as CartAbandonmentEvent["notes"] }),
+  );
   const subEvents = db.prepare("SELECT * FROM subscription_failure_events").all() as SubscriptionFailureEvent[];
   const disputeEvents = db.prepare("SELECT * FROM dispute_events").all() as DisputeEvent[];
 
   const tagged: TaggedEvent[] = [
-    ...cartEvents.map((event): TaggedEvent => ({ agent: "cart_abandonment", timestamp: event.timestamp, event })),
-    ...subEvents.map((event): TaggedEvent => ({ agent: "subscription_recovery", timestamp: event.timestamp, event })),
+    ...cartEvents.map(
+      (event): TaggedEvent => ({
+        agent: "cart_abandonment",
+        event_id: event.order_id,
+        timestamp: event.created_at,
+        event,
+      }),
+    ),
+    ...subEvents.map(
+      (event): TaggedEvent => ({
+        agent: "subscription_recovery",
+        event_id: event.payment_id,
+        timestamp: event.created_at,
+        event,
+      }),
+    ),
     ...disputeEvents.map(
-      (event): TaggedEvent => ({ agent: "dispute_responder", timestamp: event.dispute_created_at, event }),
+      (event): TaggedEvent => ({
+        agent: "dispute_responder",
+        event_id: event.dispute_id,
+        timestamp: event.dispute_created_at,
+        event,
+      }),
     ),
   ].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
@@ -244,9 +282,14 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         customer_id: customer.customer_id,
         agent: item.agent,
         mode: params.mode,
+        entry_type: "decision",
+        event_id: item.event_id,
         action: decision.action,
         reasoning: decision.reasoning,
-        metadata: { event_id: item.event.event_id, discount_amount: decision.discount_amount },
+        escalate_to_human: decision.escalate_to_human,
+        signals: decision.signals,
+        policyOverride: decision.policy_override ?? null,
+        metadata: { discount_amount: decision.discount_amount },
         timestamp: item.timestamp,
       });
 
@@ -256,7 +299,11 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
           agent: item.agent,
           mode: params.mode,
           amount: decision.discount_amount,
-          order_id: "order_id" in item.event ? item.event.order_id : undefined,
+          event_id: item.event_id,
+          // Cart events only: a dispute's order_id points at a PAST order, not
+          // at the event being decided, so joining a discount to it would be
+          // wrong. event_id above is the universal trace back to the cause.
+          order_id: item.agent === "cart_abandonment" ? item.event.order_id : undefined,
           timestamp: item.timestamp,
         });
       }
@@ -264,7 +311,7 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
       decisions.push({
         agent: item.agent,
         customer_id: customer.customer_id,
-        event_id: item.event.event_id,
+        event_id: item.event_id,
         action: decision.action,
         discount_amount: decision.discount_amount,
         escalate_to_human: decision.escalate_to_human,

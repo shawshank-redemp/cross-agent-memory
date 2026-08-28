@@ -1,33 +1,63 @@
 import type Database from "better-sqlite3";
 import type {
   AgentType,
+  AuditEntryType,
   AuditLogEntry,
   CustomerMemoryProfile,
   DiscountUsageRecord,
+  DisputeBreakdown,
   RecoveryFrequencyRecord,
 } from "../types/index.js";
+
+// What the model originally asked for, and which signals overrode it.
+// Recorded on the decision's audit row so "the LLM proposes, deterministic
+// code disposes" is a query, not a claim.
+export interface PolicyOverrideRecord {
+  original_action: string;
+  original_discount_amount: number | null;
+  original_escalate_to_human: boolean;
+  triggered_by: string[];
+  notes: string;
+}
 
 export interface AppendAuditLogInput {
   customer_id: string;
   agent: AgentType | "system";
+  entry_type: AuditEntryType;
   action: string;
   reasoning: string;
   mode?: "baseline" | "memory";
+  event_id?: string;
+  // Null on a memory_read row — reading memory decides nothing.
+  escalate_to_human?: boolean;
+  // Snapshot of the MemorySignals this decision was made against. Absent on
+  // memory_read rows (signals are computed after the read) and on every
+  // baseline row (which has no memory to compute signals from).
+  signals?: object;
+  policyOverride?: PolicyOverrideRecord | null;
   metadata?: Record<string, unknown>;
   timestamp?: string;
 }
 
 export function appendAuditLog(db: Database.Database, entry: AppendAuditLogInput): void {
   db.prepare(
-    `INSERT INTO audit_log (timestamp, customer_id, agent, mode, action, reasoning, metadata)
-     VALUES (@timestamp, @customer_id, @agent, @mode, @action, @reasoning, @metadata)`,
+    `INSERT INTO audit_log
+       (timestamp, customer_id, agent, mode, entry_type, event_id, action, reasoning,
+        escalate_to_human, signals, policy_override, metadata)
+     VALUES (@timestamp, @customer_id, @agent, @mode, @entry_type, @event_id, @action, @reasoning,
+             @escalate_to_human, @signals, @policy_override, @metadata)`,
   ).run({
     timestamp: entry.timestamp ?? new Date().toISOString(),
     customer_id: entry.customer_id,
     agent: entry.agent,
     mode: entry.mode ?? null,
+    entry_type: entry.entry_type,
+    event_id: entry.event_id ?? null,
     action: entry.action,
     reasoning: entry.reasoning,
+    escalate_to_human: entry.escalate_to_human == null ? null : entry.escalate_to_human ? 1 : 0,
+    signals: entry.signals ? JSON.stringify(entry.signals) : null,
+    policy_override: entry.policyOverride ? JSON.stringify(entry.policyOverride) : null,
     metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
   });
 }
@@ -39,19 +69,23 @@ export interface RecordDiscountUsageInput {
   // discount_usage. Must match the mode of the run recording it.
   mode: "baseline" | "memory";
   amount: number;
+  // The triggering event's id in its own table. Always present — order_id
+  // below is cart-only.
+  event_id: string;
   order_id?: string;
   timestamp?: string;
 }
 
 export function recordDiscountUsage(db: Database.Database, input: RecordDiscountUsageInput): void {
   db.prepare(
-    `INSERT INTO discount_usage (customer_id, agent, mode, amount, order_id, timestamp)
-     VALUES (@customer_id, @agent, @mode, @amount, @order_id, @timestamp)`,
+    `INSERT INTO discount_usage (customer_id, agent, mode, amount, event_id, order_id, timestamp)
+     VALUES (@customer_id, @agent, @mode, @amount, @event_id, @order_id, @timestamp)`,
   ).run({
     customer_id: input.customer_id,
     agent: input.agent,
     mode: input.mode,
     amount: input.amount,
+    event_id: input.event_id,
     order_id: input.order_id ?? null,
     timestamp: input.timestamp ?? new Date().toISOString(),
   });
@@ -67,14 +101,21 @@ function readDiscountUsageHistory(
 ): DiscountUsageRecord[] {
   const rows = db
     .prepare(
-      `SELECT agent, amount, order_id, timestamp FROM discount_usage
+      `SELECT agent, amount, event_id, order_id, timestamp FROM discount_usage
        WHERE customer_id = ? AND mode = ? ORDER BY timestamp ASC`,
     )
-    .all(customerId, mode) as { agent: AgentType; amount: number; order_id: string | null; timestamp: string }[];
+    .all(customerId, mode) as {
+    agent: AgentType;
+    amount: number;
+    event_id: string;
+    order_id: string | null;
+    timestamp: string;
+  }[];
 
   return rows.map((r) => ({
     agent: r.agent,
     amount: r.amount,
+    event_id: r.event_id,
     order_id: r.order_id ?? "",
     timestamp: r.timestamp,
   }));
@@ -107,8 +148,8 @@ function readRecoveryFrequency(db: Database.Database, customerId: string, asOf?:
 
   const cart = aggWindow(
     db,
-    `SELECT COUNT(*) AS count, MIN(timestamp) AS window_start, MAX(timestamp) AS window_end
-     FROM cart_abandonment_events WHERE customer_id = ? AND status != 'paid' ${asOf ? "AND timestamp <= ?" : ""}`,
+    `SELECT COUNT(*) AS count, MIN(created_at) AS window_start, MAX(created_at) AS window_end
+     FROM cart_abandonment_events WHERE customer_id = ? AND status != 'paid' ${asOf ? "AND created_at <= ?" : ""}`,
     customerId,
     asOf,
   );
@@ -116,8 +157,8 @@ function readRecoveryFrequency(db: Database.Database, customerId: string, asOf?:
 
   const subscription = aggWindow(
     db,
-    `SELECT COUNT(*) AS count, MIN(timestamp) AS window_start, MAX(timestamp) AS window_end
-     FROM subscription_failure_events WHERE customer_id = ? AND status IN ('failed', 'halted') ${asOf ? "AND timestamp <= ?" : ""}`,
+    `SELECT COUNT(*) AS count, MIN(created_at) AS window_start, MAX(created_at) AS window_end
+     FROM subscription_failure_events WHERE customer_id = ? AND status IN ('failed', 'halted') ${asOf ? "AND created_at <= ?" : ""}`,
     customerId,
     asOf,
   );
@@ -135,26 +176,93 @@ function readRecoveryFrequency(db: Database.Database, customerId: string, asOf?:
   return records;
 }
 
-function readDisputeStats(
-  db: Database.Database,
-  customerId: string,
-  asOf?: string,
-): { count: number; totalAmount: number } {
+interface DisputeStats {
+  count: number;
+  totalAmount: number;
+  breakdown: DisputeBreakdown;
+  adverseAmount: number;
+}
+
+// Two independent asOf cutoffs, and the distinction between them is the whole
+// point of this function:
+//
+//   VISIBLE  = dispute_created_at <= asOf   (the customer filed it)
+//   RESOLVED = resolved_at IS NOT NULL AND resolved_at <= asOf
+//
+// A visible-but-unresolved dispute counts as `unresolved` NO MATTER what its
+// stored `status` says. The stored status is the eventual truth; at this
+// point in time it has not happened yet, and reading it would leak a future
+// ruling backwards into a past decision — the same temporal-leakage bug class
+// the asOf profile exists to prevent.
+//
+// Outcome mapping once resolved: `won` is evidence about the MERCHANT (they
+// failed to deliver and lost the chargeback), never about the customer, so it
+// drives no caution at all. `lost` is adverse. `closed` is neither: it
+// generally means withdrawn or ended without a ruling, so penalising it would
+// charge the customer for a decision nobody made.
+function readDisputeStats(db: Database.Database, customerId: string, asOf?: string): DisputeStats {
+  // Named parameters, not positional: the resolved-at cutoff is repeated in
+  // five CASE expressions plus the WHERE clause, and counting `?` placeholders
+  // across that is exactly the kind of thing that silently binds the wrong
+  // value later.
+  const visibleClause = asOf ? "AND dispute_created_at <= @asOf" : "";
+  // When unscoped (the dashboard's "final state" read) any non-null
+  // resolved_at counts as resolved.
+  const resolved = asOf ? "(resolved_at IS NOT NULL AND resolved_at <= @asOf)" : "(resolved_at IS NOT NULL)";
+
   const row = db
     .prepare(
-      `SELECT COUNT(*) AS count, COALESCE(SUM(amount), 0) AS total FROM dispute_events
-       WHERE customer_id = ? ${asOf ? "AND dispute_created_at <= ?" : ""}`,
+      `SELECT
+         COUNT(*) AS count,
+         COALESCE(SUM(amount), 0) AS total,
+         SUM(CASE WHEN NOT ${resolved} THEN 1 ELSE 0 END) AS unresolved,
+         SUM(CASE WHEN ${resolved} AND status = 'won' THEN 1 ELSE 0 END) AS won,
+         SUM(CASE WHEN ${resolved} AND status = 'lost' THEN 1 ELSE 0 END) AS adverse,
+         SUM(CASE WHEN ${resolved} AND status = 'closed' THEN 1 ELSE 0 END) AS closed_undetermined,
+         COALESCE(SUM(CASE WHEN ${resolved} AND status = 'lost' THEN amount ELSE 0 END), 0) AS adverse_amount
+       FROM dispute_events
+       WHERE customer_id = @customerId ${visibleClause}`,
     )
-    .get(...(asOf ? [customerId, asOf] : [customerId])) as { count: number; total: number };
-  return { count: row.count, totalAmount: row.total };
+    .get(asOf ? { customerId, asOf } : { customerId }) as {
+    count: number;
+    total: number;
+    // SUM() over zero rows is NULL in SQLite, so these are nullable even
+    // though every non-empty result is an integer.
+    unresolved: number | null;
+    won: number | null;
+    adverse: number | null;
+    closed_undetermined: number | null;
+    adverse_amount: number;
+  };
+
+  return {
+    count: row.count,
+    totalAmount: row.total,
+    breakdown: {
+      unresolved: row.unresolved ?? 0,
+      won: row.won ?? 0,
+      adverse: row.adverse ?? 0,
+      closed_undetermined: row.closed_undetermined ?? 0,
+    },
+    adverseAmount: row.adverse_amount,
+  };
 }
 
 // Heuristic, not a model: starts at 100 and subtracts per unresolved-risk
 // event, weighted by how costly that risk is to the business (a dispute
 // costs more than one abandoned cart). Tune these weights against the
 // baseline-vs-memory comparison once that's running, not in the abstract.
+//
+// The dispute term is split by outcome rather than counting every filed
+// dispute equally. A customer who complained and WON is not a risk — that
+// dispute says the merchant failed to deliver — so it carries no penalty at
+// all. An adverse (lost) dispute carries the full weight; a dispute still
+// unresolved as of this read carries half, reflecting genuine uncertainty
+// rather than established fault. `closed` disputes ended with no ruling
+// either way and carry nothing.
 const HEALTH_WEIGHTS = {
-  disputePenalty: 12,
+  adverseDisputePenalty: 12,
+  unresolvedDisputePenalty: 6,
   failedSubscriptionCyclePenalty: 6,
   abandonedCartPenalty: 3,
 };
@@ -162,14 +270,14 @@ const HEALTH_WEIGHTS = {
 function computeRollingHealthScore(
   db: Database.Database,
   customerId: string,
-  disputeCount: number,
+  breakdown: DisputeBreakdown,
   asOf?: string,
 ): number {
   const failedCycles = (
     db
       .prepare(
         `SELECT COUNT(*) AS count FROM subscription_failure_events
-         WHERE customer_id = ? AND status IN ('failed', 'halted') ${asOf ? "AND timestamp <= ?" : ""}`,
+         WHERE customer_id = ? AND status IN ('failed', 'halted') ${asOf ? "AND created_at <= ?" : ""}`,
       )
       .get(...(asOf ? [customerId, asOf] : [customerId])) as { count: number }
   ).count;
@@ -178,14 +286,15 @@ function computeRollingHealthScore(
     db
       .prepare(
         `SELECT COUNT(*) AS count FROM cart_abandonment_events
-         WHERE customer_id = ? AND status != 'paid' ${asOf ? "AND timestamp <= ?" : ""}`,
+         WHERE customer_id = ? AND status != 'paid' ${asOf ? "AND created_at <= ?" : ""}`,
       )
       .get(...(asOf ? [customerId, asOf] : [customerId])) as { count: number }
   ).count;
 
   const score =
     100 -
-    disputeCount * HEALTH_WEIGHTS.disputePenalty -
+    breakdown.adverse * HEALTH_WEIGHTS.adverseDisputePenalty -
+    breakdown.unresolved * HEALTH_WEIGHTS.unresolvedDisputePenalty -
     failedCycles * HEALTH_WEIGHTS.failedSubscriptionCyclePenalty -
     abandonedCarts * HEALTH_WEIGHTS.abandonedCartPenalty;
 
@@ -199,7 +308,7 @@ function computeRollingHealthScore(
 function readAuditLog(db: Database.Database, customerId: string, mode: "baseline" | "memory"): AuditLogEntry[] {
   const rows = db
     .prepare(
-      `SELECT timestamp, agent, action, reasoning FROM audit_log
+      `SELECT timestamp, agent, entry_type, action, reasoning FROM audit_log
        WHERE customer_id = ? AND (mode = ? OR mode IS NULL) ORDER BY timestamp ASC`,
     )
     .all(customerId, mode) as AuditLogEntry[];
@@ -222,15 +331,17 @@ export function computeMemoryProfile(
   mode: "baseline" | "memory",
   asOf?: string,
 ): CustomerMemoryProfile {
-  const { count: disputeCount, totalAmount: totalDisputedAmount } = readDisputeStats(db, customerId, asOf);
+  const disputes = readDisputeStats(db, customerId, asOf);
 
   return {
     customer_id: customerId,
-    dispute_count: disputeCount,
-    total_disputed_amount: totalDisputedAmount,
+    dispute_count: disputes.count,
+    total_disputed_amount: disputes.totalAmount,
+    dispute_breakdown: disputes.breakdown,
+    adverse_disputed_amount: disputes.adverseAmount,
     discount_usage_history: readDiscountUsageHistory(db, customerId, mode),
     recovery_frequency: readRecoveryFrequency(db, customerId, asOf),
-    rolling_health_score: computeRollingHealthScore(db, customerId, disputeCount, asOf),
+    rolling_health_score: computeRollingHealthScore(db, customerId, disputes.breakdown, asOf),
     audit_log: readAuditLog(db, customerId, mode),
   };
 }
@@ -246,6 +357,9 @@ export interface GetMemoryProfileOptions {
   reason: string;
   // The triggering event's own timestamp — see computeMemoryProfile's asOf.
   asOf: string;
+  // The triggering event's own id, so a memory_read row joins to the decision
+  // row it preceded.
+  eventId?: string;
 }
 
 export function getMemoryProfile(
@@ -259,10 +373,13 @@ export function getMemoryProfile(
     customer_id: customerId,
     agent: options.requestedBy,
     mode: options.mode,
+    entry_type: "memory_read",
+    event_id: options.eventId,
     action: "read_memory_profile",
     reasoning: options.reason,
     metadata: {
       dispute_count: profile.dispute_count,
+      dispute_breakdown: profile.dispute_breakdown,
       rolling_health_score: profile.rolling_health_score,
     },
   });

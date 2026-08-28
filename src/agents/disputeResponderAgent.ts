@@ -1,7 +1,7 @@
 import type Database from "better-sqlite3";
 import type { Customer, DisputeEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
-import { decideWithMemory } from "./memoryContext.js";
+import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import { DisputeResponderDecisionSchema, type DisputeResponderDecision } from "./schema.js";
 import { emitTrace } from "./trace.js";
 
@@ -35,7 +35,7 @@ export async function decideDisputeResponderBaseline(
     {
       db,
       customerId: customer.customer_id,
-      eventId: event.event_id,
+      eventId: event.dispute_id,
       agent: "dispute_responder",
       mode: "baseline",
       stepOrder: 1,
@@ -66,17 +66,17 @@ export async function decideDisputeResponderMemory(
   db: Database.Database,
   customer: Customer,
   event: DisputeEvent,
-): Promise<DisputeResponderDecision> {
+): Promise<WithMemoryAudit<DisputeResponderDecision>> {
   return decideWithMemory({
     db,
     customer,
     agent: "dispute_responder",
     event,
-    eventId: event.event_id,
+    eventId: event.dispute_id,
     eventTimestamp: event.dispute_created_at,
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: DisputeResponderDecisionSchema,
     fallbackNonDiscountAction: "escalate_to_human",
-    memoryReadReason: `Dispute responder agent evaluating dispute ${event.event_id} for payment ${event.payment_id}`,
+    memoryReadReason: `Dispute responder agent evaluating dispute ${event.dispute_id} for payment ${event.payment_id}`,
   });
 }

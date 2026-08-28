@@ -33,18 +33,22 @@ export function loadGeneratedDataIntoDb(db: Database.Database, generatedDir: str
   );
   const insertCartEvent = db.prepare(
     `INSERT OR REPLACE INTO cart_abandonment_events
-       (event_id, customer_id, order_id, amount, currency, status, cart_value, items, channel, timestamp)
-     VALUES (@event_id, @customer_id, @order_id, @amount, @currency, @status, @cart_value, @items, @channel, @timestamp)`,
+       (order_id, customer_id, amount, amount_paid, amount_due, currency, status, attempts,
+        last_method, last_error_code, last_error_description, notes, created_at)
+     VALUES (@order_id, @customer_id, @amount, @amount_paid, @amount_due, @currency, @status, @attempts,
+             @last_method, @last_error_code, @last_error_description, @notes, @created_at)`,
   );
   const insertSubEvent = db.prepare(
     `INSERT OR REPLACE INTO subscription_failure_events
-       (event_id, customer_id, subscription_id, plan_id, plan_amount, cycle_number, total_count, failure_reason, status, timestamp)
-     VALUES (@event_id, @customer_id, @subscription_id, @plan_id, @plan_amount, @cycle_number, @total_count, @failure_reason, @status, @timestamp)`,
+       (payment_id, subscription_id, customer_id, plan_id, plan_amount, plan_period, plan_interval,
+        paid_count, total_count, status, method, error_code, error_description, created_at)
+     VALUES (@payment_id, @subscription_id, @customer_id, @plan_id, @plan_amount, @plan_period, @plan_interval,
+             @paid_count, @total_count, @status, @method, @error_code, @error_description, @created_at)`,
   );
   const insertDisputeEvent = db.prepare(
     `INSERT OR REPLACE INTO dispute_events
-       (event_id, customer_id, payment_id, order_id, amount, dispute_reason, dispute_created_at, status)
-     VALUES (@event_id, @customer_id, @payment_id, @order_id, @amount, @dispute_reason, @dispute_created_at, @status)`,
+       (dispute_id, customer_id, payment_id, order_id, amount, dispute_reason, dispute_created_at, resolved_at, status)
+     VALUES (@dispute_id, @customer_id, @payment_id, @order_id, @amount, @dispute_reason, @dispute_created_at, @resolved_at, @status)`,
   );
 
   const loadAll = db.transaction(() => {
@@ -56,7 +60,9 @@ export function loadGeneratedDataIntoDb(db: Database.Database, generatedDir: str
       "DELETE FROM dispute_events; DELETE FROM subscription_failure_events; DELETE FROM cart_abandonment_events; DELETE FROM discount_usage; DELETE FROM audit_log; DELETE FROM agent_trace_events; DELETE FROM experiment_assignments; DELETE FROM experiment_evidence; DELETE FROM customers;",
     );
     for (const c of customers) insertCustomer.run(c);
-    for (const e of cartEvents) insertCartEvent.run(e);
+    // `notes` is a structured object in TypeScript and in the generated JSON;
+    // SQLite stores it as a JSON TEXT column. runner.ts parses it back on read.
+    for (const e of cartEvents) insertCartEvent.run({ ...e, notes: JSON.stringify(e.notes) });
     for (const e of subEvents) insertSubEvent.run(e);
     for (const e of disputeEvents) insertDisputeEvent.run(e);
   });

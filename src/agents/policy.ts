@@ -20,8 +20,17 @@ export const MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS = 5;
 // churn_signal scenario (events spread across a ~10-day window).
 export const CHURN_WINDOW_DAYS = 14;
 
+// How much a customer's dispute history should tighten discounting, ordered
+// by severity. Adverse outranks unresolved; a history of nothing but WON
+// disputes yields "none", because winning a chargeback is evidence about the
+// merchant's delivery, not about the customer's trustworthiness.
+export type DisputeCautionLevel = "none" | "unresolved" | "adverse";
+
 export interface MemorySignals {
+  // True at either caution level — kept as its own boolean so existing
+  // consumers (the prompt block, the trace summary) stay a simple check.
   disputeCautionWarranted: boolean;
+  disputeCautionLevel: DisputeCautionLevel;
   discountAttemptsForAgent: number;
   stoppingRuleHit: boolean;
   // "This one flow is being farmed" — this agent's own recovery event has
@@ -44,14 +53,29 @@ export function computeMemorySignals(profile: CustomerMemoryProfile, agent: Agen
   // summing it here stays causal for free — no separate DB query needed.
   const totalRecoveryEventsAcrossAgents = profile.recovery_frequency.reduce((sum, r) => sum + r.count, 0);
 
+  const disputeCautionLevel = computeDisputeCautionLevel(profile);
+
   return {
-    disputeCautionWarranted: profile.dispute_count > 0,
+    disputeCautionWarranted: disputeCautionLevel !== "none",
+    disputeCautionLevel,
     discountAttemptsForAgent,
     stoppingRuleHit: discountAttemptsForAgent >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
     gamingSuspected: (recoveryForAgent?.count ?? 0) >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
     crossAgentGamingSuspected: totalRecoveryEventsAcrossAgents >= MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS,
     compositeChurnSignal: hasCompositeChurnSignal(profile),
   };
+}
+
+// Deliberately NOT `dispute_count > 0`, which is what this used to be. That
+// version suppressed the next discount for a customer who filed a legitimate
+// dispute and won it — punishing them for the merchant's own failure to
+// deliver. Only disputes that are adverse, or not yet resolved as of this
+// read, are evidence about the customer.
+function computeDisputeCautionLevel(profile: CustomerMemoryProfile): DisputeCautionLevel {
+  const { adverse, unresolved } = profile.dispute_breakdown;
+  if (adverse > 0) return "adverse";
+  if (unresolved > 0) return "unresolved";
+  return "none";
 }
 
 function hasCompositeChurnSignal(profile: CustomerMemoryProfile): boolean {

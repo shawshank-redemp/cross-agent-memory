@@ -33,15 +33,17 @@ export function buildGrossAmountByEvent(
   subEvents: SubscriptionFailureEvent[],
 ): Map<string, number> {
   const map = new Map<string, number>();
-  for (const e of cartEvents) map.set(e.event_id, e.cart_value);
-  for (const e of subEvents) map.set(e.event_id, e.plan_amount);
+  // Keyed by each event's natural primary key, which is what the decision
+  // records' generic `event_id` was normalised from (see runner.ts).
+  for (const e of cartEvents) map.set(e.order_id, e.amount);
+  for (const e of subEvents) map.set(e.payment_id, e.plan_amount);
   return map;
 }
 
 // dispute_events carry the disputed amount for the dispute-response outcome
 // model (resolveDisputeResponseOutcome).
 export function buildDisputeAmountByEvent(disputeEvents: DisputeEvent[]): Map<string, number> {
-  return new Map(disputeEvents.map((e) => [e.event_id, e.amount]));
+  return new Map(disputeEvents.map((e) => [e.dispute_id, e.amount]));
 }
 
 // Dispute-response cost is only scored for a customer's 3rd-and-later
@@ -64,7 +66,7 @@ export function buildDisputeGamingThresholdEvents(disputeEvents: DisputeEvent[])
   for (const events of byCustomer.values()) {
     const sorted = [...events].sort((a, b) => a.dispute_created_at.localeCompare(b.dispute_created_at));
     sorted.forEach((e, idx) => {
-      if (idx + 1 >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT) eligible.add(e.event_id);
+      if (idx + 1 >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT) eligible.add(e.dispute_id);
     });
   }
   return eligible;

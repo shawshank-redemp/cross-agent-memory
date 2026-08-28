@@ -29,6 +29,40 @@ export interface ScenarioRollup {
   memoryEscalations: number;
 }
 
+export interface SuppressionDetail {
+  customer_id: string;
+  event_id: string;
+  dispute_outcome: string | null;
+  baselineDiscount: number | null;
+  memoryDiscount: number | null;
+  suppressed: boolean;
+}
+
+export interface SuppressionCohortResult {
+  customersChecked: number;
+  suppressed: number;
+  unchanged: number;
+  details: SuppressionDetail[];
+}
+
+// Two cohorts with OPPOSITE expectations, split on how the planted dispute
+// resolved. Same event shape in both — paid order, dispute on it, later
+// abandoned cart — so suppressing is correct in one and a false positive in
+// the other.
+export interface CrossDomainSuppression {
+  expectation: { adverse: string; won: string };
+  adverse: SuppressionCohortResult;
+  won: SuppressionCohortResult;
+  summary: {
+    correctSuppressions: number;
+    falsePositiveSuppressions: number;
+    totalSuppressions: number;
+    correctSuppressionRatePct: number | null;
+    adverseSuppressionRatePct: number | null;
+    wonSuppressionRatePct: number | null;
+  };
+}
+
 export interface ComparisonReport {
   overall: {
     matchedEvents: number;
@@ -42,12 +76,7 @@ export interface ComparisonReport {
     netDiscountChangePaise: number;
   };
   byScenario: ScenarioRollup[];
-  crossDomainSuppression: {
-    customersChecked: number;
-    suppressed: number;
-    unchanged: number;
-    details: { customer_id: string; event_id: string; baselineDiscount: number | null; memoryDiscount: number | null }[];
-  };
+  crossDomainSuppression: CrossDomainSuppression;
 }
 
 export interface DecisionRecord {

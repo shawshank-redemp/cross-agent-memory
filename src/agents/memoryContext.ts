@@ -1,10 +1,22 @@
 import type Database from "better-sqlite3";
 import type { z } from "zod";
-import { getMemoryProfile } from "../memory/profile.js";
+import { getMemoryProfile, type PolicyOverrideRecord } from "../memory/profile.js";
 import type { AgentType, Customer, CustomerMemoryProfile } from "../types/index.js";
 import { decide } from "./claudeClient.js";
 import { computeMemorySignals, type MemorySignals } from "./policy.js";
 import { emitTrace, type TraceContext } from "./trace.js";
+
+// What decideWithMemory returns alongside the decision itself: the signals the
+// decision was made against, and the override record if enforcePolicy stepped
+// in. The runner writes both onto the decision's audit row — they are the
+// evidence for "the LLM proposes, deterministic code disposes", and they only
+// exist on the memory path.
+export interface MemoryAuditTrail {
+  signals: MemorySignals;
+  policy_override: PolicyOverrideRecord | null;
+}
+
+export type WithMemoryAudit<T> = T & MemoryAuditTrail;
 
 export const MEMORY_POLICY_BLOCK = `
 You also have this customer's shared memory profile, aggregated across ALL
@@ -13,6 +25,10 @@ Dispute Responder) — not just your own agent's past interactions with them:
 
 - dispute_count / total_disputed_amount: disputes this customer has filed,
   and for how much.
+- dispute_breakdown: those disputes split by what is KNOWN right now —
+  unresolved (filed, no ruling yet), won (resolved in the customer's
+  favour), adverse (resolved against them), closed_undetermined (ended with
+  no ruling either way).
 - rolling_health_score (0-100, lower = riskier): a composite risk score.
 - discount_usage_history: every discount ANY agent has already granted this
   customer in this run.
@@ -23,10 +39,20 @@ Dispute Responder) — not just your own agent's past interactions with them:
 
 You are also given precomputed policy_signals — treat these as hard
 constraints, not suggestions:
-- dispute_caution_warranted: this customer has at least one dispute on
-  record. If true, cap any discount at 10% of cart_value/plan_amount
-  instead of the usual 20%, and prefer a plain nudge over a discount unless
-  the amount involved is small.
+- dispute_caution_warranted / dispute_caution_level: how much this
+  customer's dispute history should tighten your discounting. Read the
+  level, not just the boolean:
+  - "none": no dispute counts against them. Discount normally, capped at
+    20% of amount/plan_amount. This includes a customer whose disputes were
+    all WON — a customer who was right to complain is not a risk, and a
+    merchant losing a chargeback is evidence about the merchant's delivery,
+    not about the customer. Do not treat a won dispute as a black mark.
+  - "unresolved": they have a dispute filed with no ruling yet. That is
+    genuine uncertainty, not established fault. Cap any discount at 15% and
+    say the uncertainty is why.
+  - "adverse": a dispute has been resolved AGAINST them. Cap any discount
+    at 10% and prefer a plain nudge over a discount unless the amount
+    involved is small.
 - stopping_rule_hit: this agent has already granted 3+ discounts to this
   customer in this run. If true, you MUST NOT grant another discount.
 - gaming_suspected: this customer has triggered this agent's recovery flow
@@ -77,12 +103,18 @@ export interface DecideWithMemoryParams<Schema extends z.ZodType<MemoryDecisionS
 
 function describeProfileForTrace(profile: CustomerMemoryProfile): string {
   const entries = profile.discount_usage_history.length;
-  return `dispute_count: ${profile.dispute_count}, recovery_frequency: ${profile.recovery_frequency.length} agents, discount_history: ${entries} entr${entries === 1 ? "y" : "ies"}`;
+  const b = profile.dispute_breakdown;
+  return [
+    `dispute_count: ${profile.dispute_count}`,
+    `disputes(unresolved/won/adverse/closed): ${b.unresolved}/${b.won}/${b.adverse}/${b.closed_undetermined}`,
+    `recovery_frequency: ${profile.recovery_frequency.length} agents`,
+    `discount_history: ${entries} entr${entries === 1 ? "y" : "ies"}`,
+  ].join(", ");
 }
 
 function describeSignalsForTrace(signals: MemorySignals): string {
   const active: string[] = [];
-  if (signals.disputeCautionWarranted) active.push("dispute_caution_warranted");
+  if (signals.disputeCautionWarranted) active.push(`dispute_caution:${signals.disputeCautionLevel}`);
   if (signals.stoppingRuleHit) active.push("stopping_rule_hit");
   if (signals.gamingSuspected) active.push("gaming_suspected");
   if (signals.crossAgentGamingSuspected) active.push("cross_agent_gaming_suspected");
@@ -92,7 +124,7 @@ function describeSignalsForTrace(signals: MemorySignals): string {
 
 export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionShape>>(
   params: DecideWithMemoryParams<Schema>,
-): Promise<z.infer<Schema>> {
+): Promise<WithMemoryAudit<z.infer<Schema>>> {
   const traceBase: Omit<TraceContext, "stepOrder"> = {
     db: params.db,
     customerId: params.customer.customer_id,
@@ -108,6 +140,7 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     mode: "memory",
     reason: params.memoryReadReason,
     asOf: params.eventTimestamp,
+    eventId: params.eventId,
   });
   stepOrder += 1;
   emitTrace(
@@ -127,7 +160,7 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     Date.now() - stepStart,
   );
 
-  const recentDecisions = profile.audit_log.filter((e) => e.action !== "read_memory_profile").slice(-5);
+  const recentDecisions = profile.audit_log.filter((e) => e.entry_type === "decision").slice(-5);
   const userContent = JSON.stringify(
     {
       customer: params.customer,
@@ -135,6 +168,8 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
       memory_profile: {
         dispute_count: profile.dispute_count,
         total_disputed_amount: profile.total_disputed_amount,
+        dispute_breakdown: profile.dispute_breakdown,
+        adverse_disputed_amount: profile.adverse_disputed_amount,
         rolling_health_score: profile.rolling_health_score,
         discount_usage_history: profile.discount_usage_history,
         recovery_frequency: profile.recovery_frequency,
@@ -155,6 +190,19 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
   return enforcePolicy(decision, signals, params.fallbackNonDiscountAction, traceBase, stepOrder);
 }
 
+// Which signals actually caused an override, named the same way they are in
+// MemorySignals so the audit row points at a real field rather than prose.
+function overrideTriggers(signals: MemorySignals, mustBlockDiscount: boolean, mustEscalate: boolean): string[] {
+  const triggers: (keyof MemorySignals)[] = [];
+  if (mustBlockDiscount && signals.stoppingRuleHit) triggers.push("stoppingRuleHit");
+  if (signals.gamingSuspected && (mustBlockDiscount || mustEscalate)) triggers.push("gamingSuspected");
+  if (signals.crossAgentGamingSuspected && (mustBlockDiscount || mustEscalate)) {
+    triggers.push("crossAgentGamingSuspected");
+  }
+  if (signals.compositeChurnSignal && (mustBlockDiscount || mustEscalate)) triggers.push("compositeChurnSignal");
+  return triggers;
+}
+
 // Safety net: an LLM call is not a reliable place to enforce a hard, bounded
 // limit — the stopping rule and churn escalation are deterministic
 // overrides, applied here regardless of what the model returned, with the
@@ -165,7 +213,7 @@ function enforcePolicy<D extends MemoryDecisionShape>(
   fallbackNonDiscountAction: D["action"],
   traceBase: Omit<TraceContext, "stepOrder">,
   stepOrder: number,
-): D {
+): WithMemoryAudit<D> {
   const stepStart = Date.now();
   const mustBlockDiscount =
     (signals.stoppingRuleHit || signals.gamingSuspected || signals.crossAgentGamingSuspected || signals.compositeChurnSignal) &&
@@ -174,7 +222,7 @@ function enforcePolicy<D extends MemoryDecisionShape>(
     (signals.gamingSuspected || signals.crossAgentGamingSuspected || signals.compositeChurnSignal) &&
     !decision.escalate_to_human;
 
-  if (!mustBlockDiscount && !mustEscalate) return decision;
+  if (!mustBlockDiscount && !mustEscalate) return { ...decision, signals, policy_override: null };
 
   const notes: string[] = [];
   if (mustBlockDiscount && (signals.stoppingRuleHit || signals.gamingSuspected || signals.crossAgentGamingSuspected)) {
@@ -200,5 +248,13 @@ function enforcePolicy<D extends MemoryDecisionShape>(
     discount_amount: mustBlockDiscount ? null : decision.discount_amount,
     escalate_to_human: true,
     reasoning: `${decision.reasoning}\n\n[POLICY OVERRIDE] ${notesJoined}.`,
+    signals,
+    policy_override: {
+      original_action: decision.action,
+      original_discount_amount: preOverrideDiscountAmount,
+      original_escalate_to_human: decision.escalate_to_human,
+      triggered_by: overrideTriggers(signals, mustBlockDiscount, mustEscalate),
+      notes: notesJoined,
+    },
   };
 }

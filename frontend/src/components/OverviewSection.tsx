@@ -10,6 +10,10 @@ import {
 } from "recharts";
 import { formatPaise, SCENARIO_LABELS, type ComparisonReport } from "../api";
 
+function pct(value: number | null): string {
+  return value == null ? "n/a" : `${value}%`;
+}
+
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
     <div className="kpi-card">
@@ -22,6 +26,7 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub?: st
 
 export function OverviewSection({ report }: { report: ComparisonReport }) {
   const { overall, byScenario, crossDomainSuppression } = report;
+  const { adverse, won, summary } = crossDomainSuppression;
 
   const discountChartData = byScenario
     .filter((s) => s.baselineDiscountPaise > 0 || s.memoryDiscountPaise > 0)
@@ -61,9 +66,14 @@ export function OverviewSection({ report }: { report: ComparisonReport }) {
         />
         <KpiCard label="Memory-informed spend" value={formatPaise(overall.memoryDiscountPaise)} />
         <KpiCard
-          label="Cross-domain suppressions"
-          value={`${crossDomainSuppression.suppressed}/${crossDomainSuppression.customersChecked}`}
-          sub="disputed customers whose next cart discount was capped or dropped"
+          label="Suppressed after an adverse dispute"
+          value={`${adverse.suppressed}/${adverse.customersChecked}`}
+          sub={`${pct(summary.adverseSuppressionRatePct)} — correct: the dispute was lost or still open`}
+        />
+        <KpiCard
+          label="Suppressed after a won dispute"
+          value={`${won.suppressed}/${won.customersChecked}`}
+          sub={`${pct(summary.wonSuppressionRatePct)} — false positives: the customer was right to complain`}
         />
         <KpiCard
           label="Escalations (baseline → memory)"
@@ -103,6 +113,17 @@ export function OverviewSection({ report }: { report: ComparisonReport }) {
           </ResponsiveContainer>
         </div>
       </div>
+
+      <p className="callout">
+        The two cross-domain cards above are the same experiment run twice.{" "}
+        <strong>Identical event shape in both cohorts</strong> — a paid order, a dispute filed
+        against it, then a later abandoned cart. The only difference is how the dispute resolved,
+        and that flips which behaviour is correct: suppressing the next discount is right when the
+        dispute went against the customer, and a false positive when the customer won. A system
+        that simply reacted to <em>having</em> a dispute would score the same in both columns.
+        Across the whole cohort, {summary.correctSuppressions} of {summary.totalSuppressions}{" "}
+        suppressions landed on the cohort that deserved them ({pct(summary.correctSuppressionRatePct)}).
+      </p>
 
       <p className="callout">
         Look at <strong>Normal</strong> in the escalation chart: baseline's dispute agent escalates

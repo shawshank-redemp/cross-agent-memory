@@ -62,11 +62,23 @@ class DataStore {
     );
     const disputeEvents = readJson<DisputeEvent[]>(join(GENERATED_DIR, "dispute_events.json"));
 
+    // Same normalisation the runner does: each table's natural primary key
+    // becomes the generic `event_id` the decision records and the frontend
+    // join on.
     const allEvents: TimelineEvent[] = [
-      ...cartEvents.map((e): TimelineEvent => ({ domain: "cart_abandonment", event_id: e.event_id, timestamp: e.timestamp, detail: e })),
-      ...subEvents.map((e): TimelineEvent => ({ domain: "subscription_recovery", event_id: e.event_id, timestamp: e.timestamp, detail: e })),
+      ...cartEvents.map(
+        (e): TimelineEvent => ({ domain: "cart_abandonment", event_id: e.order_id, timestamp: e.created_at, detail: e }),
+      ),
+      ...subEvents.map(
+        (e): TimelineEvent => ({
+          domain: "subscription_recovery",
+          event_id: e.payment_id,
+          timestamp: e.created_at,
+          detail: e,
+        }),
+      ),
       ...disputeEvents.map(
-        (e): TimelineEvent => ({ domain: "dispute_responder", event_id: e.event_id, timestamp: e.dispute_created_at, detail: e }),
+        (e): TimelineEvent => ({ domain: "dispute_responder", event_id: e.dispute_id, timestamp: e.dispute_created_at, detail: e }),
       ),
     ];
 

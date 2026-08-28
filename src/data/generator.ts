@@ -5,18 +5,24 @@ import type {
   CartAbandonmentEvent,
   Customer,
   DisputeEvent,
+  DisputeStatus,
+  PaymentMethod,
   PlanTier,
   SubscriptionFailureEvent,
 } from "../types/index.js";
 import {
   CART_CHANNELS,
+  CHECKOUT_ERRORS,
   DISPUTE_REASONS,
   EMAIL_DOMAINS,
   FIRST_NAMES,
   LAST_NAMES,
+  PAYMENT_METHODS,
   PLAN_DEFS,
+  SUBSCRIPTION_ERROR_BY_REASON,
   SUBSCRIPTION_FAILURE_REASONS,
   type PlanCode,
+  type SubscriptionFailureReason,
 } from "./fixtures.js";
 
 // Fixed reference point so a given seed always reproduces the same batch —
@@ -39,7 +45,17 @@ export interface ScenarioLabel {
   customer_id: string;
   scenario: Scenario;
   note: string;
+  // cross_domain_risk only: which outcome the planted dispute took. Recorded
+  // here so downstream analysis can split the cohort by outcome without
+  // re-deriving it from dispute_events — and, more to the point, without
+  // having to guess which of a customer's disputes was the planted one.
+  dispute_outcome?: DisputeStatus;
 }
+
+// What a scenario generator can tell the caller about the customer it just
+// planted, merged onto that customer's ScenarioLabel. Ground truth about how
+// the data was constructed, never something an agent is allowed to read.
+export type ScenarioAnnotation = Pick<ScenarioLabel, "dispute_outcome">;
 
 export interface SyntheticBatch {
   customers: Customer[];
@@ -86,25 +102,48 @@ function randomTimestampWithinWindow(rng: Rng, windowDays = EVENT_WINDOW_DAYS): 
   return daysAgo(rng.int(0, windowDays));
 }
 
+// Attempt state is generated coherently with `status`, because the two are
+// the same fact seen from two angles in a real orders report:
+//   created   -> never reached payment: attempts 0, every last_* field null
+//   attempted -> tried and failed: attempts >= 1, method + error populated
+//   paid      -> the final attempt succeeded: method set, errors null
+// That last case is a refinement of "attempts >= 1 means last_* populated":
+// a successful attempt has a method but no error to report.
 function makeCartAbandonmentEvent(
   rng: Rng,
   customer: Customer,
   timestampMs: number,
   status: CartAbandonmentEvent["status"],
 ): CartAbandonmentEvent {
-  const cartValue = rng.int(5, 50) * 10_000; // paise: ₹500 - ₹5,000
-  const orderId = makeId("order", rng);
+  const amount = rng.int(5, 50) * 10_000; // paise: ₹500 - ₹5,000
+  const amountPaid = status === "paid" ? amount : 0;
+
+  let attempts = 0;
+  let lastMethod: PaymentMethod | null = null;
+  let lastError: { error_code: string; error_description: string } | null = null;
+  if (status === "attempted") {
+    attempts = rng.int(1, 3);
+    lastMethod = rng.pick(PAYMENT_METHODS);
+    lastError = rng.pick(CHECKOUT_ERRORS);
+  } else if (status === "paid") {
+    attempts = rng.int(1, 2);
+    lastMethod = rng.pick(PAYMENT_METHODS);
+  }
+
   return {
-    event_id: orderId,
+    order_id: makeId("order", rng),
     customer_id: customer.customer_id,
-    order_id: orderId,
-    amount: cartValue,
+    amount,
+    amount_paid: amountPaid,
+    amount_due: amount - amountPaid,
     currency: "INR",
     status,
-    cart_value: cartValue,
-    items: rng.int(1, 6),
-    channel: rng.pick(CART_CHANNELS),
-    timestamp: isoAt(timestampMs),
+    attempts,
+    last_method: lastMethod,
+    last_error_code: lastError?.error_code ?? null,
+    last_error_description: lastError?.error_description ?? null,
+    notes: { items: rng.int(1, 6), channel: rng.pick(CART_CHANNELS) },
+    created_at: isoAt(timestampMs),
   };
 }
 
@@ -119,35 +158,56 @@ function makeSubscriptionCycleEvent(
   status: SubscriptionFailureEvent["status"],
 ): SubscriptionFailureEvent {
   const plan = PLAN_DEFS[planCode];
+  const failed = status === "failed" || status === "halted";
+  const error = failed ? SUBSCRIPTION_ERROR_BY_REASON[rng.pick(SUBSCRIPTION_FAILURE_REASONS)] : null;
   return {
-    event_id: makeId("sub", rng),
-    customer_id: customer.customer_id,
+    // A subscription charge failure IS a failed payment, so the row's own
+    // identity is the charge attempt. subscription_id repeats across cycles.
+    payment_id: makeId("pay", rng),
     subscription_id: subscriptionId,
+    customer_id: customer.customer_id,
     plan_id: planId,
     plan_amount: plan.plan_amount,
-    cycle_number: cycleNumber,
+    plan_period: plan.plan_period,
+    plan_interval: plan.plan_interval,
+    paid_count: cycleNumber,
     total_count: plan.total_count,
-    failure_reason: status === "failed" || status === "halted" ? rng.pick(SUBSCRIPTION_FAILURE_REASONS) : null,
     status,
-    timestamp: isoAt(timestampMs),
+    method: rng.pick(PAYMENT_METHODS),
+    error_code: error?.error_code ?? null,
+    error_description: error?.error_description ?? null,
+    created_at: isoAt(timestampMs),
   };
 }
 
+const TERMINAL_DISPUTE_STATUSES = new Set<DisputeEvent["status"]>(["won", "lost", "closed"]);
+
+// resolved_at is non-null exactly for the terminal statuses, and always
+// strictly after dispute_created_at. `resolvedAfterDays` overrides the
+// default lag (fractional days allowed) where a scenario needs the
+// resolution to land at a specific point relative to a later event.
+//
+// A resolution can fall beyond SIM_NOW: that is a dispute this batch never
+// observes resolving, and under asOf scoping it correctly reads as
+// unresolved at every decision point in the run.
 function makeDisputeEvent(
   rng: Rng,
   customer: Customer,
   timestampMs: number,
   status: DisputeEvent["status"],
-  opts?: { orderId?: string },
+  opts?: { orderId?: string; resolvedAfterDays?: number },
 ): DisputeEvent {
+  const resolved = TERMINAL_DISPUTE_STATUSES.has(status);
+  const resolvedAfterDays = opts?.resolvedAfterDays ?? (resolved ? rng.int(7, 45) : 0);
   return {
-    event_id: makeId("dispute", rng),
+    dispute_id: makeId("dispute", rng),
     customer_id: customer.customer_id,
     payment_id: makeId("pay", rng),
     order_id: opts?.orderId ?? makeId("order", rng),
     amount: rng.int(5, 80) * 10_000,
     dispute_reason: rng.pick(DISPUTE_REASONS),
     dispute_created_at: isoAt(timestampMs),
+    resolved_at: resolved ? isoAt(timestampMs + Math.max(1, Math.round(resolvedAfterDays * DAY_MS))) : null,
     status,
   };
 }
@@ -185,7 +245,7 @@ function generateRepeatOffenderCart(rng: Rng, customer: Customer, batch: Synthet
 }
 
 // ~5%: repeated subscription-cycle failures — recovery-frequency gaming +
-// stopping rule material (use cycle_number to trace it).
+// stopping rule material (use paid_count to trace it).
 function generateRepeatOffenderSubscription(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
   const planCode = planCodeFor(customer);
   const subscriptionId = makeId("sub", rng);
@@ -215,22 +275,48 @@ function generateRepeatOffenderDispute(rng: Rng, customer: Customer, batch: Synt
 // ~10%: a dispute on a completed order, followed later by a new abandoned
 // cart from the same customer — shared order_id/payment_id history should
 // suppress the cart-abandonment agent's discount spend on the new cart.
-function generateCrossDomainRisk(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
+function generateCrossDomainRisk(rng: Rng, customer: Customer, batch: SyntheticBatch): ScenarioAnnotation {
   const paidTs = daysAgo(EVENT_WINDOW_DAYS - rng.int(0, 20));
   const paidEvent = makeCartAbandonmentEvent(rng, customer, paidTs, "paid");
   batch.cartAbandonmentEvents.push(paidEvent);
 
   const disputeTs = paidTs + rng.int(2, 14) * DAY_MS;
+  const laterCartTs = Math.min(disputeTs + rng.int(5, 30) * DAY_MS, SIM_NOW);
+
+  // A terminal dispute must be RESOLVED by the time the later cart fires, not
+  // merely filed. Under the asOf rules in profile.ts a dispute counts as
+  // resolved only once resolved_at <= asOf, and a visible-but-unresolved
+  // dispute is deliberately treated as `unresolved` no matter what its
+  // eventual status says. With the default 7-45 day resolution lag a `lost`
+  // or `won` dispute would frequently still read as unresolved at the later
+  // cart, collapsing all three variants below into the same signal. Resolve
+  // strictly inside the gap instead.
+  const gapDays = Math.max(1, Math.floor((laterCartTs - disputeTs) / DAY_MS));
+  const resolvedAfterDays = gapDays >= 2 ? rng.int(1, gapDays - 1) : 1;
+
+  // Three outcomes at equal weight, and the `won` arm is the one that makes
+  // this scenario a real test rather than a one-sided one. Same event shape
+  // in every arm — paid order, dispute on it, later abandoned cart — so the
+  // ONLY thing that differs is how the dispute turned out:
+  //   lost         -> disputeCautionLevel "adverse"    -> should suppress
+  //   under_review -> disputeCautionLevel "unresolved" -> should suppress
+  //   won          -> disputeCautionLevel "none"       -> should NOT suppress
+  // Without the won arm, "memory suppresses discounts after a dispute" is
+  // unfalsifiable: a system that suppressed on any dispute at all would score
+  // identically to one that reads the outcome.
+  const disputeOutcome = rng.pick(["under_review", "lost", "won"] as const);
   batch.disputeEvents.push(
-    makeDisputeEvent(rng, customer, disputeTs, rng.pick(["under_review", "lost"] as const), {
+    makeDisputeEvent(rng, customer, disputeTs, disputeOutcome, {
       orderId: paidEvent.order_id,
+      resolvedAfterDays,
     }),
   );
 
-  const laterCartTs = disputeTs + rng.int(5, 30) * DAY_MS;
   batch.cartAbandonmentEvents.push(
-    makeCartAbandonmentEvent(rng, customer, Math.min(laterCartTs, SIM_NOW), rng.pick(["created", "attempted"] as const)),
+    makeCartAbandonmentEvent(rng, customer, laterCartTs, rng.pick(["created", "attempted"] as const)),
   );
+
+  return { dispute_outcome: disputeOutcome };
 }
 
 // ~10%: 2+ domains firing within a tight window — composite churn signal
@@ -269,21 +355,34 @@ function generateNoise(rng: Rng, customer: Customer, batch: SyntheticBatch): voi
     // Zero-value abandoned cart.
     const ts = randomTimestampWithinWindow(rng);
     const event = makeCartAbandonmentEvent(rng, customer, ts, "attempted");
-    batch.cartAbandonmentEvents.push({ ...event, amount: 0, cart_value: 0, items: 0 });
+    batch.cartAbandonmentEvents.push({
+      ...event,
+      amount: 0,
+      amount_paid: 0,
+      amount_due: 0,
+      notes: { ...event.notes, items: 0 },
+    });
     return;
   }
   if (variant === 2) {
-    // Contradictory subscription state: active status but a failure_reason set.
+    // Contradictory subscription state: active status but a payment error set.
     const planCode = planCodeFor(customer);
     const ts = randomTimestampWithinWindow(rng);
     const event = makeSubscriptionCycleEvent(rng, customer, makeId("sub", rng), makeId("plan", rng), planCode, 1, ts, "active");
-    batch.subscriptionFailureEvents.push({ ...event, failure_reason: rng.pick(SUBSCRIPTION_FAILURE_REASONS) });
+    batch.subscriptionFailureEvents.push({
+      ...event,
+      ...SUBSCRIPTION_ERROR_BY_REASON[rng.pick(SUBSCRIPTION_FAILURE_REASONS)],
+    });
     return;
   }
   if (variant === 3) {
-    // Dispute closed the same instant it was created, unusually large amount.
+    // Dispute closed implausibly fast (within an hour of being filed), for an
+    // unusually large amount. Previously this closed at the same instant it
+    // was created; resolved_at must be strictly after dispute_created_at, so
+    // the "impossibly fast" character is kept as a one-hour lag instead of a
+    // zero-length one.
     const ts = randomTimestampWithinWindow(rng);
-    const event = makeDisputeEvent(rng, customer, ts, "closed");
+    const event = makeDisputeEvent(rng, customer, ts, "closed", { resolvedAfterDays: 1 / 24 });
     batch.disputeEvents.push({ ...event, amount: 500_000_00 });
     return;
   }
@@ -302,7 +401,7 @@ interface ScenarioBucket {
   scenario: Scenario;
   weight: number;
   note: string;
-  generate: (rng: Rng, customer: Customer, batch: SyntheticBatch) => void;
+  generate: (rng: Rng, customer: Customer, batch: SyntheticBatch) => ScenarioAnnotation | void;
 }
 
 // The mix is deliberately weighted toward customers who generate MULTIPLE cart
@@ -342,7 +441,7 @@ const SCENARIO_BUCKETS: ScenarioBucket[] = [
   {
     scenario: "cross_domain_risk",
     weight: 0.15,
-    note: "dispute history should suppress a later cart discount",
+    note: "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
     generate: generateCrossDomainRisk,
   },
   {
@@ -394,12 +493,17 @@ export function generateSyntheticBatch(options: GenerateOptions = {}): Synthetic
   for (const scenario of shuffledAssignments) {
     const customer = makeCustomer(rng);
     batch.customers.push(customer);
+    // Label is written AFTER generation so it can carry whatever the
+    // generator learned while planting the customer (currently the
+    // cross_domain_risk dispute outcome). Generation consumes the same RNG
+    // draws either way, so the batch is unchanged by the reordering.
+    const annotation = generatorByScenario.get(scenario)!.generate(rng, customer, batch) ?? {};
     batch.scenarioLabels.push({
       customer_id: customer.customer_id,
       scenario,
       note: noteByScenario.get(scenario) ?? "",
+      ...annotation,
     });
-    generatorByScenario.get(scenario)!.generate(rng, customer, batch);
   }
 
   return batch;

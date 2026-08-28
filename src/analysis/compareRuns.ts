@@ -18,7 +18,13 @@ import {
   RECURRENCE_COST_SCENARIOS,
 } from "../outcomes/probabilities.js";
 import { resolveDisputeResponseOutcome, resolveRecoveryOutcome, rollsForEvent, type DecisionOutcome } from "../outcomes/resolveOutcomes.js";
-import type { AgentType, CartAbandonmentEvent, DisputeEvent, SubscriptionFailureEvent } from "../types/index.js";
+import type {
+  AgentType,
+  CartAbandonmentEvent,
+  DisputeEvent,
+  DisputeStatus,
+  SubscriptionFailureEvent,
+} from "../types/index.js";
 
 
 
@@ -239,8 +245,9 @@ function main(): void {
   const overallNetRevenueLiftPaise = overall.memoryRevenue.netRevenuePaise - overall.baselineRevenue.netRevenuePaise;
 
   // Targeted check: for cross_domain_risk customers, the generator plants a
-  // paid order, then a dispute on it, then a LATER (non-paid) abandoned cart
-  // that a memory-aware agent should treat more cautiously than baseline.
+  // paid order, then a dispute on it, then a LATER (non-paid) abandoned cart.
+  // Split by how the dispute resolved — the adverse cohort should see the
+  // discount suppressed, the won cohort should not.
   const crossDomainSuppression = checkCrossDomainSuppression(scenarioLabels, cartEvents, baseline, memory);
 
   const byScenario = [...scenarioRollups.values()]
@@ -298,6 +305,30 @@ function main(): void {
   console.log(JSON.stringify(report, null, 2));
   console.log(`\nWrote ${join(RESULTS_DIR, "comparison_report.json")}`);
   printRevenueSummary(report.overall, report.byScenario);
+  printCrossDomainSummary(report.crossDomainSuppression);
+}
+
+// The paired read, printed explicitly: identical event shape in both cohorts,
+// opposite correct behaviour, split only by how the dispute resolved.
+function printCrossDomainSummary(result: CrossDomainSuppressionResult): void {
+  const { adverse, won, summary } = result;
+  const rate = (n: number | null): string => (n == null ? "n/a" : `${n}%`);
+  console.log("\n=== Cross-domain suppression, split by dispute outcome ===");
+  console.log(
+    `adverse (lost/under_review): suppressed ${adverse.suppressed}/${adverse.customersChecked} (${rate(
+      summary.adverseSuppressionRatePct,
+    )}) — suppression is CORRECT here`,
+  );
+  console.log(
+    `won:                         suppressed ${won.suppressed}/${won.customersChecked} (${rate(
+      summary.wonSuppressionRatePct,
+    )}) — suppression is a FALSE POSITIVE here`,
+  );
+  console.log(
+    `of ${summary.totalSuppressions} suppressions overall, ${summary.correctSuppressions} landed on the right cohort (${rate(
+      summary.correctSuppressionRatePct,
+    )})`,
+  );
 }
 
 function paiseToRupees(paise: number): string {
@@ -326,16 +357,67 @@ function printRevenueSummary(
   }
 }
 
-interface CrossDomainSuppressionResult {
+// A cross_domain_risk customer's planted dispute resolves one of three ways,
+// and they do NOT all imply the same correct behaviour on the later cart:
+//
+//   lost / under_review -> the dispute is evidence about the CUSTOMER
+//                          (adverse or not-yet-known). Suppressing the next
+//                          discount is the right call.
+//   won                 -> the merchant failed to deliver and lost the
+//                          chargeback. That is evidence about the MERCHANT.
+//                          Suppressing here punishes a customer who was right
+//                          to complain — a false positive, not a success.
+//
+// Counting both cohorts as "suppressions" (which this metric used to do,
+// before the won arm existed) makes the number unfalsifiable: a system that
+// suppressed on the mere existence of a dispute would score identically to
+// one that reads the outcome. Splitting is what turns it into a real claim.
+type SuppressionCohort = "adverse" | "won";
+
+function cohortFor(outcome: DisputeStatus | undefined): SuppressionCohort {
+  return outcome === "won" ? "won" : "adverse";
+}
+
+interface SuppressionDetail {
+  customer_id: string;
+  event_id: string;
+  dispute_outcome: DisputeStatus | null;
+  baselineDiscount: number | null;
+  memoryDiscount: number | null;
+  suppressed: boolean;
+}
+
+interface CohortResult {
   customersChecked: number;
-  suppressed: number; // memory discount strictly less than baseline on the later cart
+  // memory discount strictly less than baseline on the later cart
+  suppressed: number;
   unchanged: number;
-  details: {
-    customer_id: string;
-    event_id: string;
-    baselineDiscount: number | null;
-    memoryDiscount: number | null;
-  }[];
+  details: SuppressionDetail[];
+}
+
+interface CrossDomainSuppressionResult {
+  // What each cohort is for, carried in the report so the two numbers are
+  // never read as if they meant the same thing.
+  expectation: {
+    adverse: string;
+    won: string;
+  };
+  adverse: CohortResult;
+  won: CohortResult;
+  summary: {
+    // Of every suppression memory made across the whole cross_domain_risk
+    // cohort, what share landed on a customer who deserved it. Precision-
+    // style, deliberately not called "precision": with cell counts this size
+    // the claim is directional, not statistical.
+    correctSuppressions: number;
+    falsePositiveSuppressions: number;
+    totalSuppressions: number;
+    correctSuppressionRatePct: number | null;
+    // The paired read a judge should take: same event shape in both cohorts,
+    // opposite decision, because the dispute outcome differed.
+    adverseSuppressionRatePct: number | null;
+    wonSuppressionRatePct: number | null;
+  };
 }
 
 function checkCrossDomainSuppression(
@@ -356,30 +438,62 @@ function checkCrossDomainSuppression(
   const targetEventByCustomer = new Map<string, string>();
   for (const e of cartEvents) {
     if (e.status !== "paid" && crossDomainCustomers.has(e.customer_id)) {
-      targetEventByCustomer.set(e.customer_id, e.event_id);
+      targetEventByCustomer.set(e.customer_id, e.order_id);
     }
   }
+
+  // Read straight off the scenario label rather than re-derived from
+  // dispute_events: the label records which outcome the generator planted, so
+  // there is no guessing about which of a customer's disputes was the planted
+  // one.
+  const outcomeByCustomer = new Map(scenarioLabels.map((l) => [l.customer_id, l.dispute_outcome]));
 
   const baselineByEvent = new Map(baseline.map((d) => [d.event_id, d]));
   const memoryByEvent = new Map(memory.map((d) => [d.event_id, d]));
 
-  const details: CrossDomainSuppressionResult["details"] = [];
+  const byCohort: Record<SuppressionCohort, SuppressionDetail[]> = { adverse: [], won: [] };
   for (const [customerId, eventId] of targetEventByCustomer) {
     const b = baselineByEvent.get(eventId);
     const m = memoryByEvent.get(eventId);
     if (!b || !m) continue;
-    details.push({
+    const outcome = outcomeByCustomer.get(customerId);
+    byCohort[cohortFor(outcome)].push({
       customer_id: customerId,
       event_id: eventId,
+      dispute_outcome: outcome ?? null,
       baselineDiscount: b.discount_amount,
       memoryDiscount: m.discount_amount,
+      suppressed: (m.discount_amount ?? 0) < (b.discount_amount ?? 0),
     });
   }
 
-  const suppressed = details.filter((d) => (d.memoryDiscount ?? 0) < (d.baselineDiscount ?? 0)).length;
-  const unchanged = details.length - suppressed;
+  const toCohortResult = (details: SuppressionDetail[]): CohortResult => {
+    const suppressed = details.filter((d) => d.suppressed).length;
+    return { customersChecked: details.length, suppressed, unchanged: details.length - suppressed, details };
+  };
 
-  return { customersChecked: details.length, suppressed, unchanged, details };
+  const adverse = toCohortResult(byCohort.adverse);
+  const won = toCohortResult(byCohort.won);
+  const totalSuppressions = adverse.suppressed + won.suppressed;
+  const pct = (n: number, d: number): number | null => (d === 0 ? null : Math.round((n / d) * 100));
+
+  return {
+    expectation: {
+      adverse:
+        "Dispute lost or still unresolved as of the later cart — evidence about the customer. Memory SHOULD suppress; a suppression here is correct.",
+      won: "Dispute resolved in the customer's favour — evidence about the merchant's delivery, not the customer. Memory should NOT suppress; a suppression here is a false positive.",
+    },
+    adverse,
+    won,
+    summary: {
+      correctSuppressions: adverse.suppressed,
+      falsePositiveSuppressions: won.suppressed,
+      totalSuppressions,
+      correctSuppressionRatePct: pct(adverse.suppressed, totalSuppressions),
+      adverseSuppressionRatePct: pct(adverse.suppressed, adverse.customersChecked),
+      wonSuppressionRatePct: pct(won.suppressed, won.customersChecked),
+    },
+  };
 }
 
 main();
