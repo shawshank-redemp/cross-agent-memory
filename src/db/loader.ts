@@ -48,8 +48,12 @@ export function loadGeneratedDataIntoDb(db: Database.Database, generatedDir: str
   );
 
   const loadAll = db.transaction(() => {
+    // Every per-run artifact keyed to a customer must be cleared before the
+    // customers themselves, or the customer DELETE trips a foreign-key
+    // constraint — and stale rows from a previous batch would otherwise be
+    // read back as if they belonged to this one.
     db.exec(
-      "DELETE FROM dispute_events; DELETE FROM subscription_failure_events; DELETE FROM cart_abandonment_events; DELETE FROM discount_usage; DELETE FROM audit_log; DELETE FROM customers;",
+      "DELETE FROM dispute_events; DELETE FROM subscription_failure_events; DELETE FROM cart_abandonment_events; DELETE FROM discount_usage; DELETE FROM audit_log; DELETE FROM agent_trace_events; DELETE FROM experiment_assignments; DELETE FROM experiment_evidence; DELETE FROM customers;",
     );
     for (const c of customers) insertCustomer.run(c);
     for (const e of cartEvents) insertCartEvent.run(e);

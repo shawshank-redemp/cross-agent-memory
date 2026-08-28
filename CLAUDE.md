@@ -87,3 +87,107 @@ More event *types* is explicitly out of scope (stay at 3 — cart abandonment, s
 - ~10% "churn signal" — the composite pattern: 2+ domains firing in a tight time window, which should trigger escalation rather than more automated nudges.
 - ~5% pure noise/edge cases.
 
+
+
+## Experimentation layer (recovery incrementality)
+
+### Why this exists
+
+The memory layer today lets an agent make a better-informed choice. It does not
+tell us whether the chosen intervention actually *caused* a better outcome.
+
+The problem is self-selection. Claude picks who gets a discount, so the
+discounted population is the one Claude judged most recoverable. If that group
+converts at 70%, the number is uninterpretable: it looks identical whether the
+discount moved everyone or nobody, because those customers may have converted
+anyway. This matters most for cart abandonment specifically — abandoners are the
+most self-selected audience in commerce, and published lift studies find a large
+share of them convert without any intervention.
+
+Randomisation breaks the link. A coin does not know who is recoverable, so the
+treated and untreated groups contain the same mix of easy and hard cases, and any
+outcome difference is attributable to the intervention alone. That converts a
+correlation ("discounted customers return") into incrementality ("the discount
+caused X extra returns at Y cost").
+
+### Design decisions already made — do not relitigate these
+
+- **Two-phase, not continuous.** Phase 1 runs the experiment and records
+  outcomes; nothing learns during it. Phase 2 re-runs with the aggregated
+  evidence available to agents. Continuous/online learning re-opens the asOf
+  temporal-leakage problem for aggregated evidence and demos poorly. It is
+  described in the writeup as the natural next step, not built.
+- **Cart Abandonment only is enabled.** Subscription Recovery is experimentable
+  in principle but deferred. Dispute Responder is deliberately excluded and must
+  be marked non-experimentable: it has no valid control (every dispute must get
+  some handling), and randomising between conceding and contesting means
+  conceding disputes believed fraudulent in order to gather data. This exclusion
+  is a feature of the design, not a gap.
+- **Per-intervention eligibility, not per-customer.** The gate returns the list
+  of interventions a customer may be randomised into, not a yes/no. A
+  gaming-flagged customer stays in the study but with `send_discount` removed
+  from their allowed list — so we learn about the exploiter population without
+  spending margin on a suspected exploiter.
+- **Fixed discount percentage in the discount arm.** No per-customer sizing by
+  Claude inside a treatment arm — that would make the arm a heterogeneous mixture
+  of Claude-chosen amounts and smuggle Claude's judgment back into the thing
+  being isolated. Personalised sizing is a valid *future* treatment to test
+  against uniform sizing; it is not how this arm is built.
+- **The witness call is kept.** For enrolled customers Claude is still called and
+  its free choice recorded, then discarded in favour of the coin's assignment.
+  This disagreement record ("agent wanted to spend, coin said don't, customer
+  converted anyway") is the primary demo artifact and the clearest expression of
+  wasted margin.
+- **Assignment is deterministic.** Hash of customer_id + experiment_id, never
+  Math.random(), so re-runs reproduce identical assignments and the demo is
+  stable.
+- **Everything is asOf-scoped.** Eligibility and bucketing are computed from the
+  memory profile as of the triggering event's timestamp, exactly like the profile
+  itself. Enrolling or bucketing on an event that has not yet happened is the
+  same bug class already fixed once in profile.ts.
+- **Claims are directional, not statistical.** With this dataset size, cell
+  counts are small. Language everywhere (code comments, API, UI) says
+  "directionally consistent", never "statistically significant".
+- **Honest framing on the outcome model.** Outcomes come from a hand-authored
+  probability table in src/outcomes/probabilities.ts. The experiment layer must
+  never read that table. It is a hidden ground truth; the layer observes only
+  intervention → outcome. This is presented as a mechanism demonstration, not as
+  discovery of an unknown real-world truth.
+
+### Architectural requirement: agent-agnostic by construction
+
+The experiment engine must contain no domain vocabulary — no "discount", no
+"cart", no "reminder". It operates on opaque intervention IDs. Everything
+domain-specific lives in per-agent config that the agent owns:
+
+- its intervention IDs, and which one is the control
+- which interventions are blocked under which memory signals
+- which memory signal defines its moderator bucket
+- which outcome fields it cares about
+
+Adding a fourth agent later must be a config addition, not an engine change. An
+agent must also be able to declare itself non-experimentable. Outcome fields are
+agent-declared: do not hardcode a `recovered` boolean into the evidence schema,
+since a different agent would care about different outcomes.
+
+### Moderator bucket
+
+One dimension, two buckets, split on prior discount history as of the event:
+customers with one or more prior discounts vs. customers with none. Chosen
+because it asks the sharpest business question — does discounting still work on
+someone already discounted repeatedly — and derives directly from
+`discount_usage_history`, which is already asOf-correct.
+
+### Flow
+
+Event fires → build memory profile (asOf) → eligibility gate returns allowed
+interventions → if fewer than 2 allowed, not enrolled and the existing
+memory-informed path runs unchanged → if 2 or more, enrolled: Claude's own choice
+is logged then discarded, the coin assigns one allowed intervention, control
+short-circuits to outcome with nothing sent, treatments execute and pass through
+enforcePolicy() → outcome recorded.
+
+enforcePolicy() remains the final authority on every path. The experiment
+proposes; policy disposes. Policy must never be the mechanism that removes a
+customer from an arm — ineligible customers are filtered before randomisation,
+never vetoed after, since post-hoc vetoing would make the arms non-comparable.

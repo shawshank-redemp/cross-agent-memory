@@ -102,3 +102,48 @@ CREATE TABLE IF NOT EXISTS agent_trace_events (
   started_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_trace_events_lookup ON agent_trace_events(customer_id, event_id, mode);
+
+-- One row per enrolled customer-event: what the coin was choosing between,
+-- what it chose, and what the agent would have chosen if asked. The witness
+-- columns (agent_preferred_*) are the point of the table as much as the
+-- assignment is — "agent wanted to spend, coin said don't, customer converted
+-- anyway" is only visible if the discarded free choice is kept.
+-- allowed_interventions is stored per-row because eligibility is computed asOf
+-- and so varies by event; without it a result cell can't be interpreted later.
+-- Deliberately no `mode` column, unlike discount_usage and audit_log: the
+-- experiment only ever runs on the memory-informed path, so a mode would be a
+-- constant pretending to be a dimension.
+CREATE TABLE IF NOT EXISTS experiment_assignments (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+  event_id TEXT NOT NULL,
+  agent TEXT NOT NULL,
+  experiment_id TEXT NOT NULL,
+  assigned_intervention TEXT NOT NULL,
+  allowed_interventions TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  agent_preferred_intervention TEXT,
+  agent_preferred_reasoning TEXT,
+  assigned_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_experiment_assignments_cell
+  ON experiment_assignments(experiment_id, bucket, assigned_intervention);
+
+-- Aggregated rollup, one row per (experiment, bucket, intervention) cell —
+-- the comparable unit an incrementality claim is read off. `outcomes` is a
+-- JSON object keyed by the agent's own declared outcomeFields rather than
+-- typed columns: a per-outcome column set would bake cart abandonment's
+-- worldview (recovered/revenue/discount cost) into a schema a future agent
+-- with different outcomes has to share.
+CREATE TABLE IF NOT EXISTS experiment_evidence (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  experiment_id TEXT NOT NULL,
+  agent TEXT NOT NULL,
+  bucket TEXT NOT NULL,
+  intervention TEXT NOT NULL,
+  n INTEGER NOT NULL,
+  outcomes TEXT NOT NULL,
+  computed_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_experiment_evidence_cell
+  ON experiment_evidence(experiment_id, bucket, intervention);
