@@ -191,3 +191,55 @@ enforcePolicy() remains the final authority on every path. The experiment
 proposes; policy disposes. Policy must never be the mechanism that removes a
 customer from an arm — ineligible customers are filtered before randomisation,
 never vetoed after, since post-hoc vetoing would make the arms non-comparable.
+
+## Model selection: Sonnet corrupts free-text fields under constrained decoding
+
+Measured, not assumed. `claude-sonnet-5` drifts into Python-dict style
+mid-response and tries to close a JSON string with `'`. Structured outputs uses
+constrained decoding, so the grammar refuses `'` as a delimiter — and the
+character is emitted as **literal text inside the still-open string** instead.
+The model then closes the string properly with `"`, so the JSON is always
+structurally valid and the SDK parses it faithfully. This is not a parser bug
+and not a schema bug; the damage is confined to string *contents*.
+
+Observed artifacts, all inside `reasoning`: a trailing `'`, a trailing `'}`, a
+duplicated tail phrase (`...to recover the sale.the sale.'`), and in the worst
+case an entire absorbed key-value pair
+(`...abandonment.','discount_amount 38000 reflects 20% cap.'}`) — the model
+attempting to close the string, add a key, and close the object, every
+character of it swallowed as text.
+
+Rates on the identical prompt and schema:
+
+- `claude-sonnet-5`: ~25% of reasoning strings (10/40 in a real batch run; 1/12
+  in an isolated probe).
+- `claude-opus-5`: 0/12 in the same probe.
+
+**Only free text is affected.** `action`, `discount_amount`, and
+`escalate_to_human` are structurally constrained and come through clean, so a
+Sonnet run's *decisions* are trustworthy even when its prose is not.
+
+Conclusion, and the reason `claudeClient.ts` defaults to Opus rather than
+picking the cheap model for you: **demo-quality runs and the final batch use
+`claude-opus-5`. Sonnet via `CLAUDE_MODEL=claude-sonnet-5` is for
+code-correctness iteration** — verifying that pipelines execute, signals fire,
+and rows land — where reasoning prose is not the artifact being judged.
+`reasoning` is both the audit-log field and what the dashboard displays, so
+corrupted prose is a demo defect even though it is not a correctness one.
+
+### Targeted runs, and why `--limit` is not enough
+
+The runner sorts all events by timestamp, so `--limit=N` takes the N *oldest*
+events in the batch. Under asOf scoping those all have empty memory profiles —
+a `--limit` run exercises the plumbing but can never fire a memory signal.
+`--scenario=` and `--customer=` (comma-separated, composable) exist for that:
+they select whole customers, so a small run can reach `repeat_offender_cart` or
+`cross_domain_risk` behaviour directly.
+
+Both filters are deliberately customer-granular. `recovery_frequency` and
+dispute counts are read from the raw event tables asOf-scoped, so they are
+correct regardless of which events a run processes — but
+`discount_usage_history` only contains discounts *this run granted*, so cutting
+a customer off partway would under-report `stoppingRuleHit`. Selecting whole
+customers keeps that faithful; `--limit` does not, and should not be trusted
+for stopping-rule counts.

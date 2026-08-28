@@ -13,7 +13,7 @@ function writeJson(filename: string, data: unknown): void {
 function main(): void {
   mkdirSync(OUT_DIR, { recursive: true });
 
-  const batch = generateSyntheticBatch({ seed: 42, totalCustomers: 250 });
+  const batch = generateSyntheticBatch({ seed: 42, totalCustomers: 1200 });
 
   writeJson("customers.json", batch.customers);
   writeJson("cart_abandonment_events.json", batch.cartAbandonmentEvents);

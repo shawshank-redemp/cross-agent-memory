@@ -305,11 +305,25 @@ interface ScenarioBucket {
   generate: (rng: Rng, customer: Customer, batch: SyntheticBatch) => void;
 }
 
+// The mix is deliberately weighted toward customers who generate MULTIPLE cart
+// events (repeat_offender_cart, cross_domain_risk), well above what a real
+// merchant's traffic looks like. The experimentation layer's moderator split is
+// on prior discount history, and under asOf scoping a customer's first cart
+// event always has an empty history — so only multi-cart customers can ever
+// reach the prior_discount bucket, and only then if the coin actually assigned
+// the discount arm on an earlier event. At a realistic mix that bucket lands in
+// single digits and supports no claim at all, even a directional one.
+//
+// This is a demo-scale sampling choice, not an assertion about real merchant
+// traffic: if anything, it OVER-represents repeat abandoners. It changes how
+// many customers land in each scenario, never what a scenario produces — the
+// per-scenario generators below are what make the memory layer's findings
+// meaningful and are unchanged.
 const SCENARIO_BUCKETS: ScenarioBucket[] = [
-  { scenario: "normal", weight: 0.6, note: "one clean, resolved event", generate: generateNormal },
+  { scenario: "normal", weight: 0.4, note: "one clean, resolved event", generate: generateNormal },
   {
     scenario: "repeat_offender_cart",
-    weight: 0.05,
+    weight: 0.2,
     note: "repeated abandoned carts — gaming/stopping-rule target",
     generate: generateRepeatOffenderCart,
   },
@@ -327,7 +341,7 @@ const SCENARIO_BUCKETS: ScenarioBucket[] = [
   },
   {
     scenario: "cross_domain_risk",
-    weight: 0.1,
+    weight: 0.15,
     note: "dispute history should suppress a later cart discount",
     generate: generateCrossDomainRisk,
   },
@@ -396,9 +410,24 @@ export function summarizeBatch(batch: SyntheticBatch) {
   for (const label of batch.scenarioLabels) {
     scenarioCounts[label.scenario] = (scenarioCounts[label.scenario] ?? 0) + 1;
   }
+  // Customers with 2+ cart events are the only ones who can ever reach the
+  // experimentation layer's prior_discount moderator bucket (a first cart event
+  // always sees an empty discount history under asOf scoping), so this count —
+  // read against cartAbandonmentEvents — is what says whether the experiment
+  // has the population to support a directional claim.
+  const cartEventsPerCustomer = new Map<string, number>();
+  for (const event of batch.cartAbandonmentEvents) {
+    cartEventsPerCustomer.set(event.customer_id, (cartEventsPerCustomer.get(event.customer_id) ?? 0) + 1);
+  }
+  let customersWithMultipleCartEvents = 0;
+  for (const count of cartEventsPerCustomer.values()) {
+    if (count >= 2) customersWithMultipleCartEvents += 1;
+  }
+
   return {
     customers: batch.customers.length,
     cartAbandonmentEvents: batch.cartAbandonmentEvents.length,
+    customersWithMultipleCartEvents,
     subscriptionFailureEvents: batch.subscriptionFailureEvents.length,
     disputeEvents: batch.disputeEvents.length,
     scenarioCounts,
