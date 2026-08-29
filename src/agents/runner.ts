@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
@@ -49,10 +49,23 @@ export interface DecisionLike {
   escalation_reason: string | null;
   // Memory path only. The baseline path has no memory to compute signals
   // from, so these are absent there by construction rather than by omission.
-  signals?: MemorySignals;
+  signals?: MemorySignals | null;
   policy_override?: PolicyOverrideRecord | null;
+  // Memory path only: true when the guardrail could not be evaluated and the
+  // conservative decision was substituted.
+  guardrail_failed?: boolean;
   // Memory path only: signal ids cited that were not actually active.
   unsupported_factor_citations?: string[];
+}
+
+// An event whose decision could not be produced. Recorded rather than thrown:
+// one API failure at event 3,000 must not reject every worker and discard a
+// run that has already been paid for.
+interface FailedEvent {
+  event_id: string;
+  agent: AgentType;
+  customer_id: string;
+  error: string;
 }
 
 interface DecisionRecord extends DecisionLike {
@@ -113,6 +126,21 @@ function parseListArg(flag: string): string[] | undefined {
     .map((v) => v.trim())
     .filter((v) => v.length > 0);
   return values.length > 0 ? values : undefined;
+}
+
+function parseResume(): boolean {
+  return process.argv.includes("--resume");
+}
+
+// Events this mode has already decided, read from audit_log's decision rows.
+// audit_log is authoritative rather than the partial file: it is written inside
+// the same synchronous step as the decision itself, so it cannot be ahead of or
+// behind what actually happened.
+function loadAlreadyDecided(db: Database.Database, mode: "baseline" | "memory"): Set<string> {
+  const rows = db
+    .prepare("SELECT DISTINCT event_id FROM audit_log WHERE mode = ? AND entry_type = 'decision' AND event_id IS NOT NULL")
+    .all(mode) as { event_id: string }[];
+  return new Set(rows.map((r) => r.event_id));
 }
 
 function parseSelection(): EventSelection {
@@ -255,10 +283,49 @@ export interface RunAgentBatchParams {
 
 export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> {
   const selection = parseSelection();
+  const resume = parseResume();
   const db = openDb();
   const { customerById, tagged } = loadTaggedEvents(db);
 
-  const toProcess = applySelection(tagged, selection);
+  mkdirSync(RESULTS_DIR, { recursive: true });
+  const outputPath = join(RESULTS_DIR, params.outputFile);
+  const partialPath = `${outputPath}.partial.jsonl`;
+
+  let toProcess = applySelection(tagged, selection);
+
+  // --resume skips events this mode has already decided, so a crashed run can
+  // be continued without paying again for completed work. Without it the
+  // partial file is truncated, because a fresh run's output must not be a
+  // silent merge of two different runs.
+  const resumedDecisions: DecisionRecord[] = [];
+  if (resume) {
+    const alreadyDecided = loadAlreadyDecided(db, params.mode);
+    if (existsSync(partialPath)) {
+      for (const line of readFileSync(partialPath, "utf-8").split("\n")) {
+        if (line.trim().length === 0) continue;
+        resumedDecisions.push(JSON.parse(line) as DecisionRecord);
+      }
+    }
+    const recovered = new Set(resumedDecisions.map((d) => d.event_id));
+    const before = toProcess.length;
+    toProcess = toProcess.filter((item) => !alreadyDecided.has(item.event_id));
+    console.log(`--resume: skipping ${before - toProcess.length} already-decided event(s)`);
+
+    // audit_log is the authority on what was decided, but only the partial
+    // file can reconstruct the decision RECORD. A gap between them means those
+    // events are decided-but-unrecoverable and would silently vanish from the
+    // output, so say so rather than writing a quietly short results file.
+    const unrecoverable = [...alreadyDecided].filter((id) => !recovered.has(id));
+    if (unrecoverable.length > 0) {
+      console.warn(
+        `  warning: ${unrecoverable.length} event(s) are recorded in audit_log but absent from ` +
+          `${partialPath}, so their decision records cannot be restored into the results file.`,
+      );
+    }
+  } else if (existsSync(partialPath)) {
+    rmSync(partialPath);
+  }
+
   const customerCount = new Set(toProcess.map((item) => item.event.customer_id)).size;
   console.log(
     `Running ${params.mode} agents over ${toProcess.length} event(s) across ${customerCount} customer(s)${describeSelection(selection)}...`,
@@ -290,17 +357,50 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   }
   const queues = [...byCustomer.values()];
 
-  const decisions: DecisionRecord[] = [];
+  const decisions: DecisionRecord[] = [...resumedDecisions];
+  const failures: FailedEvent[] = [];
   let completed = 0;
   let nextQueue = 0;
   let baselineMemoryLeaks = 0;
   let unsupportedCitations = 0;
+  let guardrailFailures = 0;
+
+  // Every decision is appended to a JSONL sidecar the moment it is made, so a
+  // hard crash (OOM, SIGKILL, a throw outside the per-event catch) still leaves
+  // everything already decided on disk. The sorted .json below is written once
+  // at the end; this file is what makes the run recoverable, and what --resume
+  // reads back.
+  const appendPartial = (record: DecisionRecord): void => {
+    appendFileSync(partialPath, JSON.stringify(record) + "\n", "utf-8");
+  };
 
   async function processQueue(queue: TaggedEvent[]): Promise<void> {
     for (const item of queue) {
       const customer = customerById.get(item.event.customer_id);
       if (!customer) continue;
 
+      try {
+        await decideOne(item, customer);
+      } catch (err) {
+        // ONE bad event must not end the run. decide() already retried once
+        // internally, so reaching here means the event genuinely failed.
+        const message = err instanceof Error ? err.message : String(err);
+        failures.push({
+          event_id: item.event_id,
+          agent: item.agent,
+          customer_id: customer.customer_id,
+          error: message,
+        });
+        console.error(`  !! FAILED ${item.agent} ${item.event_id} (${customer.customer_id}): ${message}`);
+      }
+      completed += 1;
+      if (completed % 25 === 0 || completed === toProcess.length) {
+        console.log(`  ${completed}/${toProcess.length}${failures.length ? ` (${failures.length} failed)` : ""}`);
+      }
+    }
+  }
+
+  async function decideOne(item: TaggedEvent, customer: Customer): Promise<void> {
       const decision = await params.decide(item, customer, db);
 
       appendAuditLog(db, {
@@ -312,7 +412,7 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         action: decision.action,
         reasoning: decision.reasoning,
         escalate_to_human: decision.escalate_to_human,
-        signals: decision.signals,
+        signals: decision.signals ?? undefined,
         policyOverride: decision.policy_override ?? null,
         metadata: {
           // DB column names are unchanged by the decision-schema rename; the
@@ -344,8 +444,9 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         baselineMemoryLeaks += 1;
       }
       unsupportedCitations += decision.unsupported_factor_citations?.length ?? 0;
+      if (decision.guardrail_failed) guardrailFailures += 1;
 
-      decisions.push({
+      const record: DecisionRecord = {
         agent: item.agent,
         customer_id: customer.customer_id,
         event_id: item.event_id,
@@ -356,13 +457,9 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         escalate_to_human: decision.escalate_to_human,
         escalation_reason: decision.escalation_reason,
         unsupported_factor_citations: decision.unsupported_factor_citations ?? [],
-      });
-
-      completed += 1;
-      if (completed % 25 === 0 || completed === toProcess.length) {
-        console.log(`  ${completed}/${toProcess.length}`);
-      }
-    }
+      };
+      decisions.push(record);
+      appendPartial(record);
   }
 
   // Workers pull the next whole customer off a shared cursor, so a customer
@@ -385,8 +482,6 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
 
   db.close();
 
-  mkdirSync(RESULTS_DIR, { recursive: true });
-  const outputPath = join(RESULTS_DIR, params.outputFile);
   writeFileSync(outputPath, JSON.stringify(decisions, null, 2) + "\n", "utf-8");
 
   const actionCounts: Record<string, number> = {};
@@ -415,6 +510,7 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         memoryFactorCitations: factorCounts,
         unsupportedFactorCitations: unsupportedCitations,
         baselineMemoryLeaks,
+        guardrailFailures,
       },
       null,
       2,
@@ -425,5 +521,34 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
       `\n!! ${baselineMemoryLeaks} baseline decision(s) cited memory factors. The control arm is ` +
         `supposed to have no history in context — investigate before trusting this comparison.`,
     );
+  }
+
+  if (guardrailFailures > 0) {
+    // Loud, because these decisions were made by the fail-closed path rather
+    // than by the agent — the run "succeeded" but that many cases were handed
+    // to a human without being reasoned about.
+    console.warn(
+      `\n!! ${guardrailFailures} decision(s) failed closed: the guardrail could not be evaluated, so ` +
+        `no spend was committed and each was escalated for human review.`,
+    );
+  }
+
+  // A partial run must never be mistaken for a complete one. The counts are
+  // printed either way, and a non-zero exit is what stops a downstream
+  // `npm run analyze:compare` in a shell chain from scoring an incomplete arm.
+  console.log(
+    `\nRun summary: ${toProcess.length} event(s) attempted, ${decisions.length - resumedDecisions.length} decided, ` +
+      `${failures.length} failed` +
+      (resumedDecisions.length > 0 ? `, ${resumedDecisions.length} restored from a previous run` : ""),
+  );
+  if (failures.length > 0) {
+    console.error(`\n!! ${failures.length} event(s) failed and have NO decision:`);
+    for (const f of failures) {
+      console.error(`   ${f.agent} ${f.event_id} (${f.customer_id}): ${f.error}`);
+    }
+    console.error(
+      `\nRe-run with --resume to retry only these; ${partialPath} holds everything already decided.`,
+    );
+    process.exitCode = 1;
   }
 }

@@ -506,6 +506,130 @@ excluded: LLM confidence is uncalibrated and would invite weighting decisions by
 a number that means nothing.
 
 
+
+## The guardrail layer
+
+enforcePolicy is the only thing standing between a model output and money
+leaving the business. It is split in two.
+
+### Universal vs memory-derived policy — both arms share the universal layer
+
+| Layer | Contents | Applies to |
+| --- | --- | --- |
+| **Universal** (`enforcement.ts`) | spend bounds, action/spend coherence, the default `DEFAULT_DISCOUNT_CAP_PERCENT` ceiling | **both arms** |
+| **Memory-derived** (`enforcePolicy`) | tightened/widened caps, blocks, forced escalation from `resolveSignalEffects()` | memory arm only |
+
+Before this split the baseline returned raw model output with no enforcement at
+all. That was a safety gap, but the worse problem was that it was a
+**confound**: any measured "memory saved money" partly reflected the mere
+existence of a guardrail rather than anything memory contributed. The control
+arm now gets the same standing business rules a real deployment would have.
+
+**Expect the headline gap between arms to shrink.** That is the correct
+outcome, not a regression — the remaining gap is what memory actually
+contributes. Do not treat the smaller number as a bug.
+
+The memory arm passes its resolved cap *into* the shared clamping logic rather
+than clamping separately, so the ceiling is enforced in exactly one place.
+A baseline `policy_override` row carries a NULL `signals` value, which is
+coherent: baseline has no memory from which to compute them.
+
+### Coherence runs before blocking
+
+`AGENT_ACTION_POLICY` declares which actions may carry spend (cart and
+subscription: `send_discount`; dispute: none) next to the action enums, not
+inside the enforcement code.
+
+Order matters, and specifically coherence must precede the block rule. The block
+rule swaps the action to a non-spend fallback whenever it removes spend. If an
+incoherent `no_action` + spend reached it with the spend intact, the guardrail
+would swap the action to `send_reminder` — **adding an outbound message the
+model never asked to send**. Nulling incoherent spend first makes that
+unreachable, and a test pins it.
+
+### Spend bounds
+
+- **Negative spend** is a malformed output, not a decision. It would slip past
+  the ceiling check (it is below it), reduce measured spend, and inflate net
+  revenue. Rejected outright and logged loudly.
+- **Zero spend** is never written. A zero-amount `discount_usage` row still
+  increments `discountAttemptsForAgent`, pushing a customer toward a gaming flag
+  on the strength of a discount that does not exist.
+- The ceiling is guarded against a zero or missing amount. This is not
+  theoretical: the `noise` scenario plants a zero-value cart, where
+  `floor(0 * pct / 100)` is 0, so the guardrail itself would otherwise
+  manufacture the bad row.
+
+### Fail closed
+
+If the profile read or `computeMemorySignals` throws, the guardrail cannot
+evaluate — so it takes the conservative action rather than crashing or passing
+model output through unguarded: no spend, `escalate_to_human` true,
+`escalation_reason` `"policy_constraint"`, and an override naming the failure.
+The model is not called at all when the failure happens before the request.
+
+Counted and reported as `guardrailFailures` in the run summary, because a
+**silent** fail-closed is worse than a crash: the run looks complete while some
+number of cases were handed to a human without being reasoned about.
+
+Distinct from the runner's per-event catch, which handles API failures. An API
+failure means "no decision"; this means "a decision we do not trust ourselves to
+make automatically".
+
+### Run resilience
+
+`decide()` retries once then throws, and workers are joined with `Promise.all` —
+so one failure at event 3,000 used to reject every worker and discard a paid
+run. Now: each event is individually caught, decisions are appended to a
+`.partial.jsonl` sidecar as they are made, the run summary lists every failed
+`event_id`, and the process exits non-zero so a partial run is never mistaken
+for a complete one. `--resume` skips events that already have a `decision` row
+in `audit_log` for that mode.
+
+The concurrency model is unchanged and deliberately so: whole customers run in
+parallel, never individual events.
+
+### Idempotency
+
+`discount_usage` is unique on `(event_id, mode)` and `audit_log` on
+`(event_id, mode, entry_type)`, each paired with `ON CONFLICT DO UPDATE` so a
+re-decide replaces rather than duplicates. The conflict clause is not optional:
+a **bare** unique index would convert silent duplication into a hard mid-run
+insert crash on the retry path that exists precisely to recover from crashes.
+`event_id` is nullable and SQLite treats each NULL as distinct, so cross-cutting
+rows carrying no event id are unaffected.
+
+### asOf scoping no longer depends on runner ordering
+
+`readDiscountUsageHistory` and `readAuditLog` filtered on `customer_id` and
+`mode` only. They were correct, but only because `runner.ts` sorts tagged events
+by timestamp and runs each customer's queue sequentially in one worker — the
+guarantee lived in the runner, not the query. Remove that sort, parallelise at
+event granularity, or add any out-of-order write path, and temporal leakage
+returns silently. Same bug class as commit `c33eed8`, in the two fields that
+escaped it. Both are now asOf-scoped; omitting `asOf` still returns everything,
+which is the dashboard's whole-batch read.
+
+This required fixing **mixed clocks** first: `memory_read` rows fell through to
+wall-clock `new Date()` while decision rows used the event's timestamp, so one
+column ordered by `timestamp` held both synthetic batch dates and real ones —
+and an asOf filter would have compared a synthetic date against a real one and
+matched nothing.
+
+### Known design limits — deliberate, not oversights
+
+Real production deployments would need these. They are recorded rather than
+built, so their absence is a documented choice:
+
+- **No escalation budget.** Nothing caps how many cases can be escalated in a
+  run, so a systematic signal misfire could route an unbounded number of
+  customers to human review.
+- **No absolute spend cap.** Ceilings are percentages of the event amount only,
+  so a sufficiently large order permits a large discount.
+- **No rate limits.** Nothing bounds spend per customer per unit time, or across
+  the batch as a whole.
+
+
 ## Experimentation layer (recovery incrementality)
 
 ### Why this exists

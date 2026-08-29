@@ -1,8 +1,11 @@
 import type Database from "better-sqlite3";
 import type { Customer, DisputeEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
+import { applyBaselinePolicy } from "./enforcement.js";
+import type { PolicyOverrideRecord } from "../memory/profile.js";
 import { OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
+import type { TriggeringEventFacts } from "./policy.js";
 import { DisputeResponderDecisionSchema, type DisputeResponderDecision } from "./schema.js";
 import { emitTrace } from "./trace.js";
 
@@ -29,14 +32,36 @@ attached. Here you can only judge this one dispute, so escalate when the
 reason or amount alone is ambiguous enough that an automated call is risky;
 you have no basis to detect a pattern across disputes.`;
 
+// A dispute is not a payment attempt: the underlying payment already
+// succeeded, in the past, outside this decision.
+//
+// ONE mapping, used by BOTH arms: the baseline needs the event amount to apply
+// the universal spend ceiling, and inventing a second mapping for it is how the
+// two arms would quietly start describing the same event differently.
+function eventFacts(event: DisputeEvent): Omit<TriggeringEventFacts, "agent" | "timestamp"> {
+  return {
+    amount: event.amount,
+    paymentAttempted: false,
+    paymentErrorCode: null,
+  };
+}
+
 export async function decideDisputeResponderBaseline(
   db: Database.Database,
   customer: Customer,
   event: DisputeEvent,
-): Promise<DisputeResponderDecision> {
+): Promise<DisputeResponderDecision & { policy_override: PolicyOverrideRecord | null }> {
   const userContent = withClosingInstruction(JSON.stringify({ customer, event }, null, 2));
   const stepStart = Date.now();
-  const decision = await decide(DISPUTE_BASELINE_SYSTEM_PROMPT, userContent, DisputeResponderDecisionSchema);
+  const raw = await decide(DISPUTE_BASELINE_SYSTEM_PROMPT, userContent, DisputeResponderDecisionSchema);
+  // The UNIVERSAL policy layer runs on the baseline arm too. Without it the
+  // control would be the only path where model output reaches the ledger
+  // unchecked, which is both a safety gap and a confound — see
+  // enforcement.ts.
+  const decision = applyBaselinePolicy(raw, {
+    agent: "dispute_responder",
+    eventAmount: eventFacts(event).amount,
+  });
   emitTrace(
     {
       db,
@@ -84,20 +109,9 @@ export async function decideDisputeResponderMemory(
     event,
     eventId: event.dispute_id,
     eventTimestamp: event.dispute_created_at,
-    // A dispute is not a payment attempt: the underlying payment already
-    // succeeded, in the past, outside this decision.
-    eventFacts: {
-      amount: event.amount,
-      paymentAttempted: false,
-      paymentErrorCode: null,
-    },
+    eventFacts: eventFacts(event),
     systemPrompt: DISPUTE_MEMORY_SYSTEM_PROMPT,
     schema: DisputeResponderDecisionSchema,
-    // Exists to typecheck. This agent's committed_spend_paise is always
-    // null, so mustBlockDiscount can never fire here and this value can
-    // never actually be applied — "contest_dispute" is the safe choice if
-    // that ever changes, since conceding is the costly direction.
-    fallbackNonDiscountAction: "contest_dispute",
     memoryReadReason: `Dispute responder agent evaluating dispute ${event.dispute_id} for payment ${event.payment_id}`,
   });
 }

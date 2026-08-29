@@ -44,12 +44,24 @@ export interface AppendAuditLogInput {
 }
 
 export function appendAuditLog(db: Database.Database, entry: AppendAuditLogInput): void {
+  // Idempotent on (event_id, mode, entry_type) — see schema.sql. Rows with a
+  // NULL event_id are unaffected, since SQLite treats each NULL as distinct.
   db.prepare(
     `INSERT INTO audit_log
        (timestamp, customer_id, agent, mode, entry_type, event_id, action, reasoning,
         escalate_to_human, signals, policy_override, metadata)
      VALUES (@timestamp, @customer_id, @agent, @mode, @entry_type, @event_id, @action, @reasoning,
-             @escalate_to_human, @signals, @policy_override, @metadata)`,
+             @escalate_to_human, @signals, @policy_override, @metadata)
+     ON CONFLICT(event_id, mode, entry_type) DO UPDATE SET
+       timestamp = excluded.timestamp,
+       customer_id = excluded.customer_id,
+       agent = excluded.agent,
+       action = excluded.action,
+       reasoning = excluded.reasoning,
+       escalate_to_human = excluded.escalate_to_human,
+       signals = excluded.signals,
+       policy_override = excluded.policy_override,
+       metadata = excluded.metadata`,
   ).run({
     timestamp: entry.timestamp ?? new Date().toISOString(),
     customer_id: entry.customer_id,
@@ -81,9 +93,18 @@ export interface RecordDiscountUsageInput {
 }
 
 export function recordDiscountUsage(db: Database.Database, input: RecordDiscountUsageInput): void {
+  // ON CONFLICT DO UPDATE, not a bare insert: re-deciding an event (which
+  // --resume makes routine) must REPLACE that event's discount row, never add a
+  // second one and never crash the run. See the unique index in schema.sql.
   db.prepare(
     `INSERT INTO discount_usage (customer_id, agent, mode, amount, event_id, order_id, timestamp)
-     VALUES (@customer_id, @agent, @mode, @amount, @event_id, @order_id, @timestamp)`,
+     VALUES (@customer_id, @agent, @mode, @amount, @event_id, @order_id, @timestamp)
+     ON CONFLICT(event_id, mode) DO UPDATE SET
+       customer_id = excluded.customer_id,
+       agent = excluded.agent,
+       amount = excluded.amount,
+       order_id = excluded.order_id,
+       timestamp = excluded.timestamp`,
   ).run({
     customer_id: input.customer_id,
     agent: input.agent,
@@ -98,17 +119,28 @@ export function recordDiscountUsage(db: Database.Database, input: RecordDiscount
 // Scoped to `mode` — a memory-informed read must never see discounts the
 // baseline run granted (or vice versa); the two runs are independent
 // hypotheticals over the same event batch, not one real timeline.
+//
+// ALSO asOf-scoped. This query was correct without it, but only accidentally:
+// the guarantee lived in runner.ts sorting tagged events by timestamp and
+// running each customer's queue sequentially in one worker, NOT in the query.
+// Remove that sort, parallelise at event granularity, or add any out-of-order
+// write path and temporal leakage returns silently — the same bug class as
+// commit c33eed8, in one of the two fields that escaped it. Correctness now
+// lives in the query, where it can be audited.
 function readDiscountUsageHistory(
   db: Database.Database,
   customerId: string,
   mode: "baseline" | "memory",
+  asOf?: string,
 ): DiscountUsageRecord[] {
   const rows = db
     .prepare(
       `SELECT agent, amount, event_id, order_id, timestamp FROM discount_usage
-       WHERE customer_id = ? AND mode = ? ORDER BY timestamp ASC`,
+       WHERE customer_id = @customerId AND mode = @mode
+       ${asOf ? "AND timestamp <= @asOf" : ""}
+       ORDER BY timestamp ASC`,
     )
-    .all(customerId, mode) as {
+    .all(asOf ? { customerId, mode, asOf } : { customerId, mode }) as {
     agent: AgentType;
     amount: number;
     event_id: string;
@@ -459,13 +491,28 @@ function computeRollingHealthScore(
 // memory-informed read must not see the baseline run's decisions as if they
 // were its own history. NULL-mode rows (system-level, not agent decisions)
 // are cross-cutting and always included.
-function readAuditLog(db: Database.Database, customerId: string, mode: "baseline" | "memory"): AuditLogEntry[] {
+//
+// asOf-scoped for the same reason as readDiscountUsageHistory above: the
+// ordering guarantee belonged to the runner, not to this query. This is the
+// read that feeds recent_decisions, so without it a decision could be shown
+// decisions that had not happened yet.
+function readAuditLog(
+  db: Database.Database,
+  customerId: string,
+  mode: "baseline" | "memory",
+  asOf?: string,
+): AuditLogEntry[] {
   const rows = db
     .prepare(
       `SELECT timestamp, agent, entry_type, action, reasoning, metadata FROM audit_log
-       WHERE customer_id = ? AND (mode = ? OR mode IS NULL) ORDER BY timestamp ASC`,
+       WHERE customer_id = @customerId AND (mode = @mode OR mode IS NULL)
+       ${asOf ? "AND timestamp <= @asOf" : ""}
+       ORDER BY timestamp ASC`,
     )
-    .all(customerId, mode) as (Omit<AuditLogEntry, "committed_spend_paise"> & { metadata: string | null })[];
+    .all(asOf ? { customerId, mode, asOf } : { customerId, mode }) as (Omit<
+    AuditLogEntry,
+    "committed_spend_paise"
+  > & { metadata: string | null })[];
 
   // The DB column keeps its original name (discount_amount); the decision
   // schema's rename to committed_spend_paise is mapped here, at the boundary.
@@ -488,11 +535,11 @@ function readAuditLog(db: Database.Database, customerId: string, mode: "baseline
 // is actually consulting memory as part of making a decision, since that
 // read itself is graded audit-trail material.
 //
-// `asOf` (ISO timestamp), when given, restricts dispute/recovery/health
-// computation to events at or before that point — pass the triggering
-// event's own timestamp so a decision only ever sees its own past, never
-// events that haven't happened yet. Omit it for a "final state" read (the
-// dashboard's overview of the whole batch).
+// `asOf` (ISO timestamp), when given, restricts EVERY read below to events at
+// or before that point — pass the triggering event's own timestamp so a
+// decision only ever sees its own past, never events that haven't happened yet.
+// Omitting it still returns everything, which is the "final state" read the
+// dashboard's whole-batch overview relies on.
 export function computeMemoryProfile(
   db: Database.Database,
   customerId: string,
@@ -509,13 +556,13 @@ export function computeMemoryProfile(
     dispute_breakdown: disputes.breakdown,
     adverse_disputed_amount: disputes.adverseAmount,
     unresolved_dispute_reasons: disputes.unresolvedReasons,
-    discount_usage_history: readDiscountUsageHistory(db, customerId, mode),
+    discount_usage_history: readDiscountUsageHistory(db, customerId, mode, asOf),
     recovery_frequency: readRecoveryFrequency(db, customerId, asOf),
     recent_events: readRecentEvents(db, customerId, asOf),
     successful_payment_count: payments.successfulPaymentCount,
     total_paid_amount: payments.totalPaidAmount,
     rolling_health_score: computeRollingHealthScore(db, customerId, disputes.breakdown, asOf),
-    audit_log: readAuditLog(db, customerId, mode),
+    audit_log: readAuditLog(db, customerId, mode, asOf),
   };
 }
 
@@ -535,6 +582,14 @@ export interface GetMemoryProfileOptions {
   eventId?: string;
 }
 
+// ONE CLOCK for audit_log. memory_read rows used to fall through to
+// appendAuditLog's wall-clock default while decision rows were written with the
+// event's own timestamp, so a single column ordered by `timestamp` held both
+// synthetic batch dates and real ones. That makes any timestamp-ordered read of
+// the table incoherent — and asOf filtering on audit_log (below) would compare
+// an event's synthetic date against a real one and match nothing.
+
+
 export function getMemoryProfile(
   db: Database.Database,
   customerId: string,
@@ -550,6 +605,8 @@ export function getMemoryProfile(
     event_id: options.eventId,
     action: "read_memory_profile",
     reasoning: options.reason,
+    // The event's own time, not wall-clock — see the note above.
+    timestamp: options.asOf,
     metadata: {
       dispute_count: profile.dispute_count,
       dispute_breakdown: profile.dispute_breakdown,

@@ -2,6 +2,8 @@ import type Database from "better-sqlite3";
 import type { z } from "zod";
 import { getMemoryProfile, type PolicyOverrideRecord } from "../memory/profile.js";
 import type { MemoryProfilePayload } from "./memoryPayloadKeys.js";
+import { enforceUniversalPolicy, normalizeEscalationReason } from "./enforcement.js";
+import { AGENT_ACTION_POLICY } from "./schema.js";
 import { withClosingInstruction } from "./objective.js";
 import { SIGNAL_REGISTRY } from "./signals/registry.js";
 import type { AgentType, Customer, CustomerMemoryProfile } from "../types/index.js";
@@ -24,8 +26,13 @@ import { emitTrace, type TraceContext } from "./trace.js";
 // evidence for "the LLM proposes, deterministic code disposes", and they only
 // exist on the memory path.
 export interface MemoryAuditTrail {
-  signals: MemorySignals;
+  // Null only on the fail-closed path, where signals could not be computed.
+  signals: MemorySignals | null;
   policy_override: PolicyOverrideRecord | null;
+  // True when the guardrail itself could not be evaluated and the conservative
+  // decision was substituted. Counted in the run summary — a silent fail-closed
+  // is worse than a crash, because the run looks complete.
+  guardrail_failed?: boolean;
   // Signal ids the model cited in memory_factors_used that were not actually
   // active. Recorded, never corrected — see unsupportedFactorCitations.
   unsupported_factor_citations: string[];
@@ -104,7 +111,6 @@ export interface DecideWithMemoryParams<Schema extends z.ZodType<MemoryDecisionS
   eventFacts: Omit<TriggeringEventFacts, "agent" | "timestamp">;
   systemPrompt: string;
   schema: Schema;
-  fallbackNonDiscountAction: z.infer<Schema>["action"];
   memoryReadReason: string;
 }
 
@@ -199,6 +205,51 @@ function buildUserContent(
   return withClosingInstruction(payload);
 }
 
+// FAIL CLOSED. A guardrail that cannot evaluate must take the CONSERVATIVE
+// action — not crash, and above all not pass model output through unguarded.
+// Commits no spend, escalates to a person, and records why.
+//
+// Distinct from the runner's per-event catch, which handles API failures: this
+// handles failures of the guardrail evaluation itself (a profile read or signal
+// computation throwing). An API failure means "no decision"; this means "a
+// decision we do not trust ourselves to make automatically".
+function failClosed<Schema extends z.ZodType<MemoryDecisionShape>>(
+  params: DecideWithMemoryParams<Schema>,
+  err: unknown,
+  original?: z.infer<Schema>,
+): WithMemoryAudit<z.infer<Schema>> {
+  const message = err instanceof Error ? err.message : String(err);
+  const fallbackAction = AGENT_ACTION_POLICY[params.agent].nonSpendFallbackAction;
+  console.error(
+    `  !! GUARDRAIL FAILURE on ${params.agent} ${params.eventId}: ${message} — failing closed ` +
+      `(no spend, escalating to a human).`,
+  );
+
+  const notes = `guardrail evaluation failed (${message}); failed closed to no spend + human review`;
+  return {
+    ...(original ?? {}),
+    reasoning:
+      (original?.reasoning ? `${original.reasoning}\n\n` : "") +
+      `[FAIL CLOSED] ${notes}.`,
+    memory_factors_used: [],
+    action: fallbackAction,
+    committed_spend_paise: null,
+    escalate_to_human: true,
+    escalation_reason: "policy_constraint",
+    signals: null,
+    policy_override: {
+      original_action: original?.action ?? null,
+      original_committed_spend_paise: original?.committed_spend_paise ?? null,
+      original_escalate_to_human: original?.escalate_to_human ?? false,
+      triggered_by: ["guardrail_evaluation_failed"],
+      notes,
+      escalation_reason_forced: true,
+    },
+    unsupported_factor_citations: [],
+    guardrail_failed: true,
+  } as WithMemoryAudit<z.infer<Schema>>;
+}
+
 export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionShape>>(
   params: DecideWithMemoryParams<Schema>,
 ): Promise<WithMemoryAudit<z.infer<Schema>>> {
@@ -212,35 +263,44 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
   let stepOrder = 0;
 
   let stepStart = Date.now();
-  const profile = getMemoryProfile(params.db, params.customer.customer_id, {
-    requestedBy: params.agent,
-    mode: "memory",
-    reason: params.memoryReadReason,
-    asOf: params.eventTimestamp,
-    eventId: params.eventId,
-  });
-  stepOrder += 1;
-  emitTrace(
-    { ...traceBase, stepOrder },
-    "read_memory_profile",
-    describeProfileForTrace(profile),
-    Date.now() - stepStart,
-  );
+  let profile: CustomerMemoryProfile;
+  let signals: MemorySignals;
+  let eventFacts: TriggeringEventFacts;
+  try {
+    profile = getMemoryProfile(params.db, params.customer.customer_id, {
+      requestedBy: params.agent,
+      mode: "memory",
+      reason: params.memoryReadReason,
+      asOf: params.eventTimestamp,
+      eventId: params.eventId,
+    });
+    stepOrder += 1;
+    emitTrace(
+      { ...traceBase, stepOrder },
+      "read_memory_profile",
+      describeProfileForTrace(profile),
+      Date.now() - stepStart,
+    );
 
-  stepStart = Date.now();
-  const eventFacts: TriggeringEventFacts = {
-    ...params.eventFacts,
-    agent: params.agent,
-    timestamp: params.eventTimestamp,
-  };
-  const signals = computeMemorySignals(profile, eventFacts);
-  stepOrder += 1;
-  emitTrace(
-    { ...traceBase, stepOrder },
-    "evaluate_policy_signals",
-    summarizeActiveSignals(signals),
-    Date.now() - stepStart,
-  );
+    stepStart = Date.now();
+    eventFacts = {
+      ...params.eventFacts,
+      agent: params.agent,
+      timestamp: params.eventTimestamp,
+    };
+    signals = computeMemorySignals(profile, eventFacts);
+    stepOrder += 1;
+    emitTrace(
+      { ...traceBase, stepOrder },
+      "evaluate_policy_signals",
+      summarizeActiveSignals(signals),
+      Date.now() - stepStart,
+    );
+  } catch (err) {
+    // The guardrail could not be evaluated. Do not call the model at all —
+    // there is nothing to check its answer against.
+    return failClosed(params, err);
+  }
 
   const userContent = buildUserContent(params.customer, params.event, profile, signals);
 
@@ -254,85 +314,95 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
   emitTrace({ ...traceBase, stepOrder }, "agent_reasoning", decision.reasoning, Date.now() - stepStart);
 
   stepOrder += 1;
-  return enforcePolicy(decision, signals, eventFacts, params.fallbackNonDiscountAction, traceBase, stepOrder);
+  try {
+    return enforcePolicy(decision, signals, eventFacts, traceBase, stepOrder);
+  } catch (err) {
+    // Enforcement itself failed. The model's answer exists but is unvetted, so
+    // it must not be used as-is.
+    return failClosed(params, err, decision);
+  }
 }
 
-// Safety net: an LLM call is not a reliable place to enforce a hard, bounded
-// limit, so the constraints are applied here deterministically regardless of
-// what the model returned, with the original reasoning preserved and the
-// override recorded for the audit trail.
+// The MEMORY-DERIVED half of enforcement, layered on top of the universal
+// policy every arm gets. It contributes what only memory can know: a tightened
+// (or widened) ceiling, outright blocks, and forced escalation.
 //
-// Every condition below is resolved from the registry rather than tested
+// Every condition is resolved from the signal registry rather than tested
 // against hardcoded signal names. That is the anti-drift property: a signal
-// that declares blocksDiscount is enforced here the moment it is registered,
-// without anyone remembering to add a clause — which is precisely what went
-// wrong in the churn-signal discount gap (commit 75f04a3).
-function enforcePolicy<D extends MemoryDecisionShape>(
+// that declares blocksDiscount is enforced the moment it is registered, without
+// anyone remembering to add a clause — which is precisely what went wrong in
+// the churn-signal discount gap (commit 75f04a3).
+//
+// ORDERING: the universal layer runs FIRST, so incoherent, negative, and zero
+// spend are already gone by the time the block rule below could swap an action.
+export function enforcePolicy<D extends MemoryDecisionShape>(
   decision: D,
   signals: MemorySignals,
   event: TriggeringEventFacts,
-  fallbackNonDiscountAction: D["action"],
   traceBase: Omit<TraceContext, "stepOrder">,
   stepOrder: number,
 ): WithMemoryAudit<D> {
   const stepStart = Date.now();
   const resolved = resolveSignalEffects(signals);
-  const capPaise = Math.floor((event.amount * resolved.discountCapPercent) / 100);
+  const fallbackNonSpendAction = AGENT_ACTION_POLICY[event.agent].nonSpendFallbackAction as D["action"];
 
-  const mustBlockDiscount = resolved.blocksDiscount && decision.committed_spend_paise != null;
-  const mustEscalate = resolved.forcesEscalation && !decision.escalate_to_human;
-  // Only meaningful when the discount survives: a blocked discount is removed
-  // outright, so there is nothing left to clamp.
-  const mustCap =
-    !mustBlockDiscount && decision.committed_spend_paise != null && decision.committed_spend_paise > capPaise;
+  // The memory arm's resolved cap flows INTO the shared clamping logic rather
+  // than being applied separately, so the ceiling is enforced in one place.
+  const universal = enforceUniversalPolicy(decision, {
+    agent: event.agent,
+    eventAmount: event.amount,
+    capPercent: resolved.discountCapPercent,
+  });
+  const afterUniversal = universal.decision;
 
-  if (!mustBlockDiscount && !mustEscalate && !mustCap) {
-    return {
-      ...decision,
-      escalation_reason: normalizeEscalationReason(decision.escalate_to_human, decision.escalation_reason),
-      signals,
-      policy_override: null,
-      unsupported_factor_citations: unsupportedFactorCitations(decision.memory_factors_used, signals),
-    };
-  }
+  const mustBlockDiscount = resolved.blocksDiscount && afterUniversal.committed_spend_paise != null;
+  const mustEscalate = resolved.forcesEscalation && !afterUniversal.escalate_to_human;
 
-  const notes: string[] = [];
-  const triggeredBy = new Set<SignalId>();
+  const notes = [...universal.notes];
+  const triggeredBy = new Set<string>(universal.triggeredBy);
   if (mustBlockDiscount) {
-    notes.push(`discount blocked by: ${resolved.blockingSignals.join(", ")}`);
+    notes.push(`spend blocked by: ${resolved.blockingSignals.join(", ")}`);
     for (const id of resolved.blockingSignals) triggeredBy.add(id);
   }
   if (mustEscalate) {
     notes.push(`escalation forced by: ${resolved.escalatingSignals.join(", ")}`);
     for (const id of resolved.escalatingSignals) triggeredBy.add(id);
   }
-  if (mustCap) {
-    notes.push(
-      `discount clamped to the ${resolved.discountCapPercent}% ceiling (${capPaise} paise)` +
-        (resolved.cappingSignal ? ` set by ${resolved.cappingSignal}` : ""),
-    );
-    if (resolved.cappingSignal) triggeredBy.add(resolved.cappingSignal);
+  if (universal.triggeredBy.includes("spend_ceiling") && resolved.cappingSignal) {
+    triggeredBy.add(resolved.cappingSignal);
   }
 
-  const preOverrideSpend = decision.committed_spend_paise;
-  const notesJoined = notes.join("; ");
+  const unsupported = unsupportedFactorCitations(decision.memory_factors_used, signals);
 
+  if (notes.length === 0) {
+    return {
+      ...afterUniversal,
+      escalation_reason: normalizeEscalationReason(
+        afterUniversal.escalate_to_human,
+        afterUniversal.escalation_reason,
+      ),
+      signals,
+      policy_override: null,
+      unsupported_factor_citations: unsupported,
+    };
+  }
+
+  const notesJoined = notes.join("; ");
   emitTrace(
     { ...traceBase, stepOrder },
     "policy_override",
-    `${notesJoined}; pre_override_committed_spend_paise: ${preOverrideSpend ?? "null"}`,
+    `${notesJoined}; pre_override_committed_spend_paise: ${decision.committed_spend_paise ?? "null"}`,
     Date.now() - stepStart,
   );
 
-  const committedSpend = mustBlockDiscount ? null : mustCap ? capPaise : decision.committed_spend_paise;
-  const escalated = mustBlockDiscount || mustEscalate ? true : decision.escalate_to_human;
+  const escalated = mustBlockDiscount || mustEscalate ? true : afterUniversal.escalate_to_human;
   // True only when policy escalated a decision the model did not escalate.
   const forcedEscalation = escalated && !decision.escalate_to_human;
 
   return {
-    ...decision,
-    action: mustBlockDiscount ? fallbackNonDiscountAction : decision.action,
-    committed_spend_paise: committedSpend,
+    ...afterUniversal,
+    action: mustBlockDiscount ? fallbackNonSpendAction : afterUniversal.action,
+    committed_spend_paise: mustBlockDiscount ? null : afterUniversal.committed_spend_paise,
     // Capping alone does not force escalation — the decision still stands, it
     // is just priced within policy.
     escalate_to_human: escalated,
@@ -341,29 +411,19 @@ function enforcePolicy<D extends MemoryDecisionShape>(
     // escalate at all.
     escalation_reason: forcedEscalation
       ? "policy_constraint"
-      : normalizeEscalationReason(escalated, decision.escalation_reason),
+      : normalizeEscalationReason(escalated, afterUniversal.escalation_reason),
     reasoning: `${decision.reasoning}\n\n[POLICY OVERRIDE] ${notesJoined}.`,
     signals,
     policy_override: {
       original_action: decision.action,
-      original_committed_spend_paise: preOverrideSpend,
+      original_committed_spend_paise: decision.committed_spend_paise,
       original_escalate_to_human: decision.escalate_to_human,
       triggered_by: [...triggeredBy],
       notes: notesJoined,
       escalation_reason_forced: forcedEscalation,
     },
-    unsupported_factor_citations: unsupportedFactorCitations(decision.memory_factors_used, signals),
+    unsupported_factor_citations: unsupported,
   };
-}
-
-// escalate_to_human and escalation_reason must agree: a reason without an
-// escalation is noise, and an escalation without a reason is an unexplained
-// handoff. Normalised deterministically here rather than as a zod .refine(),
-// because a refinement failure under constrained decoding costs a whole retry
-// call to fix what is a one-line coercion.
-function normalizeEscalationReason(escalated: boolean, reason: string | null): string | null {
-  if (!escalated) return null;
-  return reason ?? "ambiguous_case";
 }
 
 // memory_factors_used is SELF-REPORTED. This counts citations the evidence does

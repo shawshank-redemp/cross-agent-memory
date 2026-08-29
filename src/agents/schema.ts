@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MEMORY_PROFILE_EMITTABLE_KEYS } from "./memoryPayloadKeys.js";
+import type { AgentType } from "../types/index.js";
 import type { SignalId } from "./signals/registry.js";
 
 // Memory facts a decision may cite in memory_factors_used. A FIXED enum, not
@@ -114,6 +115,30 @@ export type SubscriptionRecoveryDecision = z.infer<typeof SubscriptionRecoveryDe
 export const DISPUTE_RESPONDER_ACTIONS = ["accept_dispute", "contest_dispute"] as const;
 export const DisputeResponderDecisionSchema = decisionSchema(DISPUTE_RESPONDER_ACTIONS);
 export type DisputeResponderDecision = z.infer<typeof DisputeResponderDecisionSchema>;
+
+// WHICH ACTIONS MAY CARRY SPEND, declared next to the action enums rather than
+// inside the enforcement code, so an agent's rules live with the agent's
+// vocabulary and a fourth agent declares its own.
+//
+// This is what makes "send_reminder with a discount attached" catchable. Such a
+// decision used to pass straight through: it would be written to
+// discount_usage, increment discountAttemptsForAgent, feed gaming detection,
+// and be scored by the outcome model as a discount that was never
+// conceptually offered.
+export interface AgentActionPolicy {
+  spendableActions: readonly string[];
+  // Where a decision lands when policy removes its spend. Chosen so the
+  // fallback is never MORE interventionist than what the model asked for.
+  nonSpendFallbackAction: string;
+}
+
+export const AGENT_ACTION_POLICY: Record<AgentType, AgentActionPolicy> = {
+  cart_abandonment: { spendableActions: ["send_discount"], nonSpendFallbackAction: "send_reminder" },
+  subscription_recovery: { spendableActions: ["send_discount"], nonSpendFallbackAction: "retry_payment" },
+  // No dispute action commits margin, so any spend on this agent is incoherent
+  // by construction. contest_dispute exists only to typecheck the fallback.
+  dispute_responder: { spendableActions: [], nonSpendFallbackAction: "contest_dispute" },
+};
 
 export type AgentDecision =
   | CartAbandonmentDecision

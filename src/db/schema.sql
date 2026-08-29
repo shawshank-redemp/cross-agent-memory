@@ -103,6 +103,17 @@ CREATE TABLE IF NOT EXISTS discount_usage (
 );
 CREATE INDEX IF NOT EXISTS idx_discount_usage_customer ON discount_usage(customer_id);
 
+-- IDEMPOTENCY. One event decided once per arm grants at most one discount.
+-- The normal pipeline is self-cleaning (load:data deletes this table before
+-- each load), so duplicates only arise when agents:memory is re-run WITHOUT
+-- reloading — which the runner's --resume flag makes routine.
+--
+-- The index is paired with an ON CONFLICT DO UPDATE in recordDiscountUsage.
+-- A BARE unique index would be a downgrade, not a fix: it would convert silent
+-- duplication into a hard mid-run insert crash on the retry path that exists
+-- precisely to recover from crashes.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_discount_usage_event_mode ON discount_usage(event_id, mode);
+
 -- Graded requirement per CLAUDE.md. `mode` distinguishes baseline
 -- (no-memory) runs from memory-informed runs for the comparison in step 5.
 -- Every memory read and every agent decision: what was read, what was
@@ -114,9 +125,16 @@ CREATE INDEX IF NOT EXISTS idx_discount_usage_customer ON discount_usage(custome
 -- comparison the recent-decisions view used to rely on.
 --
 -- signals is the MemorySignals snapshot the decision was made against, and
--- policy_override records what the model originally wanted plus which signals
+-- policy_override records what the model originally wanted plus which rules
 -- overrode it. Together they make "the LLM proposes, deterministic code
 -- disposes" readable straight off the data instead of merely asserted.
+--
+-- A policy_override with a NULL `signals` value is coherent, not a bug: the
+-- UNIVERSAL policy layer (spend bounds, action/spend coherence, the default
+-- ceiling) runs on BOTH arms, so a baseline row can carry an override even
+-- though baseline has no memory from which to compute signals. Only
+-- memory-derived overrides — tightened caps, blocks, forced escalation — carry
+-- a signals snapshot alongside.
 CREATE TABLE IF NOT EXISTS audit_log (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   timestamp TEXT NOT NULL,
@@ -137,6 +155,16 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_customer ON audit_log(customer_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_agent ON audit_log(agent);
 CREATE INDEX IF NOT EXISTS idx_audit_log_event ON audit_log(event_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_entry_type ON audit_log(entry_type);
+
+-- Same idempotency guarantee for the decision/memory_read rows, paired with an
+-- ON CONFLICT DO UPDATE in appendAuditLog. entry_type is part of the key because
+-- one event legitimately produces BOTH a memory_read and a decision row.
+--
+-- event_id is nullable, and SQLite treats each NULL as distinct in a unique
+-- index, so cross-cutting rows that carry no event_id are unaffected and can
+-- still be appended freely.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_audit_log_event_mode_type
+  ON audit_log(event_id, mode, entry_type);
 
 -- Stage 1 live-replay trace: granular step-by-step record of what a
 -- decideWithMemory (or baseline decide()) call actually did, separate from

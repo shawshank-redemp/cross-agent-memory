@@ -1,8 +1,11 @@
 import type Database from "better-sqlite3";
 import type { Customer, SubscriptionFailureEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
+import { applyBaselinePolicy } from "./enforcement.js";
+import type { PolicyOverrideRecord } from "../memory/profile.js";
 import { OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
+import type { TriggeringEventFacts } from "./policy.js";
 import { SubscriptionRecoveryDecisionSchema, type SubscriptionRecoveryDecision } from "./schema.js";
 import { emitTrace } from "./trace.js";
 
@@ -31,14 +34,36 @@ Here you can only judge this single cycle, so escalate when the event itself
 looks unusual enough to warrant it; you have no basis to detect a pattern
 across cycles.`;
 
+// A failed subscription charge IS a payment attempt by definition — the
+// gateway tried to bill a stored instrument and was declined.
+//
+// ONE mapping, used by BOTH arms: the baseline needs the event amount to apply
+// the universal spend ceiling, and inventing a second mapping for it is how the
+// two arms would quietly start describing the same event differently.
+function eventFacts(event: SubscriptionFailureEvent): Omit<TriggeringEventFacts, "agent" | "timestamp"> {
+  return {
+    amount: event.plan_amount,
+    paymentAttempted: true,
+    paymentErrorCode: event.error_code,
+  };
+}
+
 export async function decideSubscriptionRecoveryBaseline(
   db: Database.Database,
   customer: Customer,
   event: SubscriptionFailureEvent,
-): Promise<SubscriptionRecoveryDecision> {
+): Promise<SubscriptionRecoveryDecision & { policy_override: PolicyOverrideRecord | null }> {
   const userContent = withClosingInstruction(JSON.stringify({ customer, event }, null, 2));
   const stepStart = Date.now();
-  const decision = await decide(SUBSCRIPTION_BASELINE_SYSTEM_PROMPT, userContent, SubscriptionRecoveryDecisionSchema);
+  const raw = await decide(SUBSCRIPTION_BASELINE_SYSTEM_PROMPT, userContent, SubscriptionRecoveryDecisionSchema);
+  // The UNIVERSAL policy layer runs on the baseline arm too. Without it the
+  // control would be the only path where model output reaches the ledger
+  // unchecked, which is both a safety gap and a confound — see
+  // enforcement.ts.
+  const decision = applyBaselinePolicy(raw, {
+    agent: "subscription_recovery",
+    eventAmount: eventFacts(event).amount,
+  });
   emitTrace(
     {
       db,
@@ -83,19 +108,9 @@ export async function decideSubscriptionRecoveryMemory(
     event,
     eventId: event.payment_id,
     eventTimestamp: event.created_at,
-    // A failed subscription charge IS a payment attempt by definition — the
-    // gateway tried to bill a stored instrument and was declined.
-    eventFacts: {
-      amount: event.plan_amount,
-      paymentAttempted: true,
-      paymentErrorCode: event.error_code,
-    },
+    eventFacts: eventFacts(event),
     systemPrompt: SUBSCRIPTION_MEMORY_SYSTEM_PROMPT,
     schema: SubscriptionRecoveryDecisionSchema,
-    // Where a blocked discount lands. "retry_payment" is the cheapest lever
-    // that still does something, which is what policy wants when it has just
-    // refused to let margin be spent.
-    fallbackNonDiscountAction: "retry_payment",
     memoryReadReason: `Subscription recovery agent evaluating cycle ${event.paid_count}/${event.total_count} of ${event.subscription_id}`,
   });
 }
