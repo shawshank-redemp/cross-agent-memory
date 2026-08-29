@@ -6,6 +6,7 @@ import type {
   CustomerMemoryProfile,
   DiscountUsageRecord,
   DisputeBreakdown,
+  RecentEventRecord,
   RecoveryFrequencyRecord,
 } from "../types/index.js";
 
@@ -176,11 +177,136 @@ function readRecoveryFrequency(db: Database.Database, customerId: string, asOf?:
   return records;
 }
 
+// How far back recent_events reaches. This is a STORAGE bound, not a policy
+// threshold: it exists so the list cannot grow without limit on a heavy
+// customer, and it is deliberately much wider than any rule that reads it.
+//
+// INVARIANT: this must stay >= every policy lookback in policy.ts that reads
+// recent_events. If a policy lookback ever exceeds it, that policy would
+// silently see a truncated history and under-fire. policy.ts asserts this at
+// module load.
+export const PROFILE_RECENT_EVENTS_LOOKBACK_DAYS = 90;
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Raw recovery-flow triggering events, ascending, asOf-scoped and bounded to
+// the lookback window above.
+//
+// Same population filters as readRecoveryFrequency (non-paid carts,
+// failed/halted subscription cycles, all disputes): a paid cart or a healthy
+// cycle is not a recovery trigger, so neither belongs in a churn or recency
+// signal. See RecentEventRecord in types/memory.ts.
+//
+// When asOf is omitted (the dashboard's "final state" read) the window is
+// anchored on the customer's most recent event instead, so the bound still
+// holds rather than degenerating into "return everything".
+function readRecentEvents(db: Database.Database, customerId: string, asOf?: string): RecentEventRecord[] {
+  const anchor =
+    asOf ??
+    (
+      db
+        .prepare(
+          `SELECT MAX(at) AS at FROM (
+             SELECT MAX(created_at) AS at FROM cart_abandonment_events WHERE customer_id = @customerId AND status != 'paid'
+             UNION ALL
+             SELECT MAX(created_at) FROM subscription_failure_events WHERE customer_id = @customerId AND status IN ('failed','halted')
+             UNION ALL
+             SELECT MAX(dispute_created_at) FROM dispute_events WHERE customer_id = @customerId
+           )`,
+        )
+        .get({ customerId }) as { at: string | null }
+    ).at ??
+    "";
+  if (!anchor) return [];
+
+  const floor = new Date(Date.parse(anchor) - PROFILE_RECENT_EVENTS_LOOKBACK_DAYS * DAY_MS).toISOString();
+
+  return db
+    .prepare(
+      `SELECT 'cart_abandonment' AS agent, created_at AS timestamp FROM cart_abandonment_events
+         WHERE customer_id = @customerId AND status != 'paid'
+           AND created_at <= @anchor AND created_at >= @floor
+       UNION ALL
+       SELECT 'subscription_recovery' AS agent, created_at AS timestamp FROM subscription_failure_events
+         WHERE customer_id = @customerId AND status IN ('failed','halted')
+           AND created_at <= @anchor AND created_at >= @floor
+       UNION ALL
+       SELECT 'dispute_responder' AS agent, dispute_created_at AS timestamp FROM dispute_events
+         WHERE customer_id = @customerId
+           AND dispute_created_at <= @anchor AND dispute_created_at >= @floor
+       ORDER BY timestamp ASC`,
+    )
+    .all({ customerId, anchor, floor }) as RecentEventRecord[];
+}
+
+interface PaymentHistory {
+  successfulPaymentCount: number;
+  totalPaidAmount: number; // paise
+}
+
+// "How much has this customer successfully transacted with us, across every
+// domain" — the accelerator counterpart to the risk facts above, and a
+// question no single agent can answer alone.
+//
+// Two sources, unioned:
+//
+//   Carts: every order that reached status 'paid' as of the cutoff counts as
+//   one successful payment worth its amount_paid.
+//
+//   Subscriptions: the latest row per subscription_id as of the cutoff
+//   carries that subscription's paid_count, which is Razorpay's count of
+//   successful charges so far.
+//
+// APPROXIMATION, deliberate and worth knowing about: subscription value is
+// computed as paid_count * plan_amount, which assumes the plan amount was
+// stable across every one of those cycles. A real integration would sum the
+// actual captured payments from the payments report rather than multiplying,
+// and would not need the assumption at all. It is accurate here because the
+// generator never changes a plan mid-subscription.
+function readPaymentHistory(db: Database.Database, customerId: string, asOf?: string): PaymentHistory {
+  const cartClause = asOf ? "AND created_at <= @asOf" : "";
+  const cart = db
+    .prepare(
+      `SELECT COUNT(*) AS n, COALESCE(SUM(amount_paid), 0) AS total
+       FROM cart_abandonment_events
+       WHERE customer_id = @customerId AND status = 'paid' ${cartClause}`,
+    )
+    .get(asOf ? { customerId, asOf } : { customerId }) as { n: number; total: number };
+
+  // Latest row per subscription as of the cutoff: paid_count on any earlier
+  // row is a stale, lower count for the same subscription, so summing every
+  // row would multiply-count the same successful cycles.
+  const subClause = asOf ? "AND created_at <= @asOf" : "";
+  const sub = db
+    .prepare(
+      `SELECT COALESCE(SUM(s.paid_count), 0) AS n,
+              COALESCE(SUM(s.paid_count * s.plan_amount), 0) AS total
+       FROM subscription_failure_events s
+       JOIN (
+         SELECT subscription_id, MAX(created_at) AS latest
+         FROM subscription_failure_events
+         WHERE customer_id = @customerId ${subClause}
+         GROUP BY subscription_id
+       ) m ON m.subscription_id = s.subscription_id AND m.latest = s.created_at
+       WHERE s.customer_id = @customerId`,
+    )
+    .get(asOf ? { customerId, asOf } : { customerId }) as { n: number; total: number };
+
+  return {
+    successfulPaymentCount: cart.n + sub.n,
+    totalPaidAmount: cart.total + sub.total,
+  };
+}
+
 interface DisputeStats {
   count: number;
   totalAmount: number;
   breakdown: DisputeBreakdown;
   adverseAmount: number;
+  // Reasons of the disputes counted as `unresolved` above, same asOf and same
+  // resolved predicate. Facts only: the mapping from reason to who is at
+  // fault, and what that should do to a discount, lives in the policy layer.
+  unresolvedReasons: string[];
 }
 
 // Two independent asOf cutoffs, and the distinction between them is the whole
@@ -195,11 +321,21 @@ interface DisputeStats {
 // ruling backwards into a past decision — the same temporal-leakage bug class
 // the asOf profile exists to prevent.
 //
-// Outcome mapping once resolved: `won` is evidence about the MERCHANT (they
-// failed to deliver and lost the chargeback), never about the customer, so it
-// drives no caution at all. `lost` is adverse. `closed` is neither: it
-// generally means withdrawn or ended without a ruling, so penalising it would
-// charge the customer for a decision nobody made.
+// Outcome mapping once resolved, and note it is the OPPOSITE of the intuitive
+// reading — a Razorpay dispute belongs to the MERCHANT, so its status says how
+// it went for the merchant, not for the customer:
+//
+//   'won'  -> customer_adverse: the merchant's evidence was accepted and the
+//             complaint was rejected. This is what counts against a customer.
+//   'lost' -> merchant_conceded: the merchant lost or accepted the chargeback
+//             and the customer was refunded. Evidence about the merchant's
+//             delivery, never about the customer, so it drives no caution.
+//   'closed' -> neither: withdrawn or ended without a ruling, so penalising it
+//             would charge the customer for a decision nobody made.
+//
+// See the DisputeBreakdown doc comment in types/memory.ts. This mapping is
+// pinned by a fixture assertion in scripts/verifySchema.ts — if you flip it,
+// that fails loudly rather than silently mispenalising every customer.
 function readDisputeStats(db: Database.Database, customerId: string, asOf?: string): DisputeStats {
   // Named parameters, not positional: the resolved-at cutoff is repeated in
   // five CASE expressions plus the WHERE clause, and counting `?` placeholders
@@ -216,10 +352,10 @@ function readDisputeStats(db: Database.Database, customerId: string, asOf?: stri
          COUNT(*) AS count,
          COALESCE(SUM(amount), 0) AS total,
          SUM(CASE WHEN NOT ${resolved} THEN 1 ELSE 0 END) AS unresolved,
-         SUM(CASE WHEN ${resolved} AND status = 'won' THEN 1 ELSE 0 END) AS won,
-         SUM(CASE WHEN ${resolved} AND status = 'lost' THEN 1 ELSE 0 END) AS adverse,
+         SUM(CASE WHEN ${resolved} AND status = 'lost' THEN 1 ELSE 0 END) AS merchant_conceded,
+         SUM(CASE WHEN ${resolved} AND status = 'won' THEN 1 ELSE 0 END) AS customer_adverse,
          SUM(CASE WHEN ${resolved} AND status = 'closed' THEN 1 ELSE 0 END) AS closed_undetermined,
-         COALESCE(SUM(CASE WHEN ${resolved} AND status = 'lost' THEN amount ELSE 0 END), 0) AS adverse_amount
+         COALESCE(SUM(CASE WHEN ${resolved} AND status = 'won' THEN amount ELSE 0 END), 0) AS adverse_amount
        FROM dispute_events
        WHERE customer_id = @customerId ${visibleClause}`,
     )
@@ -229,24 +365,38 @@ function readDisputeStats(db: Database.Database, customerId: string, asOf?: stri
     // SUM() over zero rows is NULL in SQLite, so these are nullable even
     // though every non-empty result is an integer.
     unresolved: number | null;
-    won: number | null;
-    adverse: number | null;
+    merchant_conceded: number | null;
+    customer_adverse: number | null;
     closed_undetermined: number | null;
     adverse_amount: number;
   };
 
+  // Same visibility + resolved predicate as the aggregate above, so the
+  // reasons returned are exactly the reasons of the `unresolved` bucket.
+  const unresolvedReasons = (
+    db
+      .prepare(
+        `SELECT dispute_reason FROM dispute_events
+         WHERE customer_id = @customerId ${visibleClause} AND NOT ${resolved}
+         ORDER BY dispute_created_at ASC`,
+      )
+      .all(asOf ? { customerId, asOf } : { customerId }) as { dispute_reason: string }[]
+  ).map((r) => r.dispute_reason);
+
   return {
     count: row.count,
     totalAmount: row.total,
+    unresolvedReasons,
     breakdown: {
       unresolved: row.unresolved ?? 0,
-      won: row.won ?? 0,
-      adverse: row.adverse ?? 0,
+      merchant_conceded: row.merchant_conceded ?? 0,
+      customer_adverse: row.customer_adverse ?? 0,
       closed_undetermined: row.closed_undetermined ?? 0,
     },
     adverseAmount: row.adverse_amount,
   };
 }
+
 
 // Heuristic, not a model: starts at 100 and subtracts per unresolved-risk
 // event, weighted by how costly that risk is to the business (a dispute
@@ -254,14 +404,15 @@ function readDisputeStats(db: Database.Database, customerId: string, asOf?: stri
 // baseline-vs-memory comparison once that's running, not in the abstract.
 //
 // The dispute term is split by outcome rather than counting every filed
-// dispute equally. A customer who complained and WON is not a risk — that
-// dispute says the merchant failed to deliver — so it carries no penalty at
-// all. An adverse (lost) dispute carries the full weight; a dispute still
+// dispute equally. A dispute the MERCHANT conceded (Razorpay 'lost') says the
+// merchant failed to deliver, so it carries no penalty at all. A
+// customer-adverse dispute (Razorpay 'won' — the merchant contested it and the
+// complaint did not hold up) carries the full weight; a dispute still
 // unresolved as of this read carries half, reflecting genuine uncertainty
 // rather than established fault. `closed` disputes ended with no ruling
 // either way and carry nothing.
 const HEALTH_WEIGHTS = {
-  adverseDisputePenalty: 12,
+  customerAdverseDisputePenalty: 12,
   unresolvedDisputePenalty: 6,
   failedSubscriptionCyclePenalty: 6,
   abandonedCartPenalty: 3,
@@ -293,7 +444,7 @@ function computeRollingHealthScore(
 
   const score =
     100 -
-    breakdown.adverse * HEALTH_WEIGHTS.adverseDisputePenalty -
+    breakdown.customer_adverse * HEALTH_WEIGHTS.customerAdverseDisputePenalty -
     breakdown.unresolved * HEALTH_WEIGHTS.unresolvedDisputePenalty -
     failedCycles * HEALTH_WEIGHTS.failedSubscriptionCyclePenalty -
     abandonedCarts * HEALTH_WEIGHTS.abandonedCartPenalty;
@@ -332,6 +483,7 @@ export function computeMemoryProfile(
   asOf?: string,
 ): CustomerMemoryProfile {
   const disputes = readDisputeStats(db, customerId, asOf);
+  const payments = readPaymentHistory(db, customerId, asOf);
 
   return {
     customer_id: customerId,
@@ -339,8 +491,12 @@ export function computeMemoryProfile(
     total_disputed_amount: disputes.totalAmount,
     dispute_breakdown: disputes.breakdown,
     adverse_disputed_amount: disputes.adverseAmount,
+    unresolved_dispute_reasons: disputes.unresolvedReasons,
     discount_usage_history: readDiscountUsageHistory(db, customerId, mode),
     recovery_frequency: readRecoveryFrequency(db, customerId, asOf),
+    recent_events: readRecentEvents(db, customerId, asOf),
+    successful_payment_count: payments.successfulPaymentCount,
+    total_paid_amount: payments.totalPaidAmount,
     rolling_health_score: computeRollingHealthScore(db, customerId, disputes.breakdown, asOf),
     audit_log: readAuditLog(db, customerId, mode),
   };

@@ -48,18 +48,20 @@ export interface SuppressionCohortResult {
 // Two cohorts with OPPOSITE expectations, split on how the planted dispute
 // resolved. Same event shape in both — paid order, dispute on it, later
 // abandoned cart — so suppressing is correct in one and a false positive in
-// the other.
+// the other. Razorpay's dispute status describes how it went for the
+// MERCHANT: 'won' means the merchant contested successfully (customer-adverse)
+// and 'lost' means the merchant conceded and the customer was refunded.
 export interface CrossDomainSuppression {
-  expectation: { adverse: string; won: string };
+  expectation: { adverse: string; merchant_conceded: string };
   adverse: SuppressionCohortResult;
-  won: SuppressionCohortResult;
+  merchant_conceded: SuppressionCohortResult;
   summary: {
     correctSuppressions: number;
     falsePositiveSuppressions: number;
     totalSuppressions: number;
     correctSuppressionRatePct: number | null;
     adverseSuppressionRatePct: number | null;
-    wonSuppressionRatePct: number | null;
+    merchantConcededSuppressionRatePct: number | null;
   };
 }
 

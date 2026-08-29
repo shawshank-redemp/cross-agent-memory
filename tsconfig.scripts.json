@@ -1,0 +1,13 @@
+{
+  // The maintenance/verification scripts are not part of the build (they are
+  // run through tsx, never compiled to dist/), but they ARE load-bearing —
+  // scripts/pinDisputeMapping.ts is what stops the dispute mapping silently
+  // inverting again. They need typechecking just as much as src/, so this
+  // widens rootDir to the repo root and checks them alongside it.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src", "scripts"]
+}

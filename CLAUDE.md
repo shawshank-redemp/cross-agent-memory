@@ -116,9 +116,11 @@ this batch never sees resolve, and it correctly reads as unresolved throughout.
 ### Shared memory profile (the core artifact)
 ```
 dispute_count, total_disputed_amount,
-dispute_breakdown: { unresolved, won, adverse, closed_undetermined },
-adverse_disputed_amount, discount_usage_history,
-recovery_frequency (per agent type, over time), rolling_health_score,
+dispute_breakdown: { unresolved, merchant_conceded, customer_adverse, closed_undetermined },
+adverse_disputed_amount, unresolved_dispute_reasons,
+discount_usage_history, recovery_frequency (per agent type, over time),
+recent_events (raw asOf-scoped {agent,timestamp}, 90-day bound),
+successful_payment_count, total_paid_amount, rolling_health_score,
 audit_log[]: { timestamp, agent, entry_type, action, reasoning }
 ```
 
@@ -142,46 +144,190 @@ More event *types* is explicitly out of scope (stay at 3 — cart abandonment, s
 
 - ~60% "normal" customers — one clean event, resolves fine.
 - ~15% "repeat offenders" per agent — multiple cycles of the same event (use `paid_count` for subscription failures) to trigger gaming detection + stopping rules.
-- ~10% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is: the first two should suppress the later discount, `won` should NOT. The `won` arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`.
+- ~10% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is. Remember the status words are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the later discount, `lost` (merchant conceded, customer refunded) should NOT. The merchant-conceded arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`.
 - ~10% "churn signal" — the composite pattern: 2+ domains firing in a tight time window, which should trigger escalation rather than more automated nudges.
 - ~5% pure noise/edge cases.
 
 
 
-## Dispute signals are outcome-aware
+## Razorpay dispute semantics — the status words are merchant-side
 
-`disputeCautionWarranted` used to be `profile.dispute_count > 0`, firing on any
-dispute regardless of how it turned out. That suppressed the next discount for
-a customer who filed a legitimate dispute and **won** it. A merchant who failed
-to deliver and lost the chargeback is not evidence about the customer; it is
-evidence about the merchant.
+**A Razorpay dispute belongs to the MERCHANT, so its status describes how it
+went for the merchant, not the customer.** This is the opposite of the
+intuitive reading and the code shipped with it inverted once.
 
-The as-of rules in `readDisputeStats`, which are the correctness core:
+| Razorpay status | What actually happened | Profile bucket | Caution |
+| --- | --- | --- | --- |
+| `won` | The bank accepted the **merchant's** evidence; the complaint was rejected | `customer_adverse` | adverse |
+| `lost` | The bank rejected the merchant's evidence and refunded the customer. Also the status when a merchant simply **accepts** a dispute rather than contesting | `merchant_conceded` | none |
+| `closed` | Ended with no ruling either way (withdrawn) | `closed_undetermined` | none |
+| `open` / `under_review` | No ruling yet | `unresolved` | reason-derived |
+
+`DisputeBreakdown`'s field names deliberately do **not** reuse `won`/`lost`,
+because reading `breakdown.won` as "the customer won" is exactly the mistake
+that caused the inversion. The mapping is pinned by a fixture in
+`scripts/pinDisputeMapping.ts`, which runs first in `npm run verify:schema`
+and fails loudly if the arms are ever flipped back.
+
+The as-of rules in `readDisputeStats` remain the correctness core:
 
 - **Visible** if `dispute_created_at <= asOf`.
 - **Resolved** only if `resolved_at IS NOT NULL AND resolved_at <= asOf`.
 - A visible-but-unresolved dispute counts as `unresolved` **regardless of its
   stored `status`**. The eventual outcome has not happened yet and must not
-  leak backwards. This is the whole point of the change.
-- Once resolved: `won` → won, `lost` → adverse, `closed` → neither.
-
-`closed` gets its own bucket rather than being grouped with `lost`. In
-Razorpay it generally means withdrawn or ended without a chargeback ruling, so
-it is neither exoneration nor fault; grouping it with `lost` would charge the
-customer for a decision nobody made. The only producer of `closed` in the
-generator is `generateNoise()`'s deliberately weird edge case, so this is a
-correctness position, not a numbers-moving one.
-
-`disputeCautionLevel` is `"none" | "unresolved" | "adverse"`, adverse
-outranking unresolved, and a won-only history yielding `"none"`. It drives
-three different discount caps in `MEMORY_POLICY_BLOCK`: 20% (and an explicit
-statement that a customer who was right to complain is not a risk), 15%
-(genuine uncertainty, not established fault), and 10% plus a preference for a
-plain nudge. `computeRollingHealthScore` mirrors the split —
-`adverse * 12 + unresolved * 6`, with won disputes free.
+  leak backwards.
 
 `dispute_count` / `total_disputed_amount` still count every dispute filed as
 of the read, any status: the dashboard reads them.
+`computeRollingHealthScore` charges `customer_adverse * 12 + unresolved * 6`;
+merchant-conceded and closed disputes are free.
+
+### The unresolved tier is reason-aware
+
+A dispute takes weeks to resolve, so at decision time **most disputes are
+unresolved and the reason is the only evidence available**. `disputeCautionLevel`
+therefore splits that tier by who the reason points at
+(`DISPUTE_FAULT_BY_REASON` in `data/fixtures.ts` is the single source of truth):
+
+| Level | Trigger | Discount cap |
+| --- | --- | --- |
+| `none` | nothing counts against them | 20% |
+| `unresolved_merchant_fault` | goods not received, service not as described | 20% |
+| `unresolved_neutral` | duplicate charge, subscription not cancelled | 15% |
+| `unresolved_customer_fault` | unrecognized transaction | 10% |
+| `adverse` | a `customer_adverse` dispute exists | 10% |
+
+Most severe wins; within the unresolved tier the order is
+customer > neutral > merchant. **An unmapped reason defaults to `neutral`,
+never to `customer`** — an unrecognised string must not manufacture suspicion.
+
+`unresolved_merchant_fault` gets *no penalty*, not a goodwill bonus: it sits at
+the default cap and contributes no cap at all, so it cannot hold a proven payer
+back from the wider ceiling. Treating a wronged customer as actively
+higher-value is a separate product decision and a valid future extension.
+
+## Composite churn is a recency lookback, not a window comparison
+
+Composite churn fires when **two or more distinct domains have at least one
+event in the `CHURN_LOOKBACK_DAYS` (14) immediately preceding and including the
+triggering event**. The triggering event counts as one of them.
+
+This replaced a rule that compared each agent's *aggregate* window (first event
+to last event) and fired when two windows came within 14 days. That was wrong
+twice over: a window can span months, so two events 36 days apart could satisfy
+"within 14 days"; and nothing aged out, so a bad fortnight eight months ago
+still tripped the signal today.
+
+To support it, the profile exposes `recent_events` — raw asOf-scoped
+`{agent, timestamp}` pairs, ascending, bounded to
+`PROFILE_RECENT_EVENTS_LOOKBACK_DAYS` (90). That bound is **storage**, not
+policy, and must stay >= every policy lookback that reads it; `thresholds.ts`
+asserts this at module load.
+
+**Separation of concerns:** `profile.ts` exposes facts (raw asOf-scoped
+timestamps); the signal registry owns the rule (the 14-day threshold). The
+threshold must never move into `profile.ts`.
+
+### `recent_events` is a filtered population — settled, do not relitigate
+
+`recent_events` contains **recovery-flow triggering events only**: non-paid
+carts, `failed`/`halted` subscription cycles, and all disputes. These are the
+same filters `recovery_frequency` already uses. It is deliberately **not** a
+raw union of the three event tables.
+
+The reason is what the churn signal is supposed to mean. A customer who paid
+successfully and separately disputed something later is **not the same risk
+shape** as a customer with two recovery-flow failures in the same fortnight.
+Conflating them weakens the signal: composite churn would start firing on
+customers whose only "activity" was a completed purchase, and the escalation it
+triggers would stop being evidence of anything. Under a raw union it would fire
+across much of `cross_domain_risk` — those customers have a *paid* order
+followed by a dispute — turning a churn signal into a "had two events" signal.
+
+A secondary benefit: holding the population fixed is what lets
+`npm run measure:churn` attribute its before/after delta to the **window logic**
+alone, rather than confounding the rule change with a population change.
+
+This is a settled design decision, not a simplification to revisit.
+
+Measured before/after on the committed batch: **identical, 238/3202 firings
+under both rules**. Every multi-domain customer in this batch has at most one
+event per domain, which collapses each window to a single point and makes the
+two rules mathematically equivalent. The old rule is wrong in principle and the
+synthetic data never exercises the failure mode — so this is a correctness fix
+with no effect on the reported numbers. `npm run measure:churn` reproduces the
+table and cross-checks the live rule.
+
+## The signal registry
+
+Signals live in `src/agents/signals/`. Each is one self-contained object
+declaring `id`, `scope`, `kind`, `compute(ctx)`, `describe(value)` and
+`effects(value)`. `policy.ts` is now a thin re-export facade.
+
+**Adding a signal computed from facts the profile already exposes is a
+single-file change inside `src/agents/signals/`.** No edit to the
+`MemorySignals` interface, the prompt string, or `enforcePolicy` — because:
+
+- `MemorySignals` is a **mapped type derived from the registry**, not
+  hand-maintained. Two hand-written lists would drift. `keyof MemorySignals`
+  still resolves to the signal ids, so the experiment layer's `blockRules` and
+  `excludeEntirelyWhen` compile unchanged. A compile-time assertion pins that
+  the derived type still covers all seven original fields with their original
+  value types.
+- The prompt's signal half is **generated** from `describe()`, so prompt text
+  and enforcement cannot disagree.
+- `enforcePolicy` **resolves `effects()`** rather than testing hardcoded
+  booleans.
+
+A signal needing NEW facts additionally requires a `profile.ts` change. That
+split is deliberate: `profile.ts` answers *what is true about this customer*
+and holds every asOf-scoped query so temporal correctness is auditable in one
+place; the registry answers *what that means and what to do about it*.
+
+This structure exists because adding a signal used to mean four disconnected
+edits with nothing tying them together — which is how the churn-signal discount
+gap (commit `75f04a3`) happened.
+
+### Three kinds
+
+- **brake** — restricts what the agent may do. `disputeCautionLevel`,
+  `stoppingRuleHit`, `gamingSuspected`, `crossAgentGamingSuspected`,
+  `compositeChurnSignal`.
+- **accelerator** — widens what the agent may do for a customer who earned it.
+  `provenPayer`: 2+ successful payments across all domains raises the cap to
+  25%. Purely factual — it does not check for gaming or disputes; precedence
+  settles conflicts.
+- **router** — changes *which* intervention fits without changing limits.
+  `paymentFriction`: the customer tried to pay and was declined, so the
+  problem is mechanical and a discount does not address it.
+
+`paymentFriction` is deliberately **prompt-only**, carrying no effects. There
+is no "retry with another payment method" action in the decision schema, and
+adding one would change the outcome model — a documented future step. It is
+still recorded on the audit row so its influence on divergence is measurable.
+
+### Scope is the pluggability contract
+
+- **customer-scoped** (`disputeCautionWarranted`, `disputeCautionLevel`,
+  `crossAgentGamingSuspected`, `compositeChurnSignal`, `provenPayer`): true
+  about the *person*. A new agent inherits them unchanged.
+- **agent-scoped** (`discountAttemptsForAgent`, `stoppingRuleHit`,
+  `gamingSuspected`, `paymentFriction`): computed against the asking agent.
+
+**Registering a fourth agent means implementing only the agent-scoped ones.**
+`signalsByScope()` enumerates each set.
+
+### Precedence: brakes beat accelerators
+
+`resolveSignalEffects` takes the **minimum** cap across every active signal.
+A proven payer who is also gaming gets 10%, not 25%, and no ordering of the
+registry can invert that because minimum is commutative.
+`DEFAULT_DISCOUNT_CAP_PERCENT` (20) is the fallback when nothing contributes,
+**not** a participant in the minimum — folding it in would give `min(20, 25)`
+and the accelerator could never do anything.
+
+`enforcePolicy` now also **clamps** a discount to the resolved cap, recording
+the clamp in `policy_override`. Caps were previously prompt-only advice.
 
 ## Experimentation layer (recovery incrementality)
 

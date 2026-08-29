@@ -67,6 +67,15 @@ export async function decideCartAbandonmentMemory(
     event,
     eventId: event.order_id,
     eventTimestamp: event.created_at,
+    // attempts = 0 means the customer never reached payment (an intent
+    // problem, which a discount can address); >= 1 with an error code means
+    // the payment was tried and declined (a mechanical problem, which a
+    // discount does not address).
+    eventFacts: {
+      amount: event.amount,
+      paymentAttempted: event.attempts >= 1,
+      paymentErrorCode: event.last_error_code,
+    },
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: CartAbandonmentDecisionSchema,
     fallbackNonDiscountAction: "send_reminder",

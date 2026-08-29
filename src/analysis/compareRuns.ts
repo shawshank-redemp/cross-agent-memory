@@ -311,17 +311,17 @@ function main(): void {
 // The paired read, printed explicitly: identical event shape in both cohorts,
 // opposite correct behaviour, split only by how the dispute resolved.
 function printCrossDomainSummary(result: CrossDomainSuppressionResult): void {
-  const { adverse, won, summary } = result;
+  const { adverse, merchant_conceded: merchantConceded, summary } = result;
   const rate = (n: number | null): string => (n == null ? "n/a" : `${n}%`);
   console.log("\n=== Cross-domain suppression, split by dispute outcome ===");
   console.log(
-    `adverse (lost/under_review): suppressed ${adverse.suppressed}/${adverse.customersChecked} (${rate(
+    `adverse (rzp won/under_review):  suppressed ${adverse.suppressed}/${adverse.customersChecked} (${rate(
       summary.adverseSuppressionRatePct,
     )}) — suppression is CORRECT here`,
   );
   console.log(
-    `won:                         suppressed ${won.suppressed}/${won.customersChecked} (${rate(
-      summary.wonSuppressionRatePct,
+    `merchant_conceded (rzp lost):    suppressed ${merchantConceded.suppressed}/${merchantConceded.customersChecked} (${rate(
+      summary.merchantConcededSuppressionRatePct,
     )}) — suppression is a FALSE POSITIVE here`,
   );
   console.log(
@@ -360,22 +360,29 @@ function printRevenueSummary(
 // A cross_domain_risk customer's planted dispute resolves one of three ways,
 // and they do NOT all imply the same correct behaviour on the later cart:
 //
-//   lost / under_review -> the dispute is evidence about the CUSTOMER
-//                          (adverse or not-yet-known). Suppressing the next
-//                          discount is the right call.
-//   won                 -> the merchant failed to deliver and lost the
-//                          chargeback. That is evidence about the MERCHANT.
-//                          Suppressing here punishes a customer who was right
-//                          to complain — a false positive, not a success.
+// Razorpay's dispute status describes how it went for the MERCHANT, so the
+// words mean the opposite of the intuitive reading (see DisputeBreakdown in
+// types/memory.ts):
+//
+//   'won' / 'under_review' -> the merchant contested successfully (the
+//                          complaint did not hold up), or there is no ruling
+//                          yet. Evidence about the CUSTOMER, so suppressing
+//                          the next discount is the right call.
+//   'lost'              -> the merchant lost or accepted the chargeback and
+//                          the customer was refunded. That is evidence about
+//                          the MERCHANT. Suppressing here punishes a customer
+//                          who was right to complain — a false positive.
 //
 // Counting both cohorts as "suppressions" (which this metric used to do,
 // before the won arm existed) makes the number unfalsifiable: a system that
 // suppressed on the mere existence of a dispute would score identically to
 // one that reads the outcome. Splitting is what turns it into a real claim.
-type SuppressionCohort = "adverse" | "won";
+// Cohort keys are named for what they MEAN, not for Razorpay's status words,
+// so the report cannot be misread the way the code itself once was.
+type SuppressionCohort = "adverse" | "merchant_conceded";
 
 function cohortFor(outcome: DisputeStatus | undefined): SuppressionCohort {
-  return outcome === "won" ? "won" : "adverse";
+  return outcome === "lost" ? "merchant_conceded" : "adverse";
 }
 
 interface SuppressionDetail {
@@ -400,10 +407,10 @@ interface CrossDomainSuppressionResult {
   // never read as if they meant the same thing.
   expectation: {
     adverse: string;
-    won: string;
+    merchant_conceded: string;
   };
   adverse: CohortResult;
-  won: CohortResult;
+  merchant_conceded: CohortResult;
   summary: {
     // Of every suppression memory made across the whole cross_domain_risk
     // cohort, what share landed on a customer who deserved it. Precision-
@@ -416,7 +423,7 @@ interface CrossDomainSuppressionResult {
     // The paired read a judge should take: same event shape in both cohorts,
     // opposite decision, because the dispute outcome differed.
     adverseSuppressionRatePct: number | null;
-    wonSuppressionRatePct: number | null;
+    merchantConcededSuppressionRatePct: number | null;
   };
 }
 
@@ -451,7 +458,7 @@ function checkCrossDomainSuppression(
   const baselineByEvent = new Map(baseline.map((d) => [d.event_id, d]));
   const memoryByEvent = new Map(memory.map((d) => [d.event_id, d]));
 
-  const byCohort: Record<SuppressionCohort, SuppressionDetail[]> = { adverse: [], won: [] };
+  const byCohort: Record<SuppressionCohort, SuppressionDetail[]> = { adverse: [], merchant_conceded: [] };
   for (const [customerId, eventId] of targetEventByCustomer) {
     const b = baselineByEvent.get(eventId);
     const m = memoryByEvent.get(eventId);
@@ -473,25 +480,26 @@ function checkCrossDomainSuppression(
   };
 
   const adverse = toCohortResult(byCohort.adverse);
-  const won = toCohortResult(byCohort.won);
-  const totalSuppressions = adverse.suppressed + won.suppressed;
+  const merchantConceded = toCohortResult(byCohort.merchant_conceded);
+  const totalSuppressions = adverse.suppressed + merchantConceded.suppressed;
   const pct = (n: number, d: number): number | null => (d === 0 ? null : Math.round((n / d) * 100));
 
   return {
     expectation: {
       adverse:
-        "Dispute lost or still unresolved as of the later cart — evidence about the customer. Memory SHOULD suppress; a suppression here is correct.",
-      won: "Dispute resolved in the customer's favour — evidence about the merchant's delivery, not the customer. Memory should NOT suppress; a suppression here is a false positive.",
+        "Razorpay status 'won' (merchant contested successfully — the complaint did not hold up) or 'under_review' (no ruling yet as of the later cart). Evidence about the customer. Memory SHOULD suppress; a suppression here is correct.",
+      merchant_conceded:
+        "Razorpay status 'lost' — the merchant lost or accepted the chargeback and the customer was refunded. Evidence about the merchant's delivery, not the customer. Memory should NOT suppress; a suppression here is a false positive.",
     },
     adverse,
-    won,
+    merchant_conceded: merchantConceded,
     summary: {
       correctSuppressions: adverse.suppressed,
-      falsePositiveSuppressions: won.suppressed,
+      falsePositiveSuppressions: merchantConceded.suppressed,
       totalSuppressions,
       correctSuppressionRatePct: pct(adverse.suppressed, totalSuppressions),
       adverseSuppressionRatePct: pct(adverse.suppressed, adverse.customersChecked),
-      wonSuppressionRatePct: pct(won.suppressed, won.customersChecked),
+      merchantConcededSuppressionRatePct: pct(merchantConceded.suppressed, merchantConceded.customersChecked),
     },
   };
 }

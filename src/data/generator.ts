@@ -229,7 +229,14 @@ function generateNormal(rng: Rng, customer: Customer, batch: SyntheticBatch): vo
       makeSubscriptionCycleEvent(rng, customer, makeId("sub", rng), makeId("plan", rng), planCode, rng.int(1, 4), ts, "active"),
     );
   } else {
-    batch.disputeEvents.push(makeDisputeEvent(rng, customer, ts, "won"));
+    // Razorpay 'lost' = the merchant lost or accepted the chargeback and the
+    // customer was refunded. That is the CLEAN outcome for this scenario: it
+    // says nothing against the customer, so a "normal" customer reads as
+    // disputeCautionLevel "none". (Razorpay 'won' would mean the merchant
+    // successfully contested them — the customer-adverse outcome — which is
+    // the opposite of what "one clean event, resolves fine" means. This
+    // literal was 'won' while the mapping was inverted.)
+    batch.disputeEvents.push(makeDisputeEvent(rng, customer, ts, "lost"));
   }
 }
 
@@ -294,14 +301,20 @@ function generateCrossDomainRisk(rng: Rng, customer: Customer, batch: SyntheticB
   const gapDays = Math.max(1, Math.floor((laterCartTs - disputeTs) / DAY_MS));
   const resolvedAfterDays = gapDays >= 2 ? rng.int(1, gapDays - 1) : 1;
 
-  // Three outcomes at equal weight, and the `won` arm is the one that makes
-  // this scenario a real test rather than a one-sided one. Same event shape
-  // in every arm — paid order, dispute on it, later abandoned cart — so the
-  // ONLY thing that differs is how the dispute turned out:
-  //   lost         -> disputeCautionLevel "adverse"    -> should suppress
-  //   under_review -> disputeCautionLevel "unresolved" -> should suppress
-  //   won          -> disputeCautionLevel "none"       -> should NOT suppress
-  // Without the won arm, "memory suppresses discounts after a dispute" is
+  // Three outcomes at equal weight, and the merchant-conceded arm is the one
+  // that makes this scenario a real test rather than a one-sided one. Same
+  // event shape in every arm — paid order, dispute on it, later abandoned
+  // cart — so the ONLY thing that differs is how the dispute turned out.
+  //
+  // Razorpay's status words describe how it went for the MERCHANT, which is
+  // the opposite of the intuitive reading (see DisputeBreakdown in
+  // types/memory.ts):
+  //   'won'        -> merchant contested successfully; the complaint did not
+  //                   hold up -> "adverse"    -> should suppress
+  //   'under_review' -> no ruling yet          -> "unresolved" -> should suppress
+  //   'lost'       -> merchant lost or accepted the chargeback; the customer
+  //                   was refunded             -> "none"       -> should NOT suppress
+  // Without that last arm, "memory suppresses discounts after a dispute" is
   // unfalsifiable: a system that suppressed on any dispute at all would score
   // identically to one that reads the outcome.
   const disputeOutcome = rng.pick(["under_review", "lost", "won"] as const);

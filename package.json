@@ -11,9 +11,10 @@
     "agents:memory": "tsx --env-file-if-exists=.env src/agents/runMemory.ts",
     "analyze:compare": "tsx src/analysis/compareRuns.ts",
     "server:dev": "tsx watch src/server/index.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
     "analyze:escalation": "tsx src/analysis/escalationSensitivity.ts",
-    "verify:schema": "tsx scripts/verifySchema.ts"
+    "verify:schema": "tsx scripts/verifySchema.ts",
+    "measure:churn": "tsx scripts/measureChurnSignal.ts"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

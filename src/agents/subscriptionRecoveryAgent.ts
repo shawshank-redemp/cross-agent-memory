@@ -72,6 +72,13 @@ export async function decideSubscriptionRecoveryMemory(
     event,
     eventId: event.payment_id,
     eventTimestamp: event.created_at,
+    // A failed subscription charge IS a payment attempt by definition — the
+    // gateway tried to bill a stored instrument and was declined.
+    eventFacts: {
+      amount: event.plan_amount,
+      paymentAttempted: true,
+      paymentErrorCode: event.error_code,
+    },
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: SubscriptionRecoveryDecisionSchema,
     fallbackNonDiscountAction: "escalate_to_human",

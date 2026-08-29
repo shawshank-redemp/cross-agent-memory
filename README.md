@@ -60,7 +60,7 @@ comparison runs diff identical data.
 | `repeat_offender_cart` | 5% | Repeated abandoned carts — gaming/stopping-rule target |
 | `repeat_offender_subscription` | 5% | Repeated billing-cycle failures across `paid_count` |
 | `repeat_offender_dispute` | 5% | Repeat dispute filer |
-| `cross_domain_risk` | 10% | A dispute (shared `order_id`) on a past order, then a later cart. Outcome is `lost`/`under_review`/`won` at equal weight — the first two should suppress the discount, `won` should not |
+| `cross_domain_risk` | 10% | A dispute (shared `order_id`) on a past order, then a later cart. Outcome is `won`/`under_review`/`lost` at equal weight. Razorpay statuses are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the discount, `lost` (merchant conceded) should not |
 | `churn_signal` | 10% | 2+ domains firing in a tight window — should escalate to a human |
 | `noise` | 5% | Edge cases (no events, zero-value cart, contradictory states, widely-spaced events) |
 
@@ -96,12 +96,21 @@ snapshot it was made against, and — when the deterministic backstop
 intervened — a `policy_override` record of what the model originally wanted.
 
 Disputes are read **by outcome, as of the decision**, not by raw count:
-`dispute_breakdown` splits them into `unresolved` / `won` / `adverse` /
-`closed_undetermined`, where a dispute counts as resolved only once its
-`resolved_at` is in the past. A customer who filed a dispute and won it is
-evidence about the merchant's delivery, not about the customer, so it drives
-no caution and no health penalty. `disputeCautionLevel` (`none` /
-`unresolved` / `adverse`) sets the discount cap at 20% / 15% / 10%.
+`dispute_breakdown` splits them into `unresolved` / `merchant_conceded` /
+`customer_adverse` / `closed_undetermined`, where a dispute counts as resolved
+only once its `resolved_at` is in the past.
+
+A Razorpay dispute belongs to the **merchant**, so its status describes how it
+went for the merchant: `won` means the merchant contested successfully (the
+customer-adverse outcome) and `lost` means the merchant conceded and the
+customer was refunded (evidence about the merchant's delivery, so no caution
+and no health penalty). See CLAUDE.md for the full table — the code shipped
+with this inverted once, and `scripts/pinDisputeMapping.ts` now pins it.
+
+Because a dispute takes weeks to resolve, most are unresolved at decision time,
+so `disputeCautionLevel` splits that tier by the dispute's **reason**:
+`none` and `unresolved_merchant_fault` cap at 20%, `unresolved_neutral` at 15%,
+`unresolved_customer_fault` and `adverse` at 10%.
 
 ### Agents ([src/agents/](src/agents/))
 
@@ -125,8 +134,8 @@ the event shape is identical in both and only the dispute's outcome differs:
 
 | Cohort | Planted outcome | Correct behaviour | Reported as |
 | --- | --- | --- | --- |
-| `adverse` | `lost` / `under_review` | suppress the discount | correct suppressions |
-| `won` | `won` | do **not** suppress | false positives |
+| `adverse` | `won` (merchant contested) / `under_review` | suppress the discount | correct suppressions |
+| `merchant_conceded` | `lost` (merchant conceded) | do **not** suppress | false positives |
 
 The report carries both cohorts with per-customer detail rows, plus a
 precision-style summary (what share of all suppressions landed on the cohort
@@ -147,6 +156,25 @@ npm run server:dev          # API on :4000
 cd frontend && npm run dev  # dashboard on :5173 (proxies /api to :4000)
 ```
 
+### Signals ([src/agents/signals/](src/agents/signals/))
+
+Each signal is one self-contained object declaring how it is computed, how it
+is explained to the model, and what it does to the decision. `MemorySignals`
+is a mapped type **derived from the registry**, the prompt's signal half is
+**generated** from each signal's `describe()`, and `enforcePolicy` **resolves**
+declared effects rather than testing hardcoded booleans — so adding a signal
+over existing profile facts is a single-file change.
+
+Signals come in three kinds — **brakes** (restrict), one **accelerator**
+(`provenPayer`, which widens the cap to 25% for a customer with 2+ successful
+payments across all domains), and one **router** (`paymentFriction`, which
+distinguishes "never tried to pay" from "payment declined"). Brakes beat
+accelerators: the resolved cap is the minimum across active signals.
+
+Signals are also tagged **customer-scoped** or **agent-scoped**. Customer-scoped
+signals are true about the person and a new agent inherits them unchanged;
+registering a fourth agent means implementing only the agent-scoped ones.
+
 ## Checks
 
 ```bash
@@ -157,11 +185,21 @@ npm run typecheck
 npm run verify:schema
 ```
 
+```bash
+npm run measure:churn
+```
+
 `verify:schema` asserts the data-model invariants against the loaded DB: that
 `resolved_at` is null exactly for unresolved disputes and strictly after
 `dispute_created_at` otherwise, that every `cross_domain_risk` terminal
 dispute resolves before that customer's later cart event, that
 `disputeCautionLevel` at that later cart matches the planted outcome
-(`won`→`none`, `lost`→`adverse`, `under_review`→`unresolved`), that the won
-cohort is large enough to be non-anecdotal, and that `attempts`/`last_*` are
-coherent. It makes no API calls.
+(`won`→`adverse`, `lost`→`none`, `under_review`→a reason-derived tier), that
+the merchant-conceded cohort is large enough to be non-anecdotal, and that
+`attempts`/`last_*` are coherent. It also pins the Razorpay dispute-status
+mapping against an in-memory fixture. It makes no API calls.
+
+`measure:churn` is a read-only rigour artifact: it recomputes the composite
+churn signal under both the old window-pair rule and the current 14-day
+lookback and prints the per-scenario delta, then cross-checks that the live
+registry rule matches. It makes no API calls and writes nothing.

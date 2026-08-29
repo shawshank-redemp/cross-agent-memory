@@ -74,6 +74,13 @@ export async function decideDisputeResponderMemory(
     event,
     eventId: event.dispute_id,
     eventTimestamp: event.dispute_created_at,
+    // A dispute is not a payment attempt: the underlying payment already
+    // succeeded, in the past, outside this decision.
+    eventFacts: {
+      amount: event.amount,
+      paymentAttempted: false,
+      paymentErrorCode: null,
+    },
     systemPrompt: MEMORY_SYSTEM_PROMPT,
     schema: DisputeResponderDecisionSchema,
     fallbackNonDiscountAction: "escalate_to_human",

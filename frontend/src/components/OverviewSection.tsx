@@ -26,7 +26,7 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub?: st
 
 export function OverviewSection({ report }: { report: ComparisonReport }) {
   const { overall, byScenario, crossDomainSuppression } = report;
-  const { adverse, won, summary } = crossDomainSuppression;
+  const { adverse, merchant_conceded: merchantConceded, summary } = crossDomainSuppression;
 
   const discountChartData = byScenario
     .filter((s) => s.baselineDiscountPaise > 0 || s.memoryDiscountPaise > 0)
@@ -68,12 +68,12 @@ export function OverviewSection({ report }: { report: ComparisonReport }) {
         <KpiCard
           label="Suppressed after an adverse dispute"
           value={`${adverse.suppressed}/${adverse.customersChecked}`}
-          sub={`${pct(summary.adverseSuppressionRatePct)} — correct: the dispute was lost or still open`}
+          sub={`${pct(summary.adverseSuppressionRatePct)} — correct: the merchant contested it successfully, or it is still open`}
         />
         <KpiCard
-          label="Suppressed after a won dispute"
-          value={`${won.suppressed}/${won.customersChecked}`}
-          sub={`${pct(summary.wonSuppressionRatePct)} — false positives: the customer was right to complain`}
+          label="Suppressed after a conceded dispute"
+          value={`${merchantConceded.suppressed}/${merchantConceded.customersChecked}`}
+          sub={`${pct(summary.merchantConcededSuppressionRatePct)} — false positives: the merchant conceded, so the customer was right to complain`}
         />
         <KpiCard
           label="Escalations (baseline → memory)"
@@ -119,7 +119,7 @@ export function OverviewSection({ report }: { report: ComparisonReport }) {
         <strong>Identical event shape in both cohorts</strong> — a paid order, a dispute filed
         against it, then a later abandoned cart. The only difference is how the dispute resolved,
         and that flips which behaviour is correct: suppressing the next discount is right when the
-        dispute went against the customer, and a false positive when the customer won. A system
+        dispute went against the customer, and a false positive when the merchant conceded it. A system
         that simply reacted to <em>having</em> a dispute would score the same in both columns.
         Across the whole cohort, {summary.correctSuppressions} of {summary.totalSuppressions}{" "}
         suppressions landed on the cohort that deserved them ({pct(summary.correctSuppressionRatePct)}).

@@ -101,6 +101,31 @@ export const CHECKOUT_ERRORS: PaymentError[] = [
   },
 ];
 
+// Who a dispute reason points at, before any ruling exists.
+//
+// In reality a dispute takes weeks to resolve, so at decision time MOST
+// disputes are unresolved and the reason is the only evidence available. A
+// customer claiming goods never arrived is making a claim about the merchant;
+// a customer claiming they do not recognise their own transaction is making a
+// claim that, if wrong, points at them.
+//
+// "neutral" is the default for anything not listed, and unknown reasons must
+// resolve to "neutral" rather than "customer" — an unrecognised reason string
+// must never manufacture suspicion about a customer.
+export type DisputeFault = "merchant" | "customer" | "neutral";
+
+export const DISPUTE_FAULT_BY_REASON: Record<string, DisputeFault> = {
+  goods_not_received: "merchant",
+  service_not_as_described: "merchant",
+  unrecognized_transaction: "customer",
+  duplicate_charge: "neutral",
+  subscription_not_cancelled: "neutral",
+};
+
+export function disputeFaultForReason(reason: string): DisputeFault {
+  return DISPUTE_FAULT_BY_REASON[reason] ?? "neutral";
+}
+
 export const DISPUTE_REASONS = [
   "goods_not_received",
   "duplicate_charge",
