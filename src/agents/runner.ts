@@ -41,20 +41,43 @@ export type TaggedEvent =
   | { agent: "dispute_responder"; event_id: string; timestamp: string; event: DisputeEvent };
 
 export interface DecisionLike {
-  action: string;
-  discount_amount: number | null;
-  escalate_to_human: boolean;
   reasoning: string;
+  memory_factors_used: string[];
+  action: string;
+  committed_spend_paise: number | null;
+  escalate_to_human: boolean;
+  escalation_reason: string | null;
   // Memory path only. The baseline path has no memory to compute signals
   // from, so these are absent there by construction rather than by omission.
   signals?: MemorySignals;
   policy_override?: PolicyOverrideRecord | null;
+  // Memory path only: signal ids cited that were not actually active.
+  unsupported_factor_citations?: string[];
 }
 
 interface DecisionRecord extends DecisionLike {
   agent: AgentType;
   customer_id: string;
   event_id: string;
+}
+
+// memory_factors_used must ALWAYS be empty in the baseline arm: baseline
+// agents are given no memory, so a citation there means memory has leaked into
+// the control and the comparison is no longer measuring what it claims to.
+// Loud rather than fatal — a mid-batch throw would discard real progress, and
+// the count is reported at the end of the run.
+function assertBaselineCitesNoMemory(
+  mode: "baseline" | "memory",
+  decision: DecisionLike,
+  customerId: string,
+  eventId: string,
+): boolean {
+  if (mode !== "baseline" || decision.memory_factors_used.length === 0) return false;
+  console.warn(
+    `  !! BASELINE MEMORY LEAK: ${customerId} / ${eventId} cited ` +
+      `${decision.memory_factors_used.join(", ")} with no memory in context`,
+  );
+  return true;
 }
 
 // Event selection for a targeted run.
@@ -270,6 +293,8 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   const decisions: DecisionRecord[] = [];
   let completed = 0;
   let nextQueue = 0;
+  let baselineMemoryLeaks = 0;
+  let unsupportedCitations = 0;
 
   async function processQueue(queue: TaggedEvent[]): Promise<void> {
     for (const item of queue) {
@@ -289,16 +314,23 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         escalate_to_human: decision.escalate_to_human,
         signals: decision.signals,
         policyOverride: decision.policy_override ?? null,
-        metadata: { discount_amount: decision.discount_amount },
+        metadata: {
+          // DB column names are unchanged by the decision-schema rename; the
+          // mapping happens here, at the boundary.
+          discount_amount: decision.committed_spend_paise,
+          memory_factors_used: decision.memory_factors_used,
+          escalation_reason: decision.escalation_reason,
+          unsupported_factor_citations: decision.unsupported_factor_citations ?? [],
+        },
         timestamp: item.timestamp,
       });
 
-      if (decision.discount_amount != null) {
+      if (decision.committed_spend_paise != null) {
         recordDiscountUsage(db, {
           customer_id: customer.customer_id,
           agent: item.agent,
           mode: params.mode,
-          amount: decision.discount_amount,
+          amount: decision.committed_spend_paise,
           event_id: item.event_id,
           // Cart events only: a dispute's order_id points at a PAST order, not
           // at the event being decided, so joining a discount to it would be
@@ -308,14 +340,22 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         });
       }
 
+      if (assertBaselineCitesNoMemory(params.mode, decision, customer.customer_id, item.event_id)) {
+        baselineMemoryLeaks += 1;
+      }
+      unsupportedCitations += decision.unsupported_factor_citations?.length ?? 0;
+
       decisions.push({
         agent: item.agent,
         customer_id: customer.customer_id,
         event_id: item.event_id,
-        action: decision.action,
-        discount_amount: decision.discount_amount,
-        escalate_to_human: decision.escalate_to_human,
         reasoning: decision.reasoning,
+        memory_factors_used: decision.memory_factors_used,
+        action: decision.action,
+        committed_spend_paise: decision.committed_spend_paise,
+        escalate_to_human: decision.escalate_to_human,
+        escalation_reason: decision.escalation_reason,
+        unsupported_factor_citations: decision.unsupported_factor_citations ?? [],
       });
 
       completed += 1;
@@ -354,10 +394,36 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   let escalations = 0;
   for (const d of decisions) {
     actionCounts[d.action] = (actionCounts[d.action] ?? 0) + 1;
-    if (d.discount_amount) totalDiscount += d.discount_amount;
+    if (d.committed_spend_paise) totalDiscount += d.committed_spend_paise;
     if (d.escalate_to_human) escalations++;
   }
 
   console.log(`Wrote ${decisions.length} decisions to ${outputPath}`);
-  console.log(JSON.stringify({ actionCounts, totalDiscountPaise: totalDiscount, escalations }, null, 2));
+  // Attribution counts are reported, never used to alter a decision:
+  // memory_factors_used is self-reported evidence about the model's stated
+  // reasoning, not ground truth about what caused the decision.
+  const factorCounts: Record<string, number> = {};
+  for (const d of decisions) {
+    for (const f of d.memory_factors_used) factorCounts[f] = (factorCounts[f] ?? 0) + 1;
+  }
+  console.log(
+    JSON.stringify(
+      {
+        actionCounts,
+        totalDiscountPaise: totalDiscount,
+        escalations,
+        memoryFactorCitations: factorCounts,
+        unsupportedFactorCitations: unsupportedCitations,
+        baselineMemoryLeaks,
+      },
+      null,
+      2,
+    ),
+  );
+  if (baselineMemoryLeaks > 0) {
+    console.warn(
+      `\n!! ${baselineMemoryLeaks} baseline decision(s) cited memory factors. The control arm is ` +
+        `supposed to have no history in context — investigate before trusting this comparison.`,
+    );
+  }
 }

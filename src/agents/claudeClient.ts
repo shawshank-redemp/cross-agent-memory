@@ -13,11 +13,21 @@ function getClient(): Anthropic {
   return client;
 }
 
-async function decideOnce<Schema extends z.ZodType>(
+export interface RawDecision<T> {
+  parsed: T;
+  // The model's literal output text, before JSON.parse. Field ORDER survives
+  // only here — an object's key order is not something you can assert on after
+  // parsing. Used by scripts/verifyFieldOrder.ts to confirm that structured
+  // output really does emit fields in schema declaration order, which is what
+  // makes "reasoning first" reasoning rather than post-hoc justification.
+  rawText: string | null;
+}
+
+async function decideOnceWithRaw<Schema extends z.ZodType>(
   system: string,
   userContent: string,
   schema: Schema,
-): Promise<z.infer<Schema>> {
+): Promise<RawDecision<z.infer<Schema>>> {
   const response = await getClient().messages.parse({
     model: MODEL,
     // 1024 truncated mid-JSON-string on longer memory-informed reasoning
@@ -39,7 +49,17 @@ async function decideOnce<Schema extends z.ZodType>(
       `Agent call returned no parsed_output (stop_reason: ${response.stop_reason})`,
     );
   }
-  return response.parsed_output;
+
+  const textBlock = response.content.find((b): b is Anthropic.TextBlock => b.type === "text");
+  return { parsed: response.parsed_output, rawText: textBlock?.text ?? null };
+}
+
+async function decideOnce<Schema extends z.ZodType>(
+  system: string,
+  userContent: string,
+  schema: Schema,
+): Promise<z.infer<Schema>> {
+  return (await decideOnceWithRaw(system, userContent, schema)).parsed;
 }
 
 // A single flaky/truncated/schema-invalid response (observed: one placeholder
@@ -55,6 +75,22 @@ export async function decide<Schema extends z.ZodType>(
   } catch (err) {
     console.warn(`decide() failed, retrying once: ${err instanceof Error ? err.message : String(err)}`);
     return decideOnce(system, userContent, schema);
+  }
+}
+
+// Same call, same single retry, but surfacing the raw text alongside the
+// parsed object. Exists so field-order verification exercises the real
+// production path rather than a lookalike replica of it.
+export async function decideRaw<Schema extends z.ZodType>(
+  system: string,
+  userContent: string,
+  schema: Schema,
+): Promise<RawDecision<z.infer<Schema>>> {
+  try {
+    return await decideOnceWithRaw(system, userContent, schema);
+  } catch (err) {
+    console.warn(`decideRaw() failed, retrying once: ${err instanceof Error ? err.message : String(err)}`);
+    return decideOnceWithRaw(system, userContent, schema);
   }
 }
 

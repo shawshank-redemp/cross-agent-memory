@@ -25,20 +25,29 @@ function computeDisputeCautionLevel(ctx: SignalContext): DisputeCautionLevel {
   return "none";
 }
 
+// DECLARATIVE, NOT IMPERATIVE. Every string below states a FACT and what
+// policy permits given that fact. None of them issues an order.
+//
+// enforcePolicy already applies all of these deterministically, so imperative
+// text ("you MUST NOT...") buys no additional safety — it only converts the
+// model from a reasoner into a rule-follower, and it destroys the measurement:
+// if the prompt commands the outcome, then policy_override.original_action
+// records obedience rather than judgment, and agreement between the model and
+// the deterministic rules becomes a tautology instead of a result.
 const DISPUTE_CAUTION_PROMPT: Record<DisputeCautionLevel, string | null> = {
   none: null,
   unresolved_merchant_fault:
-    'dispute_caution_level = "unresolved_merchant_fault": this customer has an unresolved dispute, but its reason points at the MERCHANT (goods not received, service not as described). That is not evidence against them. Discount normally, capped at ' +
-    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_merchant_fault}% of the event amount, and do not treat the dispute as a black mark.`,
+    'dispute_caution_level = "unresolved_merchant_fault": this customer has an unresolved dispute whose reason points at the MERCHANT (goods not received, service not as described). Nothing about it is evidence against the customer. Policy treats them as it would any customer, with the standard ' +
+    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_merchant_fault}% ceiling on spend.`,
   unresolved_neutral:
-    'dispute_caution_level = "unresolved_neutral": an unresolved dispute whose reason points at neither side (duplicate charge, subscription not cancelled). Genuine uncertainty, not established fault. Cap any discount at ' +
-    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_neutral}% and say the uncertainty is why.`,
+    'dispute_caution_level = "unresolved_neutral": an unresolved dispute whose reason points at neither side (duplicate charge, subscription not cancelled). This is genuine uncertainty rather than established fault, and policy permits spend up to ' +
+    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_neutral}% of the event amount while it remains unresolved.`,
   unresolved_customer_fault:
-    'dispute_caution_level = "unresolved_customer_fault": an unresolved dispute whose reason points at the CUSTOMER (they do not recognise their own transaction). No ruling yet, but this is the one unresolved shape that warrants real caution. Cap any discount at ' +
-    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_customer_fault}%.`,
+    'dispute_caution_level = "unresolved_customer_fault": an unresolved dispute whose reason points at the CUSTOMER (they do not recognise their own transaction). No ruling has been made, but this is the one unresolved shape that carries real risk, and policy permits spend up to ' +
+    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_customer_fault}% of the event amount.`,
   adverse:
-    'dispute_caution_level = "adverse": a dispute was resolved against this customer — the merchant contested it and the complaint did not hold up. Cap any discount at ' +
-    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.adverse}% and prefer a plain nudge over a discount unless the amount involved is small.`,
+    'dispute_caution_level = "adverse": a dispute was resolved against this customer — the merchant contested it and the complaint did not hold up. Policy permits spend up to ' +
+    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.adverse}% of the event amount on a customer in this state.`,
 };
 
 const disputeCautionLevel: SignalDefinition<DisputeCautionLevel> = {
@@ -79,7 +88,9 @@ const discountAttemptsForAgent: SignalDefinition<number> = {
   kind: "brake",
   compute: (ctx) => ctx.profile.discount_usage_history.filter((d) => d.agent === ctx.agent).length,
   describe: (value) =>
-    value > 0 ? `discount_attempts_for_agent = ${value}: discounts you have already granted this customer in this run.` : null,
+    value > 0
+      ? `discount_attempts_for_agent = ${value}: margin already committed to this customer by this agent during this run.`
+      : null,
   effects: () => ({}),
 };
 
@@ -91,7 +102,7 @@ const stoppingRuleHit: SignalDefinition<boolean> = {
     ctx.profile.discount_usage_history.filter((d) => d.agent === ctx.agent).length >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
   describe: (value) =>
     value
-      ? `stopping_rule_hit: you have already granted ${MAX_DISCOUNT_ATTEMPTS_PER_AGENT}+ discounts to this customer in this run. You MUST NOT grant another discount.`
+      ? `stopping_rule_hit: this agent has already committed spend to this customer ${MAX_DISCOUNT_ATTEMPTS_PER_AGENT}+ times in this run. Policy does not permit committing further margin here — the negotiation has run its course.`
       : null,
   effects: (value) => (value ? { blocksDiscount: true } : {}),
 };
@@ -104,7 +115,7 @@ const gamingSuspected: SignalDefinition<boolean> = {
     (ctx.profile.recovery_frequency.find((r) => r.agent === ctx.agent)?.count ?? 0) >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
   describe: (value) =>
     value
-      ? `gaming_suspected: this customer has triggered your recovery flow ${MAX_DISCOUNT_ATTEMPTS_PER_AGENT}+ times — a pattern consistent with exploiting the discount nudge rather than genuine difficulty paying. You MUST NOT grant another discount and MUST set escalate_to_human=true, and say so explicitly.`
+      ? `gaming_suspected: this customer has triggered this agent's recovery flow ${MAX_DISCOUNT_ATTEMPTS_PER_AGENT}+ times, a pattern more consistent with farming the recovery nudge than with genuine difficulty paying. Policy does not permit spending margin on a customer in this state, and cases like this are handled by a person rather than automation.`
       : null,
   effects: (value) => (value ? { blocksDiscount: true, forcesEscalation: true } : {}),
 };
@@ -119,7 +130,7 @@ const crossAgentGamingSuspected: SignalDefinition<boolean> = {
     ctx.profile.recovery_frequency.reduce((sum, r) => sum + r.count, 0) >= MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS,
   describe: (value) =>
     value
-      ? `cross_agent_gaming_suspected: this customer has triggered recovery flows ${MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS}+ times in TOTAL across any combination of agents, even if no single agent's flow hit its own threshold. Spreading triggers across agents instead of repeating one is still farming recovery flows. You MUST NOT grant another discount and MUST set escalate_to_human=true, naming the cross-agent pattern explicitly.`
+      ? `cross_agent_gaming_suspected: this customer has triggered recovery flows ${MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS}+ times in total across multiple agents, no single agent's flow having reached its own threshold. Spreading triggers across agents rather than repeating one is the same pattern seen from a different angle. Policy does not permit spending margin on a customer in this state, and cases like this are handled by a person rather than automation.`
       : null,
   effects: (value) => (value ? { blocksDiscount: true, forcesEscalation: true } : {}),
 };
@@ -148,7 +159,7 @@ const compositeChurnSignal: SignalDefinition<boolean> = {
   },
   describe: (value) =>
     value
-      ? `composite_churn_signal: 2+ of this customer's recovery flows (cart/subscription/dispute) have fired within the last ${CHURN_LOOKBACK_DAYS} days — a real churn risk that another automated nudge will not fix. You MUST NOT grant another discount and MUST set escalate_to_human=true regardless of your other reasoning.`
+      ? `composite_churn_signal: two or more of this customer's recovery flows (cart, subscription, dispute) have fired within the last ${CHURN_LOOKBACK_DAYS} days. That concentration is a churn risk in its own right, and it is not something another automated nudge resolves. Policy does not permit spending margin in this state, and cases like this are handled by a person rather than automation.`
       : null,
   effects: (value) => (value ? { blocksDiscount: true, forcesEscalation: true } : {}),
 };
@@ -165,7 +176,7 @@ const provenPayer: SignalDefinition<boolean> = {
   compute: (ctx) => ctx.profile.successful_payment_count >= MIN_SUCCESSFUL_PAYMENTS,
   describe: (value) =>
     value
-      ? `proven_payer: this customer has ${MIN_SUCCESSFUL_PAYMENTS}+ successful payments with us across all domains. They have earned more room than a stranger — you may go up to ${PROVEN_PAYER_DISCOUNT_CAP_PERCENT}% of the event amount, unless another signal here caps you lower.`
+      ? `proven_payer: this customer has ${MIN_SUCCESSFUL_PAYMENTS}+ successful payments with us across all domains. Policy extends more room to an established customer than to a stranger, permitting spend up to ${PROVEN_PAYER_DISCOUNT_CAP_PERCENT}% of the event amount where no other signal permits less.`
       : null,
   effects: (value) => (value ? { discountCapPercent: PROVEN_PAYER_DISCOUNT_CAP_PERCENT } : {}),
 };
@@ -188,7 +199,7 @@ const paymentFriction: SignalDefinition<boolean> = {
   compute: (ctx) => ctx.event.paymentAttempted && ctx.event.paymentErrorCode != null,
   describe: (value) =>
     value
-      ? "payment_friction: this customer TRIED to pay and the payment was declined — this is a mechanical failure, not a pricing objection. A discount does not address a declined card or a failed mandate. Prefer a reminder that surfaces an alternative payment method, and say in your reasoning that the failure was mechanical."
+      ? "payment_friction: this customer attempted to pay and the payment was declined. The obstacle was mechanical — a declined card or a failed mandate — rather than a pricing objection, and a discount does not remove a mechanical obstacle. What unblocks a payment in this state is an alternative payment method or a retry."
       : null,
   effects: () => ({}),
 };

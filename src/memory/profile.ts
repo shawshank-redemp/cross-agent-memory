@@ -15,10 +15,13 @@ import type {
 // code disposes" is a query, not a claim.
 export interface PolicyOverrideRecord {
   original_action: string;
-  original_discount_amount: number | null;
+  original_committed_spend_paise: number | null;
   original_escalate_to_human: boolean;
   triggered_by: string[];
   notes: string;
+  // True when policy escalated a decision the model did not escalate, so
+  // escalation_reason was set to "policy_constraint" rather than by the model.
+  escalation_reason_forced?: boolean;
 }
 
 export interface AppendAuditLogInput {
@@ -459,11 +462,25 @@ function computeRollingHealthScore(
 function readAuditLog(db: Database.Database, customerId: string, mode: "baseline" | "memory"): AuditLogEntry[] {
   const rows = db
     .prepare(
-      `SELECT timestamp, agent, entry_type, action, reasoning FROM audit_log
+      `SELECT timestamp, agent, entry_type, action, reasoning, metadata FROM audit_log
        WHERE customer_id = ? AND (mode = ? OR mode IS NULL) ORDER BY timestamp ASC`,
     )
-    .all(customerId, mode) as AuditLogEntry[];
-  return rows;
+    .all(customerId, mode) as (Omit<AuditLogEntry, "committed_spend_paise"> & { metadata: string | null })[];
+
+  // The DB column keeps its original name (discount_amount); the decision
+  // schema's rename to committed_spend_paise is mapped here, at the boundary.
+  return rows.map(({ metadata, ...row }) => {
+    let committed: number | null = null;
+    if (metadata) {
+      try {
+        const parsed = JSON.parse(metadata) as { discount_amount?: number | null };
+        committed = parsed.discount_amount ?? null;
+      } catch {
+        committed = null;
+      }
+    }
+    return { ...row, committed_spend_paise: committed };
+  });
 }
 
 // Pure — no audit_log side effect. Use this for read-only inspection (the

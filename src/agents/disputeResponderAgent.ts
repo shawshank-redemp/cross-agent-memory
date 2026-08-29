@@ -1,36 +1,42 @@
 import type Database from "better-sqlite3";
 import type { Customer, DisputeEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
+import { OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import { DisputeResponderDecisionSchema, type DisputeResponderDecision } from "./schema.js";
 import { emitTrace } from "./trace.js";
 
-const BASELINE_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
+export const DISPUTE_BASELINE_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
+${OBJECTIVE_BLOCK}
 
 You see a single customer and a single dispute event. You have NO other
 history on this customer — no record of other disputes they've filed, no
 cart-abandonment or subscription record. Decide based only on what's in this
 event.
 
-Actions:
-- "accept_dispute": concede the dispute (e.g. reason is clearly legitimate).
-- "contest_dispute": contest it with evidence.
-- "escalate_to_human": hand off to a human reviewer instead of an automated
-  decision.
+Actions — pick exactly one:
+- "accept_dispute": concede the dispute (e.g. the reason is clearly
+  legitimate). committed_spend_paise is null.
+- "contest_dispute": contest it with evidence. committed_spend_paise is null.
 
-discount_amount should be null — this agent doesn't grant discounts.
-Set escalate_to_human to true whenever the dispute reason or amount alone
-looks ambiguous enough that an automated call is risky — you have no basis
-here to detect a pattern across disputes.`;
+This agent commits no margin, so committed_spend_paise is always null here.
+
+Separately from the action, set escalate_to_human when a person should sign
+off before the response goes out. It is a flag on either action, not an action
+of its own — "contest_dispute, pending human review" is a valid decision, and
+it is more useful to a reviewer than a bare escalation with no recommendation
+attached. Here you can only judge this one dispute, so escalate when the
+reason or amount alone is ambiguous enough that an automated call is risky;
+you have no basis to detect a pattern across disputes.`;
 
 export async function decideDisputeResponderBaseline(
   db: Database.Database,
   customer: Customer,
   event: DisputeEvent,
 ): Promise<DisputeResponderDecision> {
-  const userContent = JSON.stringify({ customer, event }, null, 2);
+  const userContent = withClosingInstruction(JSON.stringify({ customer, event }, null, 2));
   const stepStart = Date.now();
-  const decision = await decide(BASELINE_SYSTEM_PROMPT, userContent, DisputeResponderDecisionSchema);
+  const decision = await decide(DISPUTE_BASELINE_SYSTEM_PROMPT, userContent, DisputeResponderDecisionSchema);
   emitTrace(
     {
       db,
@@ -47,20 +53,24 @@ export async function decideDisputeResponderBaseline(
   return decision;
 }
 
-const MEMORY_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
+export const DISPUTE_MEMORY_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
+${OBJECTIVE_BLOCK}
 
-Actions:
-- "accept_dispute": concede the dispute (e.g. reason is clearly legitimate).
-- "contest_dispute": contest it with evidence.
-- "escalate_to_human": hand off to a human reviewer instead of an automated
-  decision.
+Actions — pick exactly one:
+- "accept_dispute": concede the dispute (e.g. the reason is clearly
+  legitimate). committed_spend_paise is null.
+- "contest_dispute": contest it with evidence. committed_spend_paise is null.
 
-discount_amount should be null — this agent doesn't grant discounts.
+This agent commits no margin, so committed_spend_paise is always null here.
+
+Separately from the action, set escalate_to_human when a person should sign
+off before the response goes out. It is a flag on either action, not an action
+of its own — always pair it with the response you would recommend, so the
+reviewer inherits a recommendation rather than a bare handoff.
 
 Here, gaming_suspected in policy_signals means this customer has filed 3+
-disputes — a repeat-dispute pattern is itself a fraud signal an isolated
-event can't reveal. If true, do not casually accept; lean toward contesting
-or escalating, and name the repeat pattern explicitly in your reasoning.`;
+disputes. A repeat-dispute pattern is itself a fraud signal that an isolated
+event cannot reveal.`;
 
 export async function decideDisputeResponderMemory(
   db: Database.Database,
@@ -81,9 +91,13 @@ export async function decideDisputeResponderMemory(
       paymentAttempted: false,
       paymentErrorCode: null,
     },
-    systemPrompt: MEMORY_SYSTEM_PROMPT,
+    systemPrompt: DISPUTE_MEMORY_SYSTEM_PROMPT,
     schema: DisputeResponderDecisionSchema,
-    fallbackNonDiscountAction: "escalate_to_human",
+    // Exists to typecheck. This agent's committed_spend_paise is always
+    // null, so mustBlockDiscount can never fire here and this value can
+    // never actually be applied — "contest_dispute" is the safe choice if
+    // that ever changes, since conceding is the costly direction.
+    fallbackNonDiscountAction: "contest_dispute",
     memoryReadReason: `Dispute responder agent evaluating dispute ${event.dispute_id} for payment ${event.payment_id}`,
   });
 }

@@ -1,11 +1,13 @@
 import type Database from "better-sqlite3";
 import type { Customer, SubscriptionFailureEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
+import { OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import { SubscriptionRecoveryDecisionSchema, type SubscriptionRecoveryDecision } from "./schema.js";
 import { emitTrace } from "./trace.js";
 
-const BASELINE_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
+export const SUBSCRIPTION_BASELINE_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
+${OBJECTIVE_BLOCK}
 
 You see a single customer and a single billing-cycle event. You have NO other
 history on this customer — no dispute record, no cart-abandonment record, no
@@ -13,26 +15,30 @@ record of how many times this same subscription has already failed, and no
 record of past discounts already given. Decide based only on what's in this
 event, including its own paid_count/total_count.
 
-Actions:
-- "retry_payment": ask the customer to retry with a different payment method,
-  no discount.
+Actions — pick exactly one:
+- "retry_payment": ask the customer to retry, ideally with a different payment
+  method. committed_spend_paise is null.
 - "send_discount": offer a discount to retain the subscription.
-  discount_amount is paise and must not exceed 20% of plan_amount.
-- "escalate_to_human": hand off instead of another automated nudge.
-- "no_action": nothing to do (e.g. status is "active").
+  committed_spend_paise is the discount in paise and must not exceed 20% of
+  plan_amount.
+- "no_action": nothing to do (e.g. status is "active"). committed_spend_paise
+  is null.
 
-Set escalate_to_human to true only if something about this single event looks
-unusual enough on its own to warrant it — you have no basis here to detect a
-pattern across cycles.`;
+Separately from the action, set escalate_to_human when a person should sign
+off before the action is taken. It is a flag on any action, not an action of
+its own — "retry_payment with a human checking first" is a valid decision.
+Here you can only judge this single cycle, so escalate when the event itself
+looks unusual enough to warrant it; you have no basis to detect a pattern
+across cycles.`;
 
 export async function decideSubscriptionRecoveryBaseline(
   db: Database.Database,
   customer: Customer,
   event: SubscriptionFailureEvent,
 ): Promise<SubscriptionRecoveryDecision> {
-  const userContent = JSON.stringify({ customer, event }, null, 2);
+  const userContent = withClosingInstruction(JSON.stringify({ customer, event }, null, 2));
   const stepStart = Date.now();
-  const decision = await decide(BASELINE_SYSTEM_PROMPT, userContent, SubscriptionRecoveryDecisionSchema);
+  const decision = await decide(SUBSCRIPTION_BASELINE_SYSTEM_PROMPT, userContent, SubscriptionRecoveryDecisionSchema);
   emitTrace(
     {
       db,
@@ -49,16 +55,21 @@ export async function decideSubscriptionRecoveryBaseline(
   return decision;
 }
 
-const MEMORY_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
+export const SUBSCRIPTION_MEMORY_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
+${OBJECTIVE_BLOCK}
 
-Actions:
-- "retry_payment": ask the customer to retry with a different payment
-  method, no discount.
+Actions — pick exactly one:
+- "retry_payment": ask the customer to retry, ideally with a different payment
+  method. committed_spend_paise is null.
 - "send_discount": offer a discount to retain the subscription.
-  discount_amount is paise, normally capped at 20% of plan_amount (see
-  policy_signals below for when that cap tightens).
-- "escalate_to_human": hand off instead of another automated nudge.
-- "no_action": nothing to do (e.g. status is "active").`;
+  committed_spend_paise is the discount in paise, normally capped at 20% of
+  plan_amount (see policy_signals below for when that ceiling moves).
+- "no_action": nothing to do (e.g. status is "active"). committed_spend_paise
+  is null.
+
+Separately from the action, set escalate_to_human when a person should sign
+off before the action is taken. It is a flag on any action, not an action of
+its own.`;
 
 export async function decideSubscriptionRecoveryMemory(
   db: Database.Database,
@@ -79,9 +90,12 @@ export async function decideSubscriptionRecoveryMemory(
       paymentAttempted: true,
       paymentErrorCode: event.error_code,
     },
-    systemPrompt: MEMORY_SYSTEM_PROMPT,
+    systemPrompt: SUBSCRIPTION_MEMORY_SYSTEM_PROMPT,
     schema: SubscriptionRecoveryDecisionSchema,
-    fallbackNonDiscountAction: "escalate_to_human",
+    // Where a blocked discount lands. "retry_payment" is the cheapest lever
+    // that still does something, which is what policy wants when it has just
+    // refused to let margin be spent.
+    fallbackNonDiscountAction: "retry_payment",
     memoryReadReason: `Subscription recovery agent evaluating cycle ${event.paid_count}/${event.total_count} of ${event.subscription_id}`,
   });
 }

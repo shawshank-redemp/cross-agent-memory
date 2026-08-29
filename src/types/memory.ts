@@ -12,6 +12,9 @@ export interface AuditLogEntry {
   entry_type: AuditEntryType;
   action: string;
   reasoning: string;
+  // Margin this decision committed, lifted out of the metadata JSON blob.
+  // Null on memory_read rows and on decisions that committed nothing.
+  committed_spend_paise: number | null;
 }
 
 export interface DiscountUsageRecord {

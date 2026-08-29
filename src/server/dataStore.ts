@@ -30,9 +30,11 @@ export interface DecisionRecord {
   customer_id: string;
   event_id: string;
   action: string;
-  discount_amount: number | null;
+  committed_spend_paise: number | null;
   escalate_to_human: boolean;
+  escalation_reason: string | null;
   reasoning: string;
+  memory_factors_used: string[];
 }
 
 export interface ComparisonReport {

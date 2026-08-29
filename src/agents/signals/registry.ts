@@ -21,6 +21,16 @@
 // enforcePolicy's conditions — and nothing tied them together. That is how the
 // churn-signal discount gap (commit 75f04a3) happened: enforcePolicy's
 // conditions and the prompt's promises drifted apart.
+//
+// SIGNALS ARE EVIDENCE, NOT COMMANDS. Every describe() states a fact and what
+// policy permits given it; none of them issues an order to the model. This is
+// not a stylistic preference. enforcePolicy applies every declared effect
+// deterministically, so imperative prompt text adds no safety on top of it —
+// but it does destroy the measurement. If the prompt commands the outcome,
+// policy_override.original_action records the model obeying an instruction
+// rather than exercising judgment, and "the model and the deterministic rules
+// agreed" becomes a tautology instead of a result worth reporting. Keeping the
+// prompt declarative is what makes that agreement measurable.
 import type { AgentType, CustomerMemoryProfile } from "../../types/index.js";
 import { SIGNAL_DEFINITIONS } from "./definitions.js";
 import { DEFAULT_DISCOUNT_CAP_PERCENT } from "./thresholds.js";
@@ -178,6 +188,18 @@ export function buildSignalPolicyText(signals: MemorySignals): string {
     return `- No memory signal restricts this decision. The standing discount ceiling is ${DEFAULT_DISCOUNT_CAP_PERCENT}% of the event amount.`;
   }
   return lines.join("\n");
+}
+
+// Signals NOT already stated in the generated prose — i.e. those whose
+// describe() returned null. The prose carries the rest, so echoing their values
+// back as JSON would spend tokens restating what the model has already read.
+export function signalsNotInProse(signals: MemorySignals): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [id, def] of entries()) {
+    const value = (signals as Record<string, unknown>)[id];
+    if (def.describe(value) == null) out[id] = value;
+  }
+  return out;
 }
 
 // Compact "which signals had something to say" summary, for the trace row.

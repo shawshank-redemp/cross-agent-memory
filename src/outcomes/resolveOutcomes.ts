@@ -11,7 +11,7 @@ import {
 } from "./probabilities.js";
 
 export interface DecisionInput {
-  discount_amount: number | null;
+  committed_spend_paise: number | null;
   escalate_to_human: boolean;
 }
 
@@ -98,7 +98,7 @@ export function resolveRecoveryOutcome(
 ): DecisionOutcome {
   const probs = OUTCOME_PROBABILITIES[scenario];
   const escalated = decision.escalate_to_human;
-  const hasDiscount = !escalated && decision.discount_amount != null;
+  const hasDiscount = !escalated && decision.committed_spend_paise != null;
   const escalatedPayProbability =
     escalationModel.convertsAt === "with_discount" ? probs.paysWithDiscount : probs.paysWithoutDiscount;
   const payProbability = escalated
@@ -125,7 +125,7 @@ export function resolveRecoveryOutcome(
     };
   }
 
-  const discountRedeemed = hasDiscount ? (decision.discount_amount as number) : 0;
+  const discountRedeemed = hasDiscount ? (decision.committed_spend_paise as number) : 0;
   const netAmountPaid = grossAmount - discountRedeemed;
   const disputed = rolls.disputeRoll < probs.disputesGivenPaid;
   const disputeCost = disputed ? netAmountPaid + DISPUTE_HANDLING_FEE_PAISE : 0;

@@ -329,6 +329,183 @@ and the accelerator could never do anything.
 `enforcePolicy` now also **clamps** a discount to the resolved cap, recording
 the clamp in `policy_override`. Caps were previously prompt-only advice.
 
+
+## The decisioning layer
+
+### The shared objective is an experimental invariant
+
+`OBJECTIVE_BLOCK` in `src/agents/objective.ts` states the goal and the relative
+cost of each lever. It is included **word-for-word identically** in both the
+baseline and the memory-informed system prompts.
+
+This is not tidiness, it is what keeps the baseline a valid control. The only
+intended difference between the arms is whether the agent can see the
+customer's shared history. If the baseline received a different objective —
+even a slightly weaker or shorter one — any measured difference would be partly
+the objective's doing and the comparison would no longer isolate memory. One
+exported constant, used by both, is why a copy cannot drift.
+
+The objective is also **arm-neutral**: it says nothing about memory, disputes,
+gaming, churn, or customer history. Anything memory-specific belongs in the
+memory policy block, which only one arm receives.
+
+Costs are stated as a relative **ordering** (reminder/retry < escalation <
+discount), never as rupee figures. `ESCALATION_HANDLING_COST_PAISE` and
+`DISPUTE_HANDLING_FEE_PAISE` exist in the outcome model for **scoring** and are
+deliberately not surfaced to the agent — an agent optimising against the same
+table that grades it is marking its own homework. The agent gets the shape of
+the trade-off; the scorer keeps the numbers.
+
+`npm run verify:prompts` asserts all of this: both arms carry the objective
+verbatim, the objective mentions none of the forbidden memory vocabulary, and
+it contains no rupee figures.
+
+### Reasoning first — verified, not assumed
+
+Structured output emits fields in **schema declaration order**. With `reasoning`
+declared last, the model committed to an action and then explained it: a
+post-hoc justification. `reasoning` is now the first declared property, so those
+tokens are the reasoning the decision actually follows from.
+
+Confirmed against a real response rather than assumed — key order does not
+survive `JSON.parse`, so `scripts/verifyFieldOrder.ts` inspects the **raw**
+response text through the production `decideRaw()` path. Observed on
+`claude-opus-5`: `reasoning` at char 1, `action` at char 465, in declaration
+order.
+
+No `.max()` on `reasoning`: under constrained decoding a hard cap either
+truncates mid-string (mangled audit rows) or fails validation and triggers the
+retry path, costing more than the tokens saved. `max_tokens` (2048) plus the
+`stop_reason === "max_tokens"` throw remain the runaway guardrail.
+
+### Signals are evidence, not commands
+
+Every signal's `describe()` states a **fact and what policy permits given it**.
+None issues an order. The transformation was from "You MUST NOT grant another
+discount and MUST set escalate_to_human=true" to "Policy does not permit
+spending margin on a customer in this state, and cases like this are handled by
+a person rather than automation."
+
+**Enforcement is completely unaffected** — no `effects()` changed, and
+`enforcePolicy` applies every declared effect deterministically exactly as
+before. Imperative prompt text bought no safety on top of that. What it did buy
+was a measurement problem: if the prompt commands the outcome, then
+`policy_override.original_action` records the model *obeying an instruction*
+rather than exercising judgment, and "the model and the deterministic rules
+agreed" becomes a tautology instead of a result. Declarative text is what makes
+that agreement worth reporting.
+
+### Escalation is a disposition, not an action
+
+`action` is what should happen to the customer. `escalate_to_human` is whether a
+person signs off before it happens. They are orthogonal, and
+`"escalate_to_human"` is no longer a value in any action enum — it used to be
+both, which let a decision hold contradictory values (`send_discount` with
+`escalate_to_human: true`) and meant an escalated dispute reached a human as a
+bare "escalated" with no recommendation attached. Now a reviewer inherits
+"contest_dispute, pending human review".
+
+Fallback actions when policy blocks spend: cart → `send_reminder`,
+subscription → `retry_payment`, dispute → `contest_dispute` (which exists only
+to typecheck: dispute decisions always commit null spend, so the block can never
+fire there).
+
+### Decision schema
+
+Declaration order is load-bearing, so it is listed in order:
+
+| Field | Notes |
+| --- | --- |
+| `reasoning` | 3-5 sentences, generated first |
+| `memory_factors_used` | fixed enum, self-reported — see below |
+| `action` | per-agent enum, escalation removed |
+| `committed_spend_paise` | renamed from `discount_amount` |
+| `escalate_to_human` | disposition, orthogonal to action |
+| `escalation_reason` | nullable enum, required when escalating |
+
+`committed_spend_paise` replaces `discount_amount` because every agent may
+commit spend and dispute happens to commit none: under the old name, `null` on
+a dispute read as "field does not apply", where now it means "this action
+commits no spend", which is information. It also makes the schema
+agent-agnostic. **DB column names are unchanged** (`discount_usage.amount`,
+`audit_log.metadata.discount_amount`) — this is a decision-schema rename mapped
+at the boundary, not a migration.
+
+`escalation_reason` is coupled to `escalate_to_human` deterministically in
+`enforcePolicy`, not by a zod `.refine()`: a refinement failure under
+constrained decoding costs a whole retry call to fix a one-line coercion. When
+policy *forces* an escalation the model did not ask for, the reason is set to
+`"policy_constraint"` and `policy_override.escalation_reason_forced` records
+that it was not the model's own.
+
+#### `memory_factors_used` is self-reported attribution
+
+It is **evidence about the model's stated reasoning, not ground truth about what
+caused the decision**. It must never be described as proof that memory changed a
+decision — that claim belongs to the baseline-vs-memory comparison, which
+measures outcomes rather than asking the model to introspect.
+
+**The citable set must equal the set of fields that can appear in the payload.**
+A field sent but not citable makes attribution under-report — the model used it
+and had no way to say so. A field citable but never sent is a phantom option
+that can only ever be chosen in error, inflating the counts. Both corrupt the
+attribution, in opposite directions.
+
+So the enum is **derived**, not hand-maintained: `memoryPayloadKeys.ts` declares
+the emittable `memory_profile` keys, `buildUserContent`'s payload object is
+typed against them (emitting an unlisted key is a compile error), and
+`schema.ts` builds the enum from the same constant plus every registry
+`SignalId`. Every signal is citable because every signal can appear — an active
+one in the generated prose, an inactive one in the `policy_signals` JSON.
+
+"Can appear" is the test, not "always appears": `dispute_breakdown`,
+`unresolved_dispute_reasons` and `adverse_disputed_amount` are sent only when no
+dispute finding is stated in prose, and stay citable because the model will not
+cite what it was not given.
+
+Two guards, neither of which edits the model's answer:
+
+- **Baseline must always be empty.** Baseline agents receive no history, so a
+  non-empty value there means memory has leaked into the control arm. The runner
+  logs each occurrence loudly and reports a `baselineMemoryLeaks` count.
+- **Unsupported citations are counted.** A cited *signal* that was inactive is
+  an unsupported claim. `unsupported_factor_citations` records these per
+  decision. They are counted and reported, never overwritten — silently
+  correcting the model's stated reasoning would destroy the artifact being
+  measured. Profile-field citations are not audited this way: the field was
+  sent, so citing it is never provably unsupported.
+
+### Request payload is trimmed
+
+- `recent_decisions` carries structured facts only (agent, action, committed
+  spend, timestamp), never the reasoning prose. Cost was the smaller problem;
+  the real one is anchoring — the model reads its own past arguments and tends
+  to agree with them, so a customer's timeline compounds an early judgment
+  instead of re-examining it.
+- `policy_signals` sends only signals **not** already stated in the generated
+  prose, plus numeric values regardless (magnitude is information prose carries
+  badly).
+- `recovery_frequency` windows are dropped from the payload — composite churn
+  reads `recent_events` now and nothing else consumed them.
+- `dispute_breakdown` / `unresolved_dispute_reasons` are dropped only when a
+  dispute caution level is already stated in prose. `total_disputed_amount` is
+  always sent: a small dispute and a large one are different facts no signal
+  captures.
+- The user message ends with a task statement, not a closing brace. Data first,
+  instruction last, and the instruction is shared across both arms for the same
+  reason the objective is.
+
+### No few-shot examples — settled, do not revisit
+
+Any example worth writing would demonstrate memory changing a decision, which is
+exactly what the baseline-vs-memory comparison exists to measure. Including one
+would make demonstration indistinguishable from instruction-following, and it
+could not go into both arms identically without handing the baseline the very
+capability it is the control for. Self-reported confidence scores are also
+excluded: LLM confidence is uncalibrated and would invite weighting decisions by
+a number that means nothing.
+
+
 ## Experimentation layer (recovery incrementality)
 
 ### Why this exists

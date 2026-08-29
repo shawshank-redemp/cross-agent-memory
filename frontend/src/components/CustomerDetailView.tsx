@@ -5,14 +5,17 @@ import { ProfileTimelineChart } from "./ProfileTimelineChart";
 function decisionSummary(d: DecisionRecord | undefined): string {
   if (!d) return "—";
   const parts = [d.action];
-  if (d.discount_amount != null) parts.push(formatPaise(d.discount_amount));
+  if (d.committed_spend_paise != null) parts.push(formatPaise(d.committed_spend_paise));
   if (d.escalate_to_human) parts.push("⚑ escalate");
   return parts.join(" · ");
 }
 
 function diverged(b: DecisionRecord | undefined, m: DecisionRecord | undefined): boolean {
   if (!b || !m) return false;
-  return b.escalate_to_human !== m.escalate_to_human || (b.discount_amount ?? 0) !== (m.discount_amount ?? 0);
+  return (
+    b.escalate_to_human !== m.escalate_to_human ||
+    (b.committed_spend_paise ?? 0) !== (m.committed_spend_paise ?? 0)
+  );
 }
 
 export function CustomerDetailView({ detail }: { detail: CustomerDetail }) {

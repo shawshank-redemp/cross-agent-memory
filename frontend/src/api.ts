@@ -86,7 +86,9 @@ export interface DecisionRecord {
   customer_id: string;
   event_id: string;
   action: string;
-  discount_amount: number | null;
+  committed_spend_paise: number | null;
+  escalation_reason: string | null;
+  memory_factors_used: string[];
   escalate_to_human: boolean;
   reasoning: string;
 }

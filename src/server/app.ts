@@ -29,7 +29,10 @@ export function createApp(db: Database.Database) {
       const hasDivergence = baseline.some((b) => {
         const m = memoryByEvent.get(b.event_id);
         if (!m) return false;
-        return m.escalate_to_human !== b.escalate_to_human || (m.discount_amount ?? 0) !== (b.discount_amount ?? 0);
+        return (
+          m.escalate_to_human !== b.escalate_to_human ||
+          (m.committed_spend_paise ?? 0) !== (b.committed_spend_paise ?? 0)
+        );
       });
 
       return {

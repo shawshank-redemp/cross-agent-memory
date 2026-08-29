@@ -18,10 +18,15 @@ export interface DecisionRecord {
   agent: AgentType;
   customer_id: string;
   event_id: string;
-  action: string;
-  discount_amount: number | null;
-  escalate_to_human: boolean;
   reasoning: string;
+  memory_factors_used: string[];
+  action: string;
+  // Renamed from discount_amount: every agent may commit spend, and dispute
+  // happens to commit none. null now means "this action commits no spend"
+  // rather than "field does not apply". DB columns are unchanged.
+  committed_spend_paise: number | null;
+  escalate_to_human: boolean;
+  escalation_reason: string | null;
 }
 
 export function readJson<T>(path: string): T {

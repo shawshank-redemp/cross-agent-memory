@@ -155,8 +155,8 @@ function main(): void {
     };
 
     existing.events += 1;
-    existing.baselineDiscount += b.discount_amount ?? 0;
-    existing.memoryDiscount += m.discount_amount ?? 0;
+    existing.baselineDiscount += b.committed_spend_paise ?? 0;
+    existing.memoryDiscount += m.committed_spend_paise ?? 0;
     existing.baselineEscalations += b.escalate_to_human ? 1 : 0;
     existing.memoryEscalations += m.escalate_to_human ? 1 : 0;
 
@@ -468,9 +468,9 @@ function checkCrossDomainSuppression(
       customer_id: customerId,
       event_id: eventId,
       dispute_outcome: outcome ?? null,
-      baselineDiscount: b.discount_amount,
-      memoryDiscount: m.discount_amount,
-      suppressed: (m.discount_amount ?? 0) < (b.discount_amount ?? 0),
+      baselineDiscount: b.committed_spend_paise,
+      memoryDiscount: m.committed_spend_paise,
+      suppressed: (m.committed_spend_paise ?? 0) < (b.committed_spend_paise ?? 0),
     });
   }
 

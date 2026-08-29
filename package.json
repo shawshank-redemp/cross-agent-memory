@@ -14,7 +14,9 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json",
     "analyze:escalation": "tsx src/analysis/escalationSensitivity.ts",
     "verify:schema": "tsx scripts/verifySchema.ts",
-    "measure:churn": "tsx scripts/measureChurnSignal.ts"
+    "measure:churn": "tsx scripts/measureChurnSignal.ts",
+    "verify:prompts": "tsx scripts/verifyPromptInvariants.ts",
+    "verify:fieldorder": "tsx --env-file-if-exists=.env scripts/verifyFieldOrder.ts"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
