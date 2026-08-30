@@ -54,6 +54,25 @@ column kept for fidelity, in that priority order.
 - **Disputes are an annotation on a payment/order**, not a standalone entity — `dispute_id`, `dispute_created_at`, `dispute_reason` live alongside the underlying `payment_id`/`order_id` (this is real Razorpay structure and it fits our shared-memory pitch: disputes were never siloed at the data layer, only at the decisioning layer).
 - **Subscriptions carry `paid_count`/`total_count`** — `paid_count` is the cycle counter for tracking repeat subscription failures.
 - **Trust event time, not processing time.** Anything with a "when did we learn this" dimension needs its own timestamp and must be filtered as-of. This system has already had two temporal-leakage bugs.
+- **A customer exists before they transact, and no two events share an instant.**
+  Both are structural properties of the generator, not coincidences, and both
+  were broken until 2026-08-30:
+  - `signup_date` is drawn strictly *outside* the event window
+    (`SIGNUP_MIN_DAYS_AGO = EVENT_WINDOW_DAYS + 1`). It used to be drawn
+    independently of event timestamps, which put **231 of 3,202 events (7.2%,
+    105 customers, every scenario) before their own customer's signup**, the
+    worst by 115 days. `signup_date` is rendered directly above the event
+    timeline in the customer explorer, so this was visible in the demo. The
+    trade-off is that no customer signs up *during* the observation window —
+    inherent to giving everyone events up to 120 days old.
+  - Event timestamps carry a random time-of-day (`timeOfDayOffset`). They used
+    to be pinned to midnight UTC, so all 3,202 events shared one time-of-day
+    and **47 customers had two events at the identical instant** — and under the
+    `<=` as-of filters each of a colliding pair appeared in the other's profile.
+    The offset is always *added* to a day-aligned point strictly in the past, so
+    it can never cross `SIM_NOW`; `randomTimestampWithinWindow` draws from day 1
+    (not day 0) and the churn window starts at day 11 (not day 10) for exactly
+    that reason.
 
 ### Customer
 ```
@@ -142,9 +161,9 @@ triggering event in all three domains.
 
 More event *types* is explicitly out of scope (stay at 3 — cart abandonment, subscription failure, dispute). What's needed instead is deliberately engineered patterns across the customer batch, because the cross-agent value (gaming detection, composite churn, dispute-informed discounting) only shows up when a customer has multiple, related events over time:
 
-- ~60% "normal" customers — one clean event, resolves fine.
-- ~15% "repeat offenders" per agent — multiple cycles of the same event (use `paid_count` for subscription failures) to trigger gaming detection + stopping rules.
-- ~10% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is. Remember the status words are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the later discount, `lost` (merchant conceded, customer refunded) should NOT. The merchant-conceded arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`.
+- ~40% "normal" customers — one clean event, resolves fine.
+- ~30% "repeat offenders" per agent (20% cart, 5% subscription, 5% dispute) — multiple cycles of the same event (use `paid_count` for subscription failures) to trigger gaming detection + stopping rules.
+- ~15% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is. Remember the status words are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the later discount, `lost` (merchant conceded, customer refunded) should NOT. The merchant-conceded arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`. The dispute's `amount` is the disputed order's `amount`: a chargeback cannot exceed what was charged, and passing the `order_id` without the amount left the two halves of that relationship independently random.
 - ~10% "churn signal" — the composite pattern: 2+ domains firing in a tight time window, which should trigger escalation rather than more automated nudges.
 - ~5% pure noise/edge cases.
 
@@ -250,7 +269,7 @@ alone, rather than confounding the rule change with a population change.
 
 This is a settled design decision, not a simplification to revisit.
 
-Measured before/after on the committed batch: **identical, 238/3202 firings
+Measured before/after on the committed batch: **identical, 233/3224 firings
 under both rules**. Every multi-domain customer in this batch has at most one
 event per domain, which collapses each window to a single point and makes the
 two rules mathematically equivalent. The old rule is wrong in principle and the
@@ -523,8 +542,11 @@ Two guards, neither of which edits the model's answer:
   backwards: it was sent only when the caution level was `"none"`, `"none"`
   requires `customer_adverse === 0`, and the field sums those same rows — so it
   was guaranteed to be `0` every time it was sent and withheld every time it was
-  not. Measured on the committed batch: sent on 1,785 cart events, non-zero in
-  **0** of them; withheld while non-zero on **58**. Always-sending it also makes
+  not. Measured on the *previous* batch: sent on 1,785 cart events, non-zero in
+  **0** of them; withheld while non-zero on **58**. (Those counts predate the
+  2026-08-30 generator fixes and have not been re-measured — doing so needs a
+  decision run. The argument does not depend on the magnitudes: it is an
+  identity, not an empirical finding.) Always-sending it also makes
   the zero informative rather than noise — it states that nothing has been
   resolved against this customer.
 - The user message ends with a task statement, not a closing brace. Data first,

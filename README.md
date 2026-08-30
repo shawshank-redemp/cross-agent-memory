@@ -33,7 +33,7 @@ npm run analyze:compare   # baseline vs memory numbers -> data/results/compariso
 ```
 
 `agents:baseline` and `agents:memory` call the real Claude API (defaults to
-`claude-opus-5`) once per event, and the batch is 3,202 events. Use
+`claude-opus-5`) once per event, and the batch is 3,224 events. Use
 `--scenario=` or `--customer=` to test on a slice first, e.g.
 `npm run agents:memory -- --scenario=cross_domain_risk`. Prefer those over
 `--limit=N`: the runner sorts by timestamp, so `--limit` takes the *oldest*
@@ -56,13 +56,40 @@ comparison runs diff identical data.
 
 | Scenario | Share | Purpose |
 | --- | --- | --- |
-| `normal` | 60% | One clean, resolved event — no cross-agent signal |
-| `repeat_offender_cart` | 5% | Repeated abandoned carts — gaming/stopping-rule target |
+| `normal` | 40% | One clean, resolved event — no cross-agent signal |
+| `repeat_offender_cart` | 20% | Repeated abandoned carts — gaming/stopping-rule target |
 | `repeat_offender_subscription` | 5% | Repeated billing-cycle failures across `paid_count` |
 | `repeat_offender_dispute` | 5% | Repeat dispute filer |
-| `cross_domain_risk` | 10% | A dispute (shared `order_id`) on a past order, then a later cart. Outcome is `won`/`under_review`/`lost` at equal weight. Razorpay statuses are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the discount, `lost` (merchant conceded) should not |
+| `cross_domain_risk` | 15% | A dispute (shared `order_id`) on a past order, then a later cart. Outcome is `won`/`under_review`/`lost` at equal weight. Razorpay statuses are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the discount, `lost` (merchant conceded) should not |
 | `churn_signal` | 10% | 2+ domains firing in a tight window — should escalate to a human |
 | `noise` | 5% | Edge cases (no events, zero-value cart, contradictory states, widely-spaced events) |
+
+The mix is deliberately weighted toward customers who generate **multiple cart
+events** (`repeat_offender_cart`, `cross_domain_risk`) — well above a real
+merchant's traffic. The experimentation layer's moderator split is on prior
+discount history, and under as-of scoping a customer's first cart event always
+has an empty history, so only multi-cart customers can ever reach the
+`prior_discount` bucket. At a realistic mix that bucket lands in single digits
+and supports no claim at all. This is a demo-scale **sampling** choice: it
+changes how many customers land in each scenario, never what a scenario
+produces.
+
+The `noise` variants are **deliberately implausible** — they are probes, not an
+attempt at realistic data. The ₹0 cart exists because `floor(0 × cap%) = 0` is
+exactly the case that would make the guardrail write a phantom zero-amount
+discount row (which would still increment the gaming counter); the
+one-hour-old ₹5,00,000 dispute probes as-of resolution handling at near-zero lag
+and an extreme magnitude; the `active`-with-an-error subscription probes
+contradictory source rows, which real exports do produce from webhook/
+reconciliation races; and the 115-day-apart pair is the negative control for
+composite churn. Each one is a case the pipeline must survive, not a case it
+should expect.
+
+Disputes outside `cross_domain_risk` carry an `order_id`/`payment_id` that
+resolves to nothing in this batch — they model a dispute on an order that
+predates the export window. `cross_domain_risk` is the cohort where the
+shared-`order_id` join is actually exercised, and there the dispute amount is
+the disputed order's amount.
 
 ### Data model ([src/types/events.ts](src/types/events.ts), [src/db/schema.sql](src/db/schema.sql))
 

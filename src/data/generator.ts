@@ -22,7 +22,6 @@ import {
   SUBSCRIPTION_ERROR_BY_REASON,
   SUBSCRIPTION_FAILURE_REASONS,
   type PlanCode,
-  type SubscriptionFailureReason,
 } from "./fixtures.js";
 
 // Fixed reference point so a given seed always reproduces the same batch —
@@ -31,6 +30,24 @@ const SIM_NOW = new Date("2026-08-23T00:00:00Z").getTime();
 const DAY_MS = 24 * 60 * 60 * 1000;
 const SIGNUP_LOOKBACK_DAYS = 730;
 const EVENT_WINDOW_DAYS = 120;
+
+// A customer must exist before they can transact. Every scenario draws its
+// event timestamps inside EVENT_WINDOW_DAYS of SIM_NOW, so drawing signup
+// strictly OUTSIDE that window is what makes "no event predates its own
+// customer's signup_date" structural rather than a coincidence.
+//
+// It was a coincidence, and an unreliable one: signup was drawn 1-730 days
+// back while events were drawn 0-120 days back, two completely independent
+// draws. 231 of 3,202 events (7.2%, across 105 customers and every scenario)
+// landed before their customer signed up, the worst by 115 days — and
+// signup_date is rendered directly above the event timeline in the customer
+// explorer, so the contradiction was visible in the demo.
+//
+// The cost is that nobody signs up during the observation window, so the batch
+// has no "brand new customer" cohort. That is inherent to giving every customer
+// events up to 120 days old; no signal reads signup_date, it is a dashboard
+// display field only.
+const SIGNUP_MIN_DAYS_AGO = EVENT_WINDOW_DAYS + 1;
 
 export type Scenario =
   | "normal"
@@ -74,6 +91,19 @@ function daysAgo(days: number): number {
   return SIM_NOW - days * DAY_MS;
 }
 
+// Day-aligned timestamps meant all 3,202 events in the batch shared a single
+// time-of-day (midnight UTC) — the first thing a reader who has seen a real
+// payments export would notice, and the reason 47 customers had two events
+// colliding at the exact same instant. Under the `<=` as-of filters in
+// profile.ts each of a colliding pair saw the other in its own profile.
+//
+// Always ADDED to a day-aligned point strictly in the past, so a jittered
+// timestamp can never cross SIM_NOW. Call sites that derive a timestamp
+// arithmetically from another one keep their own SIM_NOW guards.
+function timeOfDayOffset(rng: Rng): number {
+  return rng.int(0, DAY_MS - 1);
+}
+
 function isoAt(ms: number): string {
   return new Date(ms).toISOString();
 }
@@ -87,7 +117,7 @@ function makeCustomer(rng: Rng): Customer {
     name: `${first} ${last}`,
     email: `${first.toLowerCase()}.${last.toLowerCase()}${rng.int(1, 999)}@${rng.pick(EMAIL_DOMAINS)}`,
     contact: `+91${rng.int(6, 9)}${randomDigits(rng, 9)}`,
-    signup_date: isoAt(daysAgo(rng.int(1, SIGNUP_LOOKBACK_DAYS))),
+    signup_date: isoAt(daysAgo(rng.int(SIGNUP_MIN_DAYS_AGO, SIGNUP_LOOKBACK_DAYS))),
     plan_tier: planTier,
   };
 }
@@ -98,8 +128,10 @@ function randomDigits(rng: Rng, length: number): string {
   return out;
 }
 
+// Draws from day 1 rather than day 0 so the added time-of-day cannot push the
+// result past SIM_NOW: the range is (SIM_NOW - windowDays, SIM_NOW).
 function randomTimestampWithinWindow(rng: Rng, windowDays = EVENT_WINDOW_DAYS): number {
-  return daysAgo(rng.int(0, windowDays));
+  return daysAgo(rng.int(1, windowDays)) + timeOfDayOffset(rng);
 }
 
 // Attempt state is generated coherently with `status`, because the two are
@@ -190,12 +222,22 @@ const TERMINAL_DISPUTE_STATUSES = new Set<DisputeEvent["status"]>(["won", "lost"
 // A resolution can fall beyond SIM_NOW: that is a dispute this batch never
 // observes resolving, and under asOf scoping it correctly reads as
 // unresolved at every decision point in the run.
+// `amount` overrides the random draw where the dispute is attached to an order
+// this batch actually contains, because a chargeback cannot exceed what was
+// charged. Passing `orderId` alone used to wire up one half of that
+// relationship and leave the amount independently random: 178 of 180
+// cross-domain disputes disagreed with the order they pointed at, 132 of them
+// exceeding it, one by 13x. total_disputed_amount and adverse_disputed_amount
+// are sent to the model as magnitudes, so that number reaches a real decision.
+//
+// Disputes with no `orderId` reference an order outside this batch's export
+// window and keep the independent draw — there is nothing to reconcile against.
 function makeDisputeEvent(
   rng: Rng,
   customer: Customer,
   timestampMs: number,
   status: DisputeEvent["status"],
-  opts?: { orderId?: string; resolvedAfterDays?: number },
+  opts?: { orderId?: string; amount?: number; resolvedAfterDays?: number },
 ): DisputeEvent {
   const resolved = TERMINAL_DISPUTE_STATUSES.has(status);
   const resolvedAfterDays = opts?.resolvedAfterDays ?? (resolved ? rng.int(7, 45) : 0);
@@ -204,7 +246,7 @@ function makeDisputeEvent(
     customer_id: customer.customer_id,
     payment_id: makeId("pay", rng),
     order_id: opts?.orderId ?? makeId("order", rng),
-    amount: rng.int(5, 80) * 10_000,
+    amount: opts?.amount ?? rng.int(5, 80) * 10_000,
     dispute_reason: rng.pick(DISPUTE_REASONS),
     dispute_created_at: isoAt(timestampMs),
     resolved_at: resolved ? isoAt(timestampMs + Math.max(1, Math.round(resolvedAfterDays * DAY_MS))) : null,
@@ -261,10 +303,22 @@ function generateRepeatOffenderSubscription(rng: Rng, customer: Customer, batch:
   const cycleGapDays = Math.floor((EVENT_WINDOW_DAYS - 5) / failureCycles);
   let ts = daysAgo(EVENT_WINDOW_DAYS);
   for (let cycle = 1; cycle <= failureCycles; cycle++) {
-    ts = Math.min(ts + rng.int(cycleGapDays - 3, cycleGapDays + 3) * DAY_MS, SIM_NOW);
+    // Jitter is added to the cycle's own timestamp rather than accumulated into
+    // `ts`, so it cannot drift the billing cadence across cycles.
+    const cycleGap = rng.int(cycleGapDays - 3, cycleGapDays + 3) * DAY_MS;
+    ts = Math.min(ts + cycleGap, SIM_NOW);
     const status = cycle === failureCycles && rng.chance(0.4) ? "halted" : "failed";
     batch.subscriptionFailureEvents.push(
-      makeSubscriptionCycleEvent(rng, customer, subscriptionId, planId, planCode, cycle, ts, status),
+      makeSubscriptionCycleEvent(
+        rng,
+        customer,
+        subscriptionId,
+        planId,
+        planCode,
+        cycle,
+        Math.min(ts + timeOfDayOffset(rng), SIM_NOW),
+        status,
+      ),
     );
   }
 }
@@ -283,12 +337,14 @@ function generateRepeatOffenderDispute(rng: Rng, customer: Customer, batch: Synt
 // cart from the same customer — shared order_id/payment_id history should
 // suppress the cart-abandonment agent's discount spend on the new cart.
 function generateCrossDomainRisk(rng: Rng, customer: Customer, batch: SyntheticBatch): ScenarioAnnotation {
-  const paidTs = daysAgo(EVENT_WINDOW_DAYS - rng.int(0, 20));
+  const paidTs = daysAgo(EVENT_WINDOW_DAYS - rng.int(0, 20)) + timeOfDayOffset(rng);
   const paidEvent = makeCartAbandonmentEvent(rng, customer, paidTs, "paid");
   batch.cartAbandonmentEvents.push(paidEvent);
 
-  const disputeTs = paidTs + rng.int(2, 14) * DAY_MS;
-  const laterCartTs = Math.min(disputeTs + rng.int(5, 30) * DAY_MS, SIM_NOW);
+  // Each step is at least 2 days on from the last, so an independently drawn
+  // sub-day offset can never reorder the chain.
+  const disputeTs = paidTs + rng.int(2, 14) * DAY_MS + timeOfDayOffset(rng);
+  const laterCartTs = Math.min(disputeTs + rng.int(5, 30) * DAY_MS + timeOfDayOffset(rng), SIM_NOW);
 
   // A terminal dispute must be RESOLVED by the time the later cart fires, not
   // merely filed. Under the asOf rules in profile.ts a dispute counts as
@@ -321,6 +377,10 @@ function generateCrossDomainRisk(rng: Rng, customer: Customer, batch: SyntheticB
   batch.disputeEvents.push(
     makeDisputeEvent(rng, customer, disputeTs, disputeOutcome, {
       orderId: paidEvent.order_id,
+      // The chargeback is against that order, so it is that order's value.
+      // Partial chargebacks exist in reality; the full amount is the dominant
+      // case and keeps "dispute amount == disputed order amount" checkable.
+      amount: paidEvent.amount,
       resolvedAfterDays,
     }),
   );
@@ -335,13 +395,16 @@ function generateCrossDomainRisk(rng: Rng, customer: Customer, batch: SyntheticB
 // ~10%: 2+ domains firing within a tight window — composite churn signal
 // that should trigger human escalation rather than more automated nudges.
 function generateChurnSignal(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
-  const windowStart = daysAgo(rng.int(10, EVENT_WINDOW_DAYS - 14));
+  // Window starts at day 11, not day 10: an event sits up to 10 days past the
+  // start, so day 10 plus a sub-day offset would land in the future. The
+  // 11-day maximum spread is unchanged, and still inside CHURN_LOOKBACK_DAYS.
+  const windowStart = daysAgo(rng.int(11, EVENT_WINDOW_DAYS - 14));
   const domains = rng.chance(0.3)
     ? (["cart", "subscription", "dispute"] as const)
     : rng.shuffle(["cart", "subscription", "dispute"] as const).slice(0, 2);
 
   for (const domain of domains) {
-    const ts = windowStart + rng.int(0, 10) * DAY_MS;
+    const ts = windowStart + rng.int(0, 10) * DAY_MS + timeOfDayOffset(rng);
     if (domain === "cart") {
       batch.cartAbandonmentEvents.push(
         makeCartAbandonmentEvent(rng, customer, ts, rng.pick(["created", "attempted"] as const)),
@@ -401,8 +464,8 @@ function generateNoise(rng: Rng, customer: Customer, batch: SyntheticBatch): voi
   }
   // variant 4: two domains firing, but spread far apart — should NOT read as
   // a churn signal, exercising the "tight window" boundary.
-  const cartTs = daysAgo(EVENT_WINDOW_DAYS);
-  const subTs = daysAgo(5);
+  const cartTs = daysAgo(EVENT_WINDOW_DAYS) + timeOfDayOffset(rng);
+  const subTs = daysAgo(5) + timeOfDayOffset(rng);
   batch.cartAbandonmentEvents.push(makeCartAbandonmentEvent(rng, customer, cartTs, "attempted"));
   const planCode = planCodeFor(customer);
   batch.subscriptionFailureEvents.push(
