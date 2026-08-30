@@ -145,8 +145,9 @@ function describeProfileForTrace(profile: CustomerMemoryProfile): string {
 //   recent_events now, and nothing else consumed the windows.
 //   dispute_breakdown and unresolved_dispute_reasons are dropped only when a
 //   dispute caution level is already stated in prose, since in that case the
-//   prose says what they would say. total_disputed_amount is always kept — a
-//   small dispute and a large one are different facts that no signal captures.
+//   prose says what they would say. The two AMOUNT fields
+//   (total_disputed_amount, adverse_disputed_amount) are always kept — a small
+//   dispute and a large one are different facts that no signal captures.
 function buildUserContent(
   customer: Customer,
   event: unknown,
@@ -177,11 +178,15 @@ function buildUserContent(
     rolling_health_score: profile.rolling_health_score,
     discount_usage_history: profile.discount_usage_history,
     recent_decisions: recentDecisions,
+    // Always sent, even when a caution level is stated in prose — especially
+    // then. The prose says a dispute went against this customer; only this says
+    // whether that was for a trivial sum or a ruinous one. See
+    // memoryPayloadKeys.ts.
+    adverse_disputed_amount: profile.adverse_disputed_amount,
   };
   if (!disputeStatedInProse) {
     memoryProfile.dispute_breakdown = profile.dispute_breakdown;
     memoryProfile.unresolved_dispute_reasons = profile.unresolved_dispute_reasons;
-    memoryProfile.adverse_disputed_amount = profile.adverse_disputed_amount;
   }
 
   const payload = JSON.stringify(

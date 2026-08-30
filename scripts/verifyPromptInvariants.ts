@@ -4,7 +4,7 @@
 // whether the agent can see the customer's shared history. That claim is only
 // true if everything else in the prompt is identical, so it is checked here
 // rather than trusted. No API calls.
-import { OBJECTIVE_BLOCK, CLOSING_INSTRUCTION } from "../src/agents/objective.js";
+import { CLOSING_INSTRUCTION, DISPUTE_COST_MODEL, OBJECTIVE_BLOCK } from "../src/agents/objective.js";
 import { CART_BASELINE_SYSTEM_PROMPT, CART_MEMORY_SYSTEM_PROMPT } from "../src/agents/cartAbandonmentAgent.js";
 import {
   SUBSCRIPTION_BASELINE_SYSTEM_PROMPT,
@@ -78,6 +78,35 @@ for (const agent of Object.keys(MEMORY_PROMPTS) as (keyof typeof MEMORY_PROMPTS)
   const baselineOnly = BASELINE_PROMPTS[agent].includes("You have NO other");
   check(`${agent}: baseline states it has no history`, baselineOnly || agent === "dispute_responder");
 }
+
+// 6. The dispute cost model: shared across both dispute arms, absent from the
+//    other two agents, and arm-neutral like the objective.
+check(
+  "dispute baseline prompt contains DISPUTE_COST_MODEL verbatim",
+  BASELINE_PROMPTS.dispute_responder.includes(DISPUTE_COST_MODEL),
+);
+check(
+  "dispute memory prompt contains DISPUTE_COST_MODEL verbatim",
+  MEMORY_PROMPTS.dispute_responder.includes(DISPUTE_COST_MODEL),
+);
+for (const agent of ["cart_abandonment", "subscription_recovery"] as const) {
+  check(
+    `${agent}: does NOT carry the dispute cost model (its actions do not exist there)`,
+    !BASELINE_PROMPTS[agent].includes(DISPUTE_COST_MODEL) && !MEMORY_PROMPTS[agent].includes(DISPUTE_COST_MODEL),
+  );
+}
+// Arm-neutrality: it prices two actions, and must not smuggle memory into the
+// control arm by describing history or cross-dispute patterns.
+for (const word of ["memory", "history", "dispute_count", "pattern", "gaming", "churn", "profile", "signal"]) {
+  check(
+    `dispute cost model is arm-neutral: does not mention "${word}"`,
+    !DISPUTE_COST_MODEL.toLowerCase().includes(word),
+  );
+}
+check(
+  "dispute cost model states costs as an ordering, not as rupee figures",
+  !/₹|paise|\b\d{3,}\b/.test(DISPUTE_COST_MODEL),
+);
 
 console.log(failures === 0 ? "\nAll prompt invariants hold." : `\n${failures} invariant(s) FAILED.`);
 process.exit(failures === 0 ? 0 : 1);

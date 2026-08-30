@@ -3,7 +3,7 @@ import type { Customer, DisputeEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
 import { applyBaselinePolicy } from "./enforcement.js";
 import type { PolicyOverrideRecord } from "../memory/profile.js";
-import { OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
+import { DISPUTE_COST_MODEL, OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import type { TriggeringEventFacts } from "./policy.js";
 import { DisputeResponderDecisionSchema, type DisputeResponderDecision } from "./schema.js";
@@ -11,6 +11,7 @@ import { emitTrace } from "./trace.js";
 
 export const DISPUTE_BASELINE_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
 ${OBJECTIVE_BLOCK}
+${DISPUTE_COST_MODEL}
 
 You see a single customer and a single dispute event. You have NO other
 history on this customer — no record of other disputes they've filed, no
@@ -80,6 +81,7 @@ export async function decideDisputeResponderBaseline(
 
 export const DISPUTE_MEMORY_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
 ${OBJECTIVE_BLOCK}
+${DISPUTE_COST_MODEL}
 
 Actions — pick exactly one:
 - "accept_dispute": concede the dispute (e.g. the reason is clearly

@@ -360,6 +360,29 @@ the trade-off; the scorer keeps the numbers.
 verbatim, the objective mentions none of the forbidden memory vocabulary, and
 it contains no rupee figures.
 
+### Dispute economics live in their own shared constant
+
+`OBJECTIVE_BLOCK` prices discounts, reminders/retries and escalation — none of
+which is what the Dispute Responder does. Its actions are `accept_dispute` and
+`contest_dispute`, and conceding forfeits the disputed amount in full: the
+single most expensive action any agent here can take. Its prompt described what
+those actions *mean* and never what they *cost*, so the agent making the most
+expensive decision was inferring its economics from nothing.
+
+The fix is `DISPUTE_COST_MODEL` in `objective.ts`, **not** an addition to
+`OBJECTIVE_BLOCK`. That block ships in all three agents' prompts and must stay
+universal; pricing `accept_dispute` in the cart prompt would be noise competing
+with the case data.
+
+It is **one constant interpolated into both dispute prompts**, for exactly the
+reason the objective is: the baseline and memory dispute prompts are separate
+strings, so hand-writing it into each recreates the drift risk the shared
+constant exists to prevent. It is arm-neutral by construction — it describes the
+economics of two actions, which are equally true with or without memory — and
+states costs as an ordering, never rupee figures. `verify:prompts` asserts both
+dispute prompts carry it verbatim, that the other two agents do **not**, and
+that it mentions no memory vocabulary.
+
 ### Reasoning first — verified, not assumed
 
 Structured output emits fields in **schema declaration order**. With `reasoning`
@@ -488,9 +511,22 @@ Two guards, neither of which edits the model's answer:
 - `recovery_frequency` windows are dropped from the payload — composite churn
   reads `recent_events` now and nothing else consumed them.
 - `dispute_breakdown` / `unresolved_dispute_reasons` are dropped only when a
-  dispute caution level is already stated in prose. `total_disputed_amount` is
-  always sent: a small dispute and a large one are different facts no signal
-  captures.
+  dispute caution level is already stated in prose. Both are *judgment*-shaped —
+  they are what the caution level is derived from, so once it is stated they add
+  nothing.
+- **Both amount fields are always sent.** The rule is: **prose carries
+  judgments, JSON carries magnitudes.** A signal can say "a dispute was resolved
+  against this customer"; no signal says whether it was for a trivial sum or a
+  ruinous one, and those should lead to different decisions.
+
+  `adverse_disputed_amount` was briefly conditional, which had it exactly
+  backwards: it was sent only when the caution level was `"none"`, `"none"`
+  requires `customer_adverse === 0`, and the field sums those same rows — so it
+  was guaranteed to be `0` every time it was sent and withheld every time it was
+  not. Measured on the committed batch: sent on 1,785 cart events, non-zero in
+  **0** of them; withheld while non-zero on **58**. Always-sending it also makes
+  the zero informative rather than noise — it states that nothing has been
+  resolved against this customer.
 - The user message ends with a task statement, not a closing brace. Data first,
   instruction last, and the instruction is shared across both arms for the same
   reason the objective is.

@@ -18,9 +18,27 @@
 // given.
 
 // Sent on every memory-arm call.
+//
+// PROSE CARRIES JUDGMENTS, JSON CARRIES MAGNITUDES. That is why the two
+// amount fields are here rather than below: a signal can say "a dispute was
+// resolved against this customer", but no signal says whether it was for a
+// trivial sum or a ruinous one, and those are different facts that should lead
+// to different decisions.
 export const MEMORY_PROFILE_ALWAYS_KEYS = [
   "dispute_count",
   "total_disputed_amount",
+  // Was conditional, which had it exactly backwards. It is only ever sent when
+  // the caution level is "none"; "none" requires customer_adverse === 0; and
+  // this field sums the amounts of those same customer_adverse rows. So it was
+  // guaranteed to be 0 every time it was sent, and withheld every time it was
+  // not — the model was told a dispute had been resolved against the customer
+  // and never told for how much. Measured on the committed batch: sent on 1785
+  // cart events, non-zero in 0 of them; withheld while non-zero on 58.
+  //
+  // Always-sending it also makes the zero informative rather than noise: 0 here
+  // means "nothing has been resolved against this customer", which is a fact
+  // worth having stated.
+  "adverse_disputed_amount",
   "successful_payment_count",
   "total_paid_amount",
   "rolling_health_score",
@@ -29,12 +47,16 @@ export const MEMORY_PROFILE_ALWAYS_KEYS = [
 ] as const;
 
 // Sent only when the dispute caution level is "none" — otherwise the generated
-// prose already says what these would say, and repeating it costs tokens for
-// nothing.
+// prose already states the finding these would support, and repeating it costs
+// tokens for nothing.
+//
+// Both of these are JUDGMENT-shaped: a breakdown of outcomes and a list of
+// reasons are what the caution level is derived FROM, so once the level is
+// stated they add nothing. Contrast adverse_disputed_amount, which was moved to
+// the always-list above precisely because it is a magnitude no prose carries.
 export const MEMORY_PROFILE_CONDITIONAL_KEYS = [
   "dispute_breakdown",
   "unresolved_dispute_reasons",
-  "adverse_disputed_amount",
 ] as const;
 
 export const MEMORY_PROFILE_EMITTABLE_KEYS = [
