@@ -29,6 +29,10 @@ import type {
   SubscriptionFailureEvent,
 } from "../src/types/index.js";
 import type { Scenario, ScenarioLabel } from "../src/data/generator.js";
+import { openDb } from "../src/db/connection.js";
+import { computeMemoryProfile } from "../src/memory/profile.js";
+import { computeMemorySignals } from "../src/agents/signals/index.js";
+import type { TriggeringEventFacts } from "../src/agents/signals/types.js";
 import { SCENARIO_WEIGHTS, SIM_NOW_ISO, CHURN_SAFE_GAP_DAYS } from "../src/data/generator.js";
 import {
   CHURN_LOOKBACK_DAYS,
@@ -252,6 +256,115 @@ for (const [scenario, weight] of Object.entries(SCENARIO_WEIGHTS)) {
   if (delta > DISTRIBUTION_TOLERANCE_PP) drifted.push(`${scenario}: ${delta.toFixed(2)}pp off`);
 }
 assert(`every scenario is within ${DISTRIBUTION_TOLERANCE_PP}pp of its configured weight`, drifted);
+
+// --- The control cohort must be silent -------------------------------------
+//
+// Every other reachability check above runs on a REPLICA of profile.ts's
+// aggregation. This one runs the real thing: the actual computeMemoryProfile
+// and computeMemorySignals, at each normal customer's real triggering event.
+// The control's whole job is to show the two arms agree where there is no
+// adverse history, so "no memory signal fires here" is the one property worth
+// checking against production code rather than a reimplementation.
+//
+// paymentFriction is EXCLUDED deliberately. It is the registry's one router and
+// it reads the TRIGGERING EVENT, not memory — it fires whenever a cart was
+// `attempted` rather than `created`, which is a fact about this event that both
+// arms see. It carries no effects, so it cannot move a cap or block a spend and
+// cannot make the arms diverge. Asserting it false would mean banning attempted
+// carts from the control, which would distort the cohort to satisfy a check.
+const MEMORY_DERIVED_DEFAULTS: Record<string, unknown> = {
+  disputeCautionWarranted: false,
+  disputeCautionLevel: "none",
+  discountAttemptsForAgent: 0,
+  stoppingRuleHit: false,
+  gamingSuspected: false,
+  crossAgentGamingSuspected: false,
+  compositeChurnSignal: false,
+  provenPayer: false,
+};
+
+console.log("\nControl-cohort silence (real computeMemorySignals)");
+
+const normalIds = idsIn("normal");
+const db = openDb();
+
+// The signals come from the DB, the cohort from the JSON. If load:data has not
+// run since generate:data they describe different batches, and a green result
+// would be meaningless.
+const dbCustomers = (db.prepare("SELECT COUNT(*) AS n FROM customers").get() as { n: number }).n;
+if (dbCustomers !== customers.length) {
+  console.error(
+    `\n  Database holds ${dbCustomers} customers but the generated batch has ${customers.length}.\n` +
+      `  Run \`npm run load:data\` so this check reads the batch it is validating.\n`,
+  );
+  process.exit(1);
+}
+
+const cartByCustomer = new Map<string, CartAbandonmentEvent[]>();
+for (const c of carts) cartByCustomer.set(c.customer_id, [...(cartByCustomer.get(c.customer_id) ?? []), c]);
+const subByCustomer = new Map<string, SubscriptionFailureEvent[]>();
+for (const x of subs) subByCustomer.set(x.customer_id, [...(subByCustomer.get(x.customer_id) ?? []), x]);
+
+const noisy: string[] = [];
+let evaluated = 0;
+let paymentFrictionCount = 0;
+const firedTally: Record<string, number> = {};
+
+for (const id of normalIds) {
+  const cart = (cartByCustomer.get(id) ?? []).find((c) => c.status !== "paid");
+  const sub = (subByCustomer.get(id) ?? []).find((x) => x.status === "failed" || x.status === "halted");
+  const facts: TriggeringEventFacts | null = cart
+    ? {
+        agent: "cart_abandonment",
+        timestamp: cart.created_at,
+        amount: cart.amount,
+        paymentAttempted: cart.attempts > 0,
+        paymentErrorCode: cart.last_error_code,
+      }
+    : sub
+      ? {
+          agent: "subscription_recovery",
+          timestamp: sub.created_at,
+          amount: sub.plan_amount,
+          paymentAttempted: true,
+          paymentErrorCode: sub.error_code,
+        }
+      : null;
+  if (!facts) continue;
+  evaluated += 1;
+
+  const profile = computeMemoryProfile(db, id, "memory", facts.timestamp);
+  const signals = computeMemorySignals(profile, facts) as unknown as Record<string, unknown>;
+  if (signals.paymentFriction === true) paymentFrictionCount += 1;
+
+  const offending = Object.entries(MEMORY_DERIVED_DEFAULTS).filter(([k, def]) => signals[k] !== def);
+  if (offending.length > 0) {
+    for (const [k, def] of offending) {
+      firedTally[k] = (firedTally[k] ?? 0) + 1;
+      void def;
+    }
+    noisy.push(id);
+  }
+}
+db.close();
+
+const silentRate = evaluated === 0 ? 0 : ((evaluated - noisy.length) / evaluated) * 100;
+console.log(
+  `        ${evaluated} of ${normalIds.length} normal customers evaluated at their triggering event; ` +
+    `${evaluated - noisy.length} silent (${silentRate.toFixed(1)}%)`,
+);
+console.log(
+  `        paymentFriction (router, reads the event not memory, no effects): ` +
+    `${paymentFrictionCount}/${evaluated} — expected, not a failure`,
+);
+if (Object.keys(firedTally).length > 0) {
+  console.log(`        memory-derived signals that fired: ${JSON.stringify(firedTally)}`);
+}
+assert(
+  "no memory-derived signal fires anywhere in the control cohort",
+  noisy,
+  `${Object.keys(MEMORY_DERIVED_DEFAULTS).length} signals checked against their defaults`,
+);
 
 const weightSum = Object.values(SCENARIO_WEIGHTS).reduce((a, b) => a + b, 0);
 assert(

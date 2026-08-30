@@ -282,39 +282,49 @@ function planCodeFor(customer: Customer): PlanCode {
 
 // One recovery-eligible event, in a single domain, for a customer with no other
 // history. The negative control: a real recovery opportunity where memory has
-// nothing to say and both arms should reach the same decision.
+// nothing to say, so both arms should reach the same decision.
 //
-// This scenario used to emit the CLEAN terminal state of each domain — a paid
-// cart, an active cycle, a 'lost' dispute. Every one of those is ineligible
-// under db/eligibility.ts, so once the runner started filtering, the control
-// cohort would have vanished from the comparison entirely: no decisions, no
-// events to match between arms, and a headline built on the remaining cohorts,
-// all of which are ones where memory is supposed to act.
+// TWO constraints make this cohort actually quiet, and both were learned by
+// getting it wrong:
 //
-// A control has to be a case the system actually decides. What makes it a
-// control is the ABSENCE OF HISTORY, not the absence of a recovery question —
-// the customer has exactly one event, so every memory signal is silent and any
-// divergence between arms is noise rather than memory.
+// 1. CART OR SUBSCRIPTION ONLY. This used to include an unresolved dispute as a
+//    third domain, which fired disputeCautionWarranted and tightened the memory
+//    arm's cap to 15% or 10% while the baseline stayed at the 20% default — so
+//    roughly a third of the control diverged between arms by construction. A
+//    control cohort exists to show the arms AGREE where there is no adverse
+//    history; it cannot show that if part of it disagrees. Dispute-agent
+//    coverage comes from repeat_offender_dispute and cross_domain_risk, which
+//    are built for it.
+//
+// 2. paid_count IS PINNED TO 1. successful_payment_count reads the paid_count
+//    of a subscription's latest row (readPaymentHistory in profile.ts), so a
+//    cycle drawn with paid_count >= MIN_SUCCESSFUL_PAYMENTS would fire
+//    provenPayer and widen the memory arm's cap to 25% — the same divergence as
+//    (1), arriving from the subscription side instead. One prior successful
+//    charge followed by a failure is both quiet and the ordinary shape of a
+//    first billing failure.
+//
+// Before this scenario emitted the CLEAN terminal state of each domain — a paid
+// cart, an active cycle, a conceded dispute. All three are ineligible for a
+// decision, so the entire control cohort would have vanished from the
+// comparison once the runner started filtering. What makes it a control is the
+// absence of HISTORY, not the absence of a recovery question.
 function generateNormal(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
-  const domain = rng.pick(["cart", "subscription", "dispute"] as const);
+  const domain = rng.pick(["cart", "subscription"] as const);
   const ts = randomTimestampWithinWindow(rng);
 
   if (domain === "cart") {
     batch.cartAbandonmentEvents.push(
       makeCartAbandonmentEvent(rng, customer, ts, rng.pick(["created", "attempted"] as const)),
     );
-  } else if (domain === "subscription") {
+  } else {
     const planCode = planCodeFor(customer);
     batch.subscriptionFailureEvents.push(
-      makeSubscriptionCycleEvent(rng, customer, makeId("sub", rng), makeId("plan", rng), planCode, rng.int(1, 4), ts, "failed"),
+      makeSubscriptionCycleEvent(rng, customer, makeId("sub", rng), makeId("plan", rng), planCode, 1, ts, "failed"),
     );
-  } else {
-    // Unresolved, so the responder has something to file. The reason still
-    // drives disputeCautionLevel, but with one event and no other domain there
-    // is no cross-agent history for any brake to accumulate from.
-    batch.disputeEvents.push(makeDisputeEvent(rng, customer, ts, rng.pick(["open", "under_review"] as const)));
   }
 }
+
 
 
 // Repeated abandoned carts for one customer, converting only occasionally.

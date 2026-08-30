@@ -68,7 +68,7 @@ assigned to scenarios that plant the patterns the memory layer should catch.
 
 | Scenario | Share | What it tests |
 | --- | --- | --- |
-| `normal` | 24% | One recovery-eligible event, no other history — the control |
+| `normal` | 24% | One recovery-eligible event, cart or subscription, no other history — the control. Asserted to fire no memory signal |
 | `repeat_offender_cart` | 15% | Gaming detection + discount stopping rule |
 | `cross_domain_risk` | 17% | Dispute outcome suppressing a later discount |
 | `churn_signal` | 9% | 2+ domains in a tight window → escalate to a human |
@@ -214,8 +214,9 @@ cd frontend && npm run dev  # dashboard on :5173
 ```
 
 **Checks** — `npm run typecheck` (types + unit tests), `npm run validate:data`
-(batch hygiene, plus that each scenario still reaches the signal it was written
-for), `npm run verify:schema` (data-model and as-of invariants against the
+(batch hygiene, that each scenario still reaches the signal it was written for,
+and that the control cohort fires none — needs `load:data` first, since it runs
+the real signal code), `npm run verify:schema` (data-model and as-of invariants against the
 loaded DB), `npm run verify:prompts` (both arms carry an identical, arm-neutral
 objective). None call the API.
 
