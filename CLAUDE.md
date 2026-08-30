@@ -161,10 +161,13 @@ triggering event in all three domains.
 
 More event *types* is explicitly out of scope (stay at 3 — cart abandonment, subscription failure, dispute). What's needed instead is deliberately engineered patterns across the customer batch, because the cross-agent value (gaming detection, composite churn, dispute-informed discounting) only shows up when a customer has multiple, related events over time:
 
-- ~40% "normal" customers — one clean event, resolves fine.
-- ~30% "repeat offenders" per agent (20% cart, 5% subscription, 5% dispute) — multiple cycles of the same event (use `paid_count` for subscription failures) to trigger gaming detection + stopping rules.
-- ~15% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is. Remember the status words are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the later discount, `lost` (merchant conceded, customer refunded) should NOT. The merchant-conceded arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`. The dispute's `amount` is the disputed order's `amount`: a chargeback cannot exceed what was charged, and passing the `order_id` without the amount left the two halves of that relationship independently random.
-- ~10% "churn signal" — the composite pattern: 2+ domains firing in a tight time window, which should trigger escalation rather than more automated nudges.
+- ~24% "normal" customers — one clean event, resolves fine.
+- ~27% "repeat offenders" per agent (18% cart, 4.5% subscription, 4.5% dispute) — multiple cycles of the same event (use `paid_count` for subscription failures) to trigger gaming detection + stopping rules.
+- ~14% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is. Remember the status words are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the later discount, `lost` (merchant conceded, customer refunded) should NOT. The merchant-conceded arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`. The dispute's `amount` is the disputed order's `amount`: a chargeback cannot exceed what was charged, and passing the `order_id` without the amount left the two halves of that relationship independently random.
+- ~9% "churn signal" — the composite pattern: 2+ domains firing in a tight time window, which should trigger escalation rather than more automated nudges.
+- ~8% "loyal payer" — 3-5 successful events across two domains, then a single abandoned cart. Exists because `provenPayer` was otherwise reachable only by accident: before this scenario, the only customers with 2+ successful payments were `repeat_offender_cart` customers who happened to convert twice — roughly 3% of the batch, and precisely the population the accelerator is *not* meant to reward. Carries no disputes and no failed cycles, so it fires the accelerator with every brake silent.
+- ~7% "conflicted customer" — 4-6 abandoned carts interleaved with 2-3 genuine payments, ending on an abandonment. Fires `gamingSuspected` and `provenPayer` **simultaneously**, which is what makes precedence in `resolveSignalEffects` observable rather than merely asserted.
+- ~6% "cross-agent gaming" — 2 carts, 2 failed cycles and 1 dispute, spaced 18-25 days apart. Per-agent counts of 2/2/1 keep every agent below `MAX_DISCOUNT_ATTEMPTS_PER_AGENT` while the total reaches `MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS`, so `crossAgentGamingSuspected` fires alone. The spacing is load-bearing: inside `CHURN_LOOKBACK_DAYS` this would also read as composite churn and the scenario would stop isolating anything.
 - ~5% pure noise/edge cases.
 
 
@@ -269,13 +272,25 @@ alone, rather than confounding the rule change with a population change.
 
 This is a settled design decision, not a simplification to revisit.
 
-Measured before/after on the committed batch: **identical, 233/3224 firings
-under both rules**. Every multi-domain customer in this batch has at most one
-event per domain, which collapses each window to a single point and makes the
-two rules mathematically equivalent. The old rule is wrong in principle and the
-synthetic data never exercises the failure mode — so this is a correctness fix
-with no effect on the reported numbers. `npm run measure:churn` reproduces the
-table and cross-checks the live rule.
+Measured before/after on the committed batch: **324 firings under the old rule,
+180 under the new one**. The entire 144-firing gap is `cross_agent_gaming`,
+where the old rule fires on 40% of events and the new one on 0%.
+
+This was not always so. Until `cross_agent_gaming` existed, the two rules scored
+**identically** (233/3224), because every multi-domain customer in the batch had
+at most one event per domain — which collapses each aggregate window to a single
+point and makes the two rules mathematically equivalent. The failure mode was
+real but unexercised, so the fix was defensible only in principle.
+
+`cross_agent_gaming` exercises it by construction: it spreads events across all
+three domains at 18-25 day gaps, deliberately wider than
+`CHURN_LOOKBACK_DAYS`. Under the new rule that is correctly not composite churn
+— no two domains fired within a fortnight. Under the old rule the customer's
+cart window and subscription window each collapse to points that fall within 14
+days of *each other's endpoints*, so it fires on a customer whose domains are
+months apart. That is the bug, now visible in a number rather than only in an
+argument. `npm run measure:churn` reproduces the table and cross-checks the live
+rule.
 
 ## The signal registry
 

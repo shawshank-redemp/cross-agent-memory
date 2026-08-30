@@ -49,6 +49,25 @@ const EVENT_WINDOW_DAYS = 120;
 // display field only.
 const SIGNUP_MIN_DAYS_AGO = EVENT_WINDOW_DAYS + 1;
 
+// Spacing for cross_agent_gaming, which must NOT also read as composite churn.
+// Both bounds must stay strictly above CHURN_LOOKBACK_DAYS (14) in
+// agents/signals/thresholds.ts.
+//
+// The constant is duplicated here rather than imported: thresholds.ts reaches
+// into memory/profile.ts and therefore into better-sqlite3, and the data
+// generator has no business depending on the decisioning layer or on a DB
+// driver. `npm run validate:data` imports both and asserts the relationship
+// holds, so the duplication is checked rather than merely commented.
+const CHURN_SAFE_GAP_MIN_DAYS = 18;
+const CHURN_SAFE_GAP_MAX_DAYS = 25;
+
+// Exported for validate:data, which asserts the gap clears CHURN_LOOKBACK_DAYS.
+export const CHURN_SAFE_GAP_DAYS = { min: CHURN_SAFE_GAP_MIN_DAYS, max: CHURN_SAFE_GAP_MAX_DAYS } as const;
+
+// The batch's fixed "now", exported so validators can assert against the same
+// instant the generator built the batch around rather than wall-clock time.
+export const SIM_NOW_ISO = new Date(SIM_NOW).toISOString();
+
 export type Scenario =
   | "normal"
   | "repeat_offender_cart"
@@ -56,6 +75,9 @@ export type Scenario =
   | "repeat_offender_dispute"
   | "cross_domain_risk"
   | "churn_signal"
+  | "loyal_payer"
+  | "conflicted_customer"
+  | "cross_agent_gaming"
   | "noise";
 
 export interface ScenarioLabel {
@@ -258,7 +280,8 @@ function planCodeFor(customer: Customer): PlanCode {
   return customer.plan_tier;
 }
 
-// ~60%: one clean event, resolves fine — no cross-agent signal.
+// One clean event in a single domain, resolving well. The control population:
+// nothing here should fire any memory signal.
 function generateNormal(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
   const domain = rng.pick(["cart", "subscription", "dispute"] as const);
   const ts = randomTimestampWithinWindow(rng);
@@ -282,8 +305,9 @@ function generateNormal(rng: Rng, customer: Customer, batch: SyntheticBatch): vo
   }
 }
 
-// ~5% (of 15% total): repeated abandoned carts — should trip gaming detection
-// and a stopping rule on discount attempts.
+// Repeated abandoned carts for one customer, converting only occasionally.
+// Drives cart recovery_frequency past MAX_DISCOUNT_ATTEMPTS_PER_AGENT, so it is
+// the per-agent gamingSuspected and discount stopping-rule target.
 function generateRepeatOffenderCart(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
   const cycles = rng.int(4, 7);
   const timestamps = Array.from({ length: cycles }, () => randomTimestampWithinWindow(rng)).sort((a, b) => a - b);
@@ -293,8 +317,9 @@ function generateRepeatOffenderCart(rng: Rng, customer: Customer, batch: Synthet
   }
 }
 
-// ~5%: repeated subscription-cycle failures — recovery-frequency gaming +
-// stopping rule material (use paid_count to trace it).
+// One subscription failing across consecutive billing cycles, spaced roughly a
+// month apart, with a chance the last cycle halts. The subscription-side
+// equivalent of the repeat cart abandoner; paid_count traces the cycle.
 function generateRepeatOffenderSubscription(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
   const planCode = planCodeFor(customer);
   const subscriptionId = makeId("sub", rng);
@@ -323,7 +348,8 @@ function generateRepeatOffenderSubscription(rng: Rng, customer: Customer, batch:
   }
 }
 
-// ~5%: repeat dispute filer across unrelated payments.
+// Several disputes filed against unrelated payments, in a mix of live and
+// ruled states. The main source of customer_adverse (Razorpay 'won') outcomes.
 function generateRepeatOffenderDispute(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
   const disputes = rng.int(3, 5);
   const timestamps = Array.from({ length: disputes }, () => randomTimestampWithinWindow(rng)).sort((a, b) => a - b);
@@ -333,9 +359,9 @@ function generateRepeatOffenderDispute(rng: Rng, customer: Customer, batch: Synt
   }
 }
 
-// ~10%: a dispute on a completed order, followed later by a new abandoned
-// cart from the same customer — shared order_id/payment_id history should
-// suppress the cart-abandonment agent's discount spend on the new cart.
+// A paid order, a dispute filed against that same order, then a later abandoned
+// cart. The shared order_id is the cross-domain join, and whether the later
+// discount SHOULD be suppressed depends entirely on how the dispute resolved.
 function generateCrossDomainRisk(rng: Rng, customer: Customer, batch: SyntheticBatch): ScenarioAnnotation {
   const paidTs = daysAgo(EVENT_WINDOW_DAYS - rng.int(0, 20)) + timeOfDayOffset(rng);
   const paidEvent = makeCartAbandonmentEvent(rng, customer, paidTs, "paid");
@@ -392,8 +418,9 @@ function generateCrossDomainRisk(rng: Rng, customer: Customer, batch: SyntheticB
   return { dispute_outcome: disputeOutcome };
 }
 
-// ~10%: 2+ domains firing within a tight window — composite churn signal
-// that should trigger human escalation rather than more automated nudges.
+// Two or three domains firing inside a single fortnight — the composite churn
+// pattern, which should escalate to a person rather than draw more automated
+// nudges from each agent separately.
 function generateChurnSignal(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
   // Window starts at day 11, not day 10: an event sits up to 10 days past the
   // start, so day 10 plus a sub-day offset would land in the future. The
@@ -420,7 +447,131 @@ function generateChurnSignal(rng: Rng, customer: Customer, batch: SyntheticBatch
   }
 }
 
-// ~5%: pure noise / edge cases agents must handle without falling over.
+// A customer with a real payment history who then abandons one cart. Exists to
+// exercise the ACCELERATOR path cleanly: provenPayer must fire and no brake may.
+//
+// The successes are split across carts and subscription cycles so the "across
+// all domains" half of provenPayer is actually exercised rather than assumed.
+// Note how successful_payment_count is computed (readPaymentHistory in
+// profile.ts): paid carts count one each, but a subscription contributes the
+// `paid_count` of its LATEST row as of the read, not one per row. Incrementing
+// paid_count per cycle therefore makes the subscription contribute exactly its
+// cycle count.
+//
+// Deliberately carries no disputes and no failed cycles, because every brake is
+// reachable from those: a dispute would trip disputeCautionLevel, and failed
+// cycles would feed recovery_frequency. The single trailing abandoned cart puts
+// cart recovery_frequency at 1 — below MAX_DISCOUNT_ATTEMPTS_PER_AGENT — and
+// total recovery at 1, below MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS. With only
+// one domain in recent_events, composite churn cannot fire either.
+function generateLoyalPayer(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
+  const successes = rng.int(3, 5);
+  // At least one of each, so the successes always span two domains.
+  const paidCarts = rng.int(1, successes - 1);
+  const paidCycles = successes - paidCarts;
+
+  let ts = daysAgo(EVENT_WINDOW_DAYS - rng.int(0, 10));
+  const step = (): number => {
+    ts = ts + rng.int(2, 12) * DAY_MS;
+    return Math.min(ts + timeOfDayOffset(rng), SIM_NOW);
+  };
+
+  for (let i = 0; i < paidCarts; i++) {
+    batch.cartAbandonmentEvents.push(makeCartAbandonmentEvent(rng, customer, step(), "paid"));
+  }
+
+  const subscriptionId = makeId("sub", rng);
+  const planId = makeId("plan", rng);
+  const planCode = planCodeFor(customer);
+  for (let cycle = 1; cycle <= paidCycles; cycle++) {
+    batch.subscriptionFailureEvents.push(
+      makeSubscriptionCycleEvent(rng, customer, subscriptionId, planId, planCode, cycle, step(), "active"),
+    );
+  }
+
+  // The triggering event: one abandonment, after every success.
+  batch.cartAbandonmentEvents.push(
+    makeCartAbandonmentEvent(rng, customer, step(), rng.pick(["created", "attempted"] as const)),
+  );
+}
+
+// A customer who is BOTH an established payer and a heavy abandoner. Exists to
+// exercise precedence in resolveSignalEffects: gamingSuspected (brake) and
+// provenPayer (accelerator) are true simultaneously at the final event, and the
+// brake must win regardless of registry order.
+//
+// Everything is a cart event, which keeps the scenario honest about what it
+// tests. recent_events only ever sees one domain, so composite churn cannot
+// fire and confound the reading; and the paid carts feed
+// successful_payment_count without also feeding recovery_frequency, since that
+// counts non-paid carts only.
+function generateConflictedCustomer(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
+  const abandoned = rng.int(4, 6);
+  const paid = rng.int(2, 3);
+
+  // The final event must be an abandoned cart, so it is held back from the
+  // shuffle rather than left to chance.
+  const leading: CartAbandonmentEvent["status"][] = [
+    ...Array.from({ length: paid }, () => "paid" as const),
+    ...Array.from({ length: abandoned - 1 }, () => rng.pick(["created", "attempted"] as const)),
+  ];
+  const order = [...rng.shuffle(leading), rng.pick(["created", "attempted"] as const)];
+
+  let ts = daysAgo(EVENT_WINDOW_DAYS - rng.int(0, 10));
+  for (const status of order) {
+    ts = ts + rng.int(2, 10) * DAY_MS;
+    batch.cartAbandonmentEvents.push(
+      makeCartAbandonmentEvent(rng, customer, Math.min(ts + timeOfDayOffset(rng), SIM_NOW), status),
+    );
+  }
+}
+
+// The pattern crossAgentGamingSuspected was written for: recovery flows
+// triggered across every agent, with no single agent reaching its own
+// MAX_DISCOUNT_ATTEMPTS_PER_AGENT threshold. 2 carts + 2 failed cycles + 1
+// dispute puts the per-agent counts at 2/2/1 and the total at
+// MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS, so per-agent gamingSuspected stays
+// silent and only the cross-agent signal fires.
+//
+// Events are spaced strictly wider than CHURN_LOOKBACK_DAYS. Composite churn
+// asks whether 2+ domains fired within a fortnight; this scenario's claim is
+// dispersion ACROSS AGENTS, not concentration in time. If churn also fired, the
+// scenario would prove nothing the churn scenario does not already prove.
+//
+// The two failed cycles hold paid_count at 1 rather than incrementing it. That
+// is both the correct Razorpay reading — paid_count counts SUCCESSFUL charges,
+// which do not increase when a charge fails — and what keeps
+// successful_payment_count below MIN_SUCCESSFUL_PAYMENTS, so provenPayer stays
+// out of this scenario and the cross-agent brake is read in isolation.
+function generateCrossAgentGaming(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
+  const subscriptionId = makeId("sub", rng);
+  const planId = makeId("plan", rng);
+  const planCode = planCodeFor(customer);
+
+  // Ordered so the triggering event is a cart, and every gap exceeds
+  // CHURN_LOOKBACK_DAYS.
+  const sequence = ["cart", "subscription", "dispute", "subscription", "cart"] as const;
+
+  let ts = daysAgo(EVENT_WINDOW_DAYS);
+  for (const domain of sequence) {
+    ts = ts + rng.int(CHURN_SAFE_GAP_MIN_DAYS, CHURN_SAFE_GAP_MAX_DAYS) * DAY_MS;
+    const at = Math.min(ts + timeOfDayOffset(rng), SIM_NOW);
+
+    if (domain === "cart") {
+      batch.cartAbandonmentEvents.push(
+        makeCartAbandonmentEvent(rng, customer, at, rng.pick(["created", "attempted"] as const)),
+      );
+    } else if (domain === "subscription") {
+      batch.subscriptionFailureEvents.push(
+        makeSubscriptionCycleEvent(rng, customer, subscriptionId, planId, planCode, 1, at, "failed"),
+      );
+    } else {
+      batch.disputeEvents.push(makeDisputeEvent(rng, customer, at, rng.pick(["open", "under_review"] as const)));
+    }
+  }
+}
+
+// Edge cases agents must handle without falling over.
 function generateNoise(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
   const variant = rng.int(0, 4);
   if (variant === 0) {
@@ -495,39 +646,64 @@ interface ScenarioBucket {
 // per-scenario generators below are what make the memory layer's findings
 // meaningful and are unchanged.
 const SCENARIO_BUCKETS: ScenarioBucket[] = [
-  { scenario: "normal", weight: 0.4, note: "one clean, resolved event", generate: generateNormal },
+  { scenario: "normal", weight: 0.24, note: "one clean, resolved event", generate: generateNormal },
   {
     scenario: "repeat_offender_cart",
-    weight: 0.2,
+    weight: 0.18,
     note: "repeated abandoned carts — gaming/stopping-rule target",
     generate: generateRepeatOffenderCart,
   },
   {
-    scenario: "repeat_offender_subscription",
-    weight: 0.05,
-    note: "repeated billing-cycle failures — gaming/stopping-rule target",
-    generate: generateRepeatOffenderSubscription,
-  },
-  {
-    scenario: "repeat_offender_dispute",
-    weight: 0.05,
-    note: "repeat dispute filer",
-    generate: generateRepeatOffenderDispute,
-  },
-  {
     scenario: "cross_domain_risk",
-    weight: 0.15,
+    weight: 0.14,
     note: "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
     generate: generateCrossDomainRisk,
   },
   {
     scenario: "churn_signal",
-    weight: 0.1,
+    weight: 0.09,
     note: "2+ domains in a tight window — should escalate to human",
     generate: generateChurnSignal,
   },
+  {
+    scenario: "loyal_payer",
+    weight: 0.08,
+    note: "established payer, one abandonment — the accelerator path with no brake active",
+    generate: generateLoyalPayer,
+  },
+  {
+    scenario: "conflicted_customer",
+    weight: 0.07,
+    note: "heavy abandoner who also pays — brake and accelerator true at once",
+    generate: generateConflictedCustomer,
+  },
+  {
+    scenario: "cross_agent_gaming",
+    weight: 0.06,
+    note: "recovery triggers spread across all three agents, none reaching its own threshold",
+    generate: generateCrossAgentGaming,
+  },
+  {
+    scenario: "repeat_offender_subscription",
+    weight: 0.045,
+    note: "repeated billing-cycle failures — gaming/stopping-rule target",
+    generate: generateRepeatOffenderSubscription,
+  },
+  {
+    scenario: "repeat_offender_dispute",
+    weight: 0.045,
+    note: "repeat dispute filer",
+    generate: generateRepeatOffenderDispute,
+  },
   { scenario: "noise", weight: 0.05, note: "edge case / malformed-ish data", generate: generateNoise },
 ];
+
+// Derived from SCENARIO_BUCKETS rather than restated, so a validator checking
+// realised counts against configured weights cannot be checking against a
+// second, stale copy of those weights.
+export const SCENARIO_WEIGHTS: Record<Scenario, number> = Object.fromEntries(
+  SCENARIO_BUCKETS.map((b) => [b.scenario, b.weight]),
+) as Record<Scenario, number>;
 
 function allocateCounts(total: number): Map<Scenario, number> {
   const counts = new Map<Scenario, number>();

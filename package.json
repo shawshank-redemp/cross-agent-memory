@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "generate:data": "tsx src/data/index.ts",
+    "validate:data": "tsx scripts/validateGeneratedData.ts",
     "load:data": "tsx src/db/load.ts",
     "agents:baseline": "tsx --env-file-if-exists=.env src/agents/runBaseline.ts",
     "agents:memory": "tsx --env-file-if-exists=.env src/agents/runMemory.ts",

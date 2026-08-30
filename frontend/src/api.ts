@@ -198,6 +198,9 @@ export const SCENARIO_LABELS: Record<Scenario, string> = {
   repeat_offender_dispute: "Repeat Offender (Dispute)",
   cross_domain_risk: "Cross-Domain Risk",
   churn_signal: "Churn Signal",
+  loyal_payer: "Loyal Payer",
+  conflicted_customer: "Conflicted (Gaming + Paying)",
+  cross_agent_gaming: "Cross-Agent Gaming",
   noise: "Noise / Edge Case",
 };
 

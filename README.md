@@ -68,12 +68,15 @@ assigned to scenarios that plant the patterns the memory layer should catch.
 
 | Scenario | Share | What it tests |
 | --- | --- | --- |
-| `normal` | 40% | No cross-agent signal — the control |
-| `repeat_offender_cart` | 20% | Gaming detection + discount stopping rule |
-| `repeat_offender_subscription` | 5% | Repeat billing failure across cycles |
-| `repeat_offender_dispute` | 5% | Repeat dispute filer |
-| `cross_domain_risk` | 15% | Dispute outcome suppressing a later discount |
-| `churn_signal` | 10% | 2+ domains in a tight window → escalate to a human |
+| `normal` | 24% | No cross-agent signal — the control |
+| `repeat_offender_cart` | 18% | Gaming detection + discount stopping rule |
+| `cross_domain_risk` | 14% | Dispute outcome suppressing a later discount |
+| `churn_signal` | 9% | 2+ domains in a tight window → escalate to a human |
+| `loyal_payer` | 8% | An established payer who abandons once — the accelerator, with no brake active |
+| `conflicted_customer` | 7% | Heavy abandoner who also pays — brake and accelerator true at once |
+| `cross_agent_gaming` | 6% | Recovery triggers spread across all three agents, none reaching its own threshold |
+| `repeat_offender_subscription` | 4.5% | Repeat billing failure across cycles |
+| `repeat_offender_dispute` | 4.5% | Repeat dispute filer |
 | `noise` | 5% | Edge cases the pipeline must survive |
 
 `scenario_labels.json` records the planted pattern per customer. It is ground
@@ -181,7 +184,7 @@ npm run agents:memory     # memory-informed arm decides on every event
 npm run analyze:compare   # -> data/results/comparison_report.json
 ```
 
-The agent steps call the Claude API once per event across 3,224 events. To try a
+The agent steps call the Claude API once per event across 4,242 events. To try a
 slice, `--scenario=` and `--customer=` select whole customers:
 
 ```bash
@@ -201,9 +204,11 @@ npm run server:dev          # API on :4000
 cd frontend && npm run dev  # dashboard on :5173
 ```
 
-**Checks** — `npm run typecheck` (types + unit tests), `npm run verify:schema`
-(data-model and as-of invariants against the loaded DB), `npm run verify:prompts`
-(both arms carry an identical, arm-neutral objective). None call the API.
+**Checks** — `npm run typecheck` (types + unit tests), `npm run validate:data`
+(batch hygiene, plus that each scenario still reaches the signal it was written
+for), `npm run verify:schema` (data-model and as-of invariants against the
+loaded DB), `npm run verify:prompts` (both arms carry an identical, arm-neutral
+objective). None call the API.
 
 ---
 
