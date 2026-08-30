@@ -195,14 +195,25 @@ const amountMismatch = db
 check("amount_due = amount - amount_paid on every order", amountMismatch.n === 0, `${amountMismatch.n} rows`);
 
 // --- 4. dispute caution level flips across a won dispute's resolution ------
-const normalCustomers = new Set(labels.filter((l) => l.scenario === "normal").map((l) => l.customer_id));
+// Needs a customer whose ONLY dispute is a resolved merchant-conceded one, so
+// the caution level flips cleanly across its resolution with no second dispute
+// holding the level up. Selected by that property directly rather than by
+// scenario: this used to look inside `normal`, which was coupled to
+// generateNormal happening to emit 'lost' disputes. When that scenario changed
+// to emit recovery-ELIGIBLE events (an open dispute has something left to
+// file; a ruled one does not), the fixture vanished and the check failed for a
+// reason that had nothing to do with the property under test.
+const disputesPerCustomer = new Map<string, number>();
+for (const row of db.prepare("SELECT customer_id FROM dispute_events").all() as { customer_id: string }[]) {
+  disputesPerCustomer.set(row.customer_id, (disputesPerCustomer.get(row.customer_id) ?? 0) + 1);
+}
 // Razorpay 'lost' = the merchant conceded, i.e. the no-caution outcome.
 const concededDispute = (db.prepare("SELECT * FROM dispute_events WHERE status = 'lost'").all() as DisputeEvent[]).find(
-  (d) => normalCustomers.has(d.customer_id) && d.resolved_at != null,
+  (d) => d.resolved_at != null && disputesPerCustomer.get(d.customer_id) === 1,
 );
 
 if (!concededDispute) {
-  check("found a `normal` customer with a merchant-conceded (rzp 'lost') dispute", false);
+  check("found a customer whose only dispute is a resolved merchant-conceded (rzp 'lost') one", false);
 } else {
   const midpoint = new Date(
     (Date.parse(concededDispute.dispute_created_at) + Date.parse(concededDispute.resolved_at!)) / 2,

@@ -3,6 +3,11 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import { openDb } from "../db/connection.js";
+import {
+  CART_ELIGIBLE_SQL,
+  DISPUTE_ELIGIBLE_SQL,
+  SUBSCRIPTION_ELIGIBLE_SQL,
+} from "../db/eligibility.js";
 import type { Scenario, ScenarioLabel } from "../data/generator.js";
 import { appendAuditLog, recordDiscountUsage, type PolicyOverrideRecord } from "../memory/profile.js";
 import { POLICY_FINGERPRINT, type MemorySignals } from "./policy.js";
@@ -242,11 +247,19 @@ function loadTaggedEvents(db: Database.Database): { customerById: Map<string, Cu
   const customers = db.prepare("SELECT * FROM customers").all() as Customer[];
   const customerById = new Map(customers.map((c) => [c.customer_id, c]));
 
-  const cartEvents = (db.prepare("SELECT * FROM cart_abandonment_events").all() as CartEventRow[]).map(
-    (row): CartAbandonmentEvent => ({ ...row, notes: JSON.parse(row.notes) as CartAbandonmentEvent["notes"] }),
-  );
-  const subEvents = db.prepare("SELECT * FROM subscription_failure_events").all() as SubscriptionFailureEvent[];
-  const disputeEvents = db.prepare("SELECT * FROM dispute_events").all() as DisputeEvent[];
+  // Only events with an open recovery question get their own decision. The
+  // ineligible rows stay in the database untouched and are still read by the
+  // asOf profile queries — this narrows the decision queue, never memory. See
+  // db/eligibility.ts.
+  const cartEvents = (
+    db.prepare(`SELECT * FROM cart_abandonment_events WHERE ${CART_ELIGIBLE_SQL}`).all() as CartEventRow[]
+  ).map((row): CartAbandonmentEvent => ({ ...row, notes: JSON.parse(row.notes) as CartAbandonmentEvent["notes"] }));
+  const subEvents = db
+    .prepare(`SELECT * FROM subscription_failure_events WHERE ${SUBSCRIPTION_ELIGIBLE_SQL}`)
+    .all() as SubscriptionFailureEvent[];
+  const disputeEvents = db
+    .prepare(`SELECT * FROM dispute_events WHERE ${DISPUTE_ELIGIBLE_SQL}`)
+    .all() as DisputeEvent[];
 
   const tagged: TaggedEvent[] = [
     ...cartEvents.map(

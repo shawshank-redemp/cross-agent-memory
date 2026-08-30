@@ -280,30 +280,42 @@ function planCodeFor(customer: Customer): PlanCode {
   return customer.plan_tier;
 }
 
-// One clean event in a single domain, resolving well. The control population:
-// nothing here should fire any memory signal.
+// One recovery-eligible event, in a single domain, for a customer with no other
+// history. The negative control: a real recovery opportunity where memory has
+// nothing to say and both arms should reach the same decision.
+//
+// This scenario used to emit the CLEAN terminal state of each domain — a paid
+// cart, an active cycle, a 'lost' dispute. Every one of those is ineligible
+// under db/eligibility.ts, so once the runner started filtering, the control
+// cohort would have vanished from the comparison entirely: no decisions, no
+// events to match between arms, and a headline built on the remaining cohorts,
+// all of which are ones where memory is supposed to act.
+//
+// A control has to be a case the system actually decides. What makes it a
+// control is the ABSENCE OF HISTORY, not the absence of a recovery question —
+// the customer has exactly one event, so every memory signal is silent and any
+// divergence between arms is noise rather than memory.
 function generateNormal(rng: Rng, customer: Customer, batch: SyntheticBatch): void {
   const domain = rng.pick(["cart", "subscription", "dispute"] as const);
   const ts = randomTimestampWithinWindow(rng);
 
   if (domain === "cart") {
-    batch.cartAbandonmentEvents.push(makeCartAbandonmentEvent(rng, customer, ts, "paid"));
+    batch.cartAbandonmentEvents.push(
+      makeCartAbandonmentEvent(rng, customer, ts, rng.pick(["created", "attempted"] as const)),
+    );
   } else if (domain === "subscription") {
     const planCode = planCodeFor(customer);
     batch.subscriptionFailureEvents.push(
-      makeSubscriptionCycleEvent(rng, customer, makeId("sub", rng), makeId("plan", rng), planCode, rng.int(1, 4), ts, "active"),
+      makeSubscriptionCycleEvent(rng, customer, makeId("sub", rng), makeId("plan", rng), planCode, rng.int(1, 4), ts, "failed"),
     );
   } else {
-    // Razorpay 'lost' = the merchant lost or accepted the chargeback and the
-    // customer was refunded. That is the CLEAN outcome for this scenario: it
-    // says nothing against the customer, so a "normal" customer reads as
-    // disputeCautionLevel "none". (Razorpay 'won' would mean the merchant
-    // successfully contested them — the customer-adverse outcome — which is
-    // the opposite of what "one clean event, resolves fine" means. This
-    // literal was 'won' while the mapping was inverted.)
-    batch.disputeEvents.push(makeDisputeEvent(rng, customer, ts, "lost"));
+    // Unresolved, so the responder has something to file. The reason still
+    // drives disputeCautionLevel, but with one event and no other domain there
+    // is no cross-agent history for any brake to accumulate from.
+    batch.disputeEvents.push(makeDisputeEvent(rng, customer, ts, rng.pick(["open", "under_review"] as const)));
   }
 }
+
 
 // Repeated abandoned carts for one customer, converting only occasionally.
 // Drives cart recovery_frequency past MAX_DISCOUNT_ATTEMPTS_PER_AGENT, so it is
@@ -646,16 +658,16 @@ interface ScenarioBucket {
 // per-scenario generators below are what make the memory layer's findings
 // meaningful and are unchanged.
 const SCENARIO_BUCKETS: ScenarioBucket[] = [
-  { scenario: "normal", weight: 0.24, note: "one clean, resolved event", generate: generateNormal },
+  { scenario: "normal", weight: 0.24, note: "a single recovery-eligible event, no other history — the negative control", generate: generateNormal },
   {
     scenario: "repeat_offender_cart",
-    weight: 0.18,
+    weight: 0.15,
     note: "repeated abandoned carts — gaming/stopping-rule target",
     generate: generateRepeatOffenderCart,
   },
   {
     scenario: "cross_domain_risk",
-    weight: 0.14,
+    weight: 0.17,
     note: "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
     generate: generateCrossDomainRisk,
   },
@@ -701,6 +713,18 @@ const SCENARIO_BUCKETS: ScenarioBucket[] = [
 // Derived from SCENARIO_BUCKETS rather than restated, so a validator checking
 // realised counts against configured weights cannot be checking against a
 // second, stale copy of those weights.
+// Asserted at module load, not by inspection: a previous reweight was specified
+// with values summing to 1.04 and the error was caught only by hand-adding the
+// column. allocateCounts gives the final bucket whatever is left over, so a bad
+// sum does not throw — it silently distorts that one bucket instead.
+const WEIGHT_SUM = SCENARIO_BUCKETS.reduce((total, b) => total + b.weight, 0);
+if (Math.abs(WEIGHT_SUM - 1) > 1e-9) {
+  throw new Error(
+    `SCENARIO_BUCKETS weights must sum to exactly 1.0, got ${WEIGHT_SUM}. ` +
+      `The last bucket silently absorbs any discrepancy, so this must fail loudly instead.`,
+  );
+}
+
 export const SCENARIO_WEIGHTS: Record<Scenario, number> = Object.fromEntries(
   SCENARIO_BUCKETS.map((b) => [b.scenario, b.weight]),
 ) as Record<Scenario, number>;

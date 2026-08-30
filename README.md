@@ -68,9 +68,9 @@ assigned to scenarios that plant the patterns the memory layer should catch.
 
 | Scenario | Share | What it tests |
 | --- | --- | --- |
-| `normal` | 24% | No cross-agent signal — the control |
-| `repeat_offender_cart` | 18% | Gaming detection + discount stopping rule |
-| `cross_domain_risk` | 14% | Dispute outcome suppressing a later discount |
+| `normal` | 24% | One recovery-eligible event, no other history — the control |
+| `repeat_offender_cart` | 15% | Gaming detection + discount stopping rule |
+| `cross_domain_risk` | 17% | Dispute outcome suppressing a later discount |
 | `churn_signal` | 9% | 2+ domains in a tight window → escalate to a human |
 | `loyal_payer` | 8% | An established payer who abandons once — the accelerator, with no brake active |
 | `conflicted_customer` | 7% | Heavy abandoner who also pays — brake and accelerator true at once |
@@ -184,8 +184,17 @@ npm run agents:memory     # memory-informed arm decides on every event
 npm run analyze:compare   # -> data/results/comparison_report.json
 ```
 
-The agent steps call the Claude API once per event across 4,242 events. To try a
-slice, `--scenario=` and `--customer=` select whole customers:
+The agent steps call the Claude API once per **recovery-eligible** event —
+a cart that was never paid, a failed or halted billing cycle, an unresolved
+dispute. Already-paid carts, active subscriptions and ruled disputes have no
+recovery question to answer, so they get no decision and cost nothing; they stay
+in the database and are still read as memory by the as-of profile queries. See
+[src/db/eligibility.ts](src/db/eligibility.ts).
+
+`npm run estimate:cost` prices a two-arm run against the current database before
+you pay for it, and `npm run generate:data -- --customers=N` resizes the
+population. To try a slice, `--scenario=` and `--customer=` select whole
+customers:
 
 ```bash
 npm run agents:memory -- --scenario=cross_domain_risk

@@ -20,6 +20,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { openDb } from "../src/db/connection.js";
+import {
+  CART_ELIGIBLE_SQL,
+  DISPUTE_ELIGIBLE_SQL,
+  SUBSCRIPTION_ELIGIBLE_SQL,
+} from "../src/db/eligibility.js";
 import { computeMemoryProfile } from "../src/memory/profile.js";
 import { computeMemorySignals, type TriggeringEventFacts } from "../src/agents/policy.js";
 import type { AgentType } from "../src/types/index.js";
@@ -36,6 +41,15 @@ interface RecoveryEvent {
 }
 
 // The population is the RECOVERY-FLOW triggering events, matching the filters
+// NOTE: this population is NOT db/eligibility.ts, and must not become it.
+//
+// It mirrors profile.ts's readRecoveryFrequency/readRecentEvents, which count
+// ALL disputes regardless of status — a ruled dispute still happened and is
+// still evidence about the customer. Eligibility excludes ruled disputes,
+// because the responder has nothing left to file. The two agree on carts and
+// subscriptions and diverge on disputes by design; sharing a constant here
+// would let a change to the decision queue silently redefine what composite
+// churn measures.
 // readRecoveryFrequency already uses: a paid cart and an active subscription
 // cycle do not fire a recovery flow, so neither is evidence of churn. Holding
 // this population fixed across both rules is what makes the comparison below
@@ -50,6 +64,7 @@ function loadRecoveryEventsByCustomer(): Map<string, RecoveryEvent[]> {
     ...(db
       .prepare("SELECT customer_id, created_at AS at FROM subscription_failure_events WHERE status IN ('failed','halted')")
       .all() as { customer_id: string; at: string }[]).map((r) => ({ ...r, agent: "subscription_recovery" as const })),
+    // ALL disputes, deliberately unfiltered — see the note above.
     ...(db.prepare("SELECT customer_id, dispute_created_at AS at FROM dispute_events").all() as {
       customer_id: string;
       at: string;
@@ -67,21 +82,24 @@ function loadRecoveryEventsByCustomer(): Map<string, RecoveryEvent[]> {
   return byCustomer;
 }
 
-// Every event the runner decides on — including paid carts and active
-// subscription cycles, which get a decision even though they are not
-// themselves recovery-flow triggers.
+// Every event the runner decides on. That is now the recovery-eligible set —
+// the shared definition in db/eligibility.ts, imported rather than restated so
+// this denominator cannot drift away from what the runner actually processes.
+//
+// It used to be every row in all three tables, back when the runner decided on
+// paid carts and active cycles too.
 function loadAllDecisionPoints(): { customer_id: string; ts: number }[] {
   const db = openDb();
   const rows = [
-    ...(db.prepare("SELECT customer_id, created_at AS at FROM cart_abandonment_events").all() as {
+    ...(db.prepare(`SELECT customer_id, created_at AS at FROM cart_abandonment_events WHERE ${CART_ELIGIBLE_SQL}`).all() as {
       customer_id: string;
       at: string;
     }[]),
-    ...(db.prepare("SELECT customer_id, created_at AS at FROM subscription_failure_events").all() as {
+    ...(db.prepare(`SELECT customer_id, created_at AS at FROM subscription_failure_events WHERE ${SUBSCRIPTION_ELIGIBLE_SQL}`).all() as {
       customer_id: string;
       at: string;
     }[]),
-    ...(db.prepare("SELECT customer_id, dispute_created_at AS at FROM dispute_events").all() as {
+    ...(db.prepare(`SELECT customer_id, dispute_created_at AS at FROM dispute_events WHERE ${DISPUTE_ELIGIBLE_SQL}`).all() as {
       customer_id: string;
       at: string;
     }[]),

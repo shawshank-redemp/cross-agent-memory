@@ -161,9 +161,9 @@ triggering event in all three domains.
 
 More event *types* is explicitly out of scope (stay at 3 — cart abandonment, subscription failure, dispute). What's needed instead is deliberately engineered patterns across the customer batch, because the cross-agent value (gaming detection, composite churn, dispute-informed discounting) only shows up when a customer has multiple, related events over time:
 
-- ~24% "normal" customers — one clean event, resolves fine.
-- ~27% "repeat offenders" per agent (18% cart, 4.5% subscription, 4.5% dispute) — multiple cycles of the same event (use `paid_count` for subscription failures) to trigger gaming detection + stopping rules.
-- ~14% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is. Remember the status words are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the later discount, `lost` (merchant conceded, customer refunded) should NOT. The merchant-conceded arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`. The dispute's `amount` is the disputed order's `amount`: a chargeback cannot exceed what was charged, and passing the `order_id` without the amount left the two halves of that relationship independently random.
+- ~24% "normal" customers — ONE RECOVERY-ELIGIBLE event (abandoned cart, failed cycle, or unresolved dispute) and no other history. The negative control. It used to emit the clean TERMINAL state of each domain — a paid cart, an active cycle, a conceded dispute — every one of which is ineligible for a decision, so the whole control cohort would have disappeared from the comparison the moment the runner started filtering. What makes it a control is the absence of HISTORY, not the absence of a recovery question.
+- ~24% "repeat offenders" per agent (15% cart, 4.5% subscription, 4.5% dispute) — multiple cycles of the same event (use `paid_count` for subscription failures) to trigger gaming detection + stopping rules.
+- ~17% "cross-domain risk" — a dispute (via shared `payment_id`/`order_id`) on a past order, followed by a later cart abandonment. The dispute's outcome is drawn at equal weight from `lost` / `under_review` / `won`, and it decides what correct behaviour is. Remember the status words are merchant-side: `won` (merchant contested successfully) and `under_review` should suppress the later discount, `lost` (merchant conceded, customer refunded) should NOT. The merchant-conceded arm is what makes the scenario falsifiable — without it, a system that reacted to the mere existence of a dispute would score identically to one that reads the outcome. Terminal disputes are forced to resolve strictly before the later cart so the cart agent sees a resolved outcome rather than an unresolved one. The planted outcome is recorded on the scenario label as `dispute_outcome`. The dispute's `amount` is the disputed order's `amount`: a chargeback cannot exceed what was charged, and passing the `order_id` without the amount left the two halves of that relationship independently random.
 - ~9% "churn signal" — the composite pattern: 2+ domains firing in a tight time window, which should trigger escalation rather than more automated nudges.
 - ~8% "loyal payer" — 3-5 successful events across two domains, then a single abandoned cart. Exists because `provenPayer` was otherwise reachable only by accident: before this scenario, the only customers with 2+ successful payments were `repeat_offender_cart` customers who happened to convert twice — roughly 3% of the batch, and precisely the population the accelerator is *not* meant to reward. Carries no disputes and no failed cycles, so it fires the accelerator with every brake silent.
 - ~7% "conflicted customer" — 4-6 abandoned carts interleaved with 2-3 genuine payments, ending on an abandonment. Fires `gamingSuspected` and `provenPayer` **simultaneously**, which is what makes precedence in `resolveSignalEffects` observable rather than merely asserted.
@@ -272,9 +272,9 @@ alone, rather than confounding the rule change with a population change.
 
 This is a settled design decision, not a simplification to revisit.
 
-Measured before/after on the committed batch: **324 firings under the old rule,
-180 under the new one**. The entire 144-firing gap is `cross_agent_gaming`,
-where the old rule fires on 40% of events and the new one on 0%.
+Measured before/after on the committed batch (700 customers, 1,731 eligible
+events): **204 firings under the old rule, 120 under the new one**. The entire 144-firing gap is `cross_agent_gaming`,
+where the old rule fires and the new one does not.
 
 This was not always so. Until `cross_agent_gaming` existed, the two rules scored
 **identically** (233/3224), because every multi-domain customer in the batch had
@@ -291,6 +291,41 @@ days of *each other's endpoints*, so it fires on a customer whose domains are
 months apart. That is the bug, now visible in a number rather than only in an
 argument. `npm run measure:churn` reproduces the table and cross-checks the live
 rule.
+
+## Recovery eligibility: which events get a decision
+
+`src/db/eligibility.ts` is the single definition of whether an event has a
+recovery question to answer — cart `status != 'paid'`, subscription
+`status IN ('failed','halted')`, dispute `status IN ('open','under_review')`.
+It exports SQL fragments and predicate functions, and a test walks every value
+of all three status enums through both paths against a real SQLite database to
+prove they agree.
+
+The runner used to decide on every row in all three tables, paying for an API
+call to work out how to recover a cart that was already paid or a dispute that
+had already been ruled on. Roughly 29% of a batch is such events.
+
+**This filters the decision queue, never memory.** Ineligible rows stay in the
+database and are still read by every asOf profile query — a paid cart is exactly
+what makes someone a `provenPayer`, and a resolved dispute is exactly what sets
+a caution level. Removing them from the queue changes what gets *decided*, not
+what is *known*.
+
+### It is NOT the same as recovery-flow membership
+
+`profile.ts` (`readRecoveryFrequency`, `readRecentEvents`) counts **all
+disputes regardless of status**, because a dispute that has since been ruled on
+still happened and is still evidence about the customer. Eligibility excludes
+ruled disputes, because the responder has nothing left to file. The two
+definitions agree on carts and subscriptions and diverge on disputes **by
+design**.
+
+They are deliberately kept as separate constants rather than shared. Coupling
+them would let a change to the decision queue silently redefine what composite
+churn measures — and `measure:churn`'s whole claim rests on holding that
+population fixed. The one place eligibility legitimately belongs in that script
+is `loadAllDecisionPoints`, which is literally "every event the runner decides
+on".
 
 ## The signal registry
 
