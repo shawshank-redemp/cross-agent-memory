@@ -23,6 +23,55 @@ export interface RawDecision<T> {
   rawText: string | null;
 }
 
+// --- Token accounting -------------------------------------------------------
+//
+// Accumulated per PROCESS, across every API call the run makes. The runner
+// prints the totals and the real cost in its summary; nothing here alters a
+// decision.
+//
+// Recorded inside decideOnceWithRaw rather than in decide(), because decide()
+// retries once on failure and BOTH attempts are billed. Accounting at the
+// wrapper would silently under-report every retried call.
+//
+// Recorded immediately on response, BEFORE the max_tokens and parsed_output
+// checks below throw: a response that arrives and is then rejected has already
+// consumed — and been charged for — its tokens.
+export interface UsageTotals {
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
+}
+
+const usageTotals: UsageTotals = {
+  calls: 0,
+  inputTokens: 0,
+  outputTokens: 0,
+  cacheReadTokens: 0,
+  cacheCreationTokens: 0,
+};
+
+// cache_* are `number | null` on the SDK's Usage type; input/output are always
+// numbers. The null coalescing is what the type requires, not defensiveness.
+function recordUsage(usage: Anthropic.Usage): void {
+  usageTotals.calls += 1;
+  usageTotals.inputTokens += usage.input_tokens;
+  usageTotals.outputTokens += usage.output_tokens;
+  usageTotals.cacheReadTokens += usage.cache_read_input_tokens ?? 0;
+  usageTotals.cacheCreationTokens += usage.cache_creation_input_tokens ?? 0;
+}
+
+export function getUsageTotals(): UsageTotals {
+  return { ...usageTotals };
+}
+
+// Which model the calls actually went to, so cost is priced against the model
+// that ran rather than the one the code defaults to.
+export function getModelInUse(): string {
+  return MODEL;
+}
+
 async function decideOnceWithRaw<Schema extends z.ZodType>(
   system: string,
   userContent: string,
@@ -40,6 +89,10 @@ async function decideOnceWithRaw<Schema extends z.ZodType>(
     messages: [{ role: "user", content: userContent }],
     output_config: { format: zodOutputFormat(schema) },
   });
+
+  // Before any throw below: these tokens are billed whether or not we accept
+  // the response.
+  recordUsage(response.usage);
 
   if (response.stop_reason === "max_tokens") {
     throw new AnthropicError("Agent call hit max_tokens before finishing structured output");

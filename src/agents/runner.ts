@@ -3,6 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import { openDb } from "../db/connection.js";
+import { getModelInUse, getUsageTotals } from "./claudeClient.js";
+import { BATCH_DISCOUNT, costUsd, pricingFor } from "../lib/pricing.js";
 import {
   CART_ELIGIBLE_SQL,
   DISPUTE_ELIGIBLE_SQL,
@@ -559,6 +561,33 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   // A partial run must never be mistaken for a complete one. The counts are
   // printed either way, and a non-zero exit is what stops a downstream
   // `npm run analyze:compare` in a shell chain from scoring an incomplete arm.
+  // Actual token spend for this process. Only counts calls THIS run made, so a
+  // --resume run reports the cost of the retry, not of the original attempt.
+  const usage = getUsageTotals();
+  const model = getModelInUse();
+  const pricing = pricingFor(model);
+  console.log(`\nAPI usage (this run): ${usage.calls} call(s), ${model}`);
+  console.log(
+    `  input  ${usage.inputTokens.toLocaleString()} tokens` +
+      (usage.calls > 0 ? `  (${Math.round(usage.inputTokens / usage.calls)}/call)` : ""),
+  );
+  console.log(
+    `  output ${usage.outputTokens.toLocaleString()} tokens` +
+      (usage.calls > 0 ? `  (${Math.round(usage.outputTokens / usage.calls)}/call)` : ""),
+  );
+  if (usage.cacheReadTokens > 0 || usage.cacheCreationTokens > 0) {
+    console.log(`  cache  ${usage.cacheReadTokens.toLocaleString()} read, ${usage.cacheCreationTokens.toLocaleString()} written`);
+  }
+  if (pricing) {
+    const actual = costUsd(usage.inputTokens, usage.outputTokens, pricing);
+    console.log(`  cost   $${actual.toFixed(2)} at ${model} rates ($${pricing.inputPerMTok}/$${pricing.outputPerMTok} per Mtok)`);
+    console.log(`         $${(actual * BATCH_DISCOUNT).toFixed(2)} had this gone through the Batch API`);
+  } else {
+    // Never invent a price for an unrecognised model — the token counts above
+    // are the answer, and a confidently wrong dollar figure is worse than none.
+    console.log(`  cost   no published pricing for "${model}" in lib/pricing.ts — tokens reported above`);
+  }
+
   console.log(
     `\nRun summary: ${toProcess.length} event(s) attempted, ${decisions.length - resumedDecisions.length} decided, ` +
       `${failures.length} failed` +

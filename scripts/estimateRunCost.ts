@@ -10,6 +10,7 @@
 
 import Database from "better-sqlite3";
 import { openDb } from "../src/db/connection.js";
+import { BATCH_DISCOUNT, DEFAULT_PRICING_MODEL, pricingFor } from "../src/lib/pricing.js";
 import {
   CART_ELIGIBLE_SQL,
   DISPUTE_ELIGIBLE_SQL,
@@ -19,13 +20,18 @@ import {
 // ---------------------------------------------------------------------------
 // Pricing. Claude Opus 5, USD per MILLION tokens.
 // ---------------------------------------------------------------------------
-const USD_PER_MTOK_INPUT = 5;
-const USD_PER_MTOK_OUTPUT = 25;
+// Imported, not restated: the runner prints ACTUAL cost from the same table
+// after a run, and a projection that disagreed with the actual would be worse
+// than no projection.
+const PRICING = pricingFor(DEFAULT_PRICING_MODEL)!;
+const USD_PER_MTOK_INPUT = PRICING.inputPerMTok;
+const USD_PER_MTOK_OUTPUT = PRICING.outputPerMTok;
 
-// The Batch API is half price. The runner currently makes ordinary streaming
-// calls, so the batch column is what this WOULD cost if moved to batch, not
-// what today's `npm run agents:*` costs. Both are reported for that reason.
-const BATCH_DISCOUNT = 0.5;
+// The Batch API is half price. The runner does not use it and cannot trivially:
+// decisions within a customer are sequential, since discount_usage_history
+// written by one decision feeds stoppingRuleHit on the next, while the Batch
+// API needs every request submitted up front. The batch column is therefore an
+// upper bound on what a restructured run could save, not a switch to flip.
 
 // Rough per-call token estimates. Input is the system prompt, the objective
 // block, the memory payload and the signal prose; output is 3-5 sentences of
