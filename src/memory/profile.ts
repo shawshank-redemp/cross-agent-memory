@@ -34,6 +34,9 @@ export interface AppendAuditLogInput {
   event_id?: string;
   // Null on a memory_read row — reading memory decides nothing.
   escalate_to_human?: boolean;
+  // Which policy governed this decision (POLICY_FINGERPRINT). Null on
+  // memory_read rows, which decide nothing.
+  policyVersion?: string;
   // Snapshot of the MemorySignals this decision was made against. Absent on
   // memory_read rows (signals are computed after the read) and on every
   // baseline row (which has no memory to compute signals from).
@@ -49,9 +52,9 @@ export function appendAuditLog(db: Database.Database, entry: AppendAuditLogInput
   db.prepare(
     `INSERT INTO audit_log
        (timestamp, customer_id, agent, mode, entry_type, event_id, action, reasoning,
-        escalate_to_human, signals, policy_override, metadata)
+        escalate_to_human, policy_version, signals, policy_override, metadata)
      VALUES (@timestamp, @customer_id, @agent, @mode, @entry_type, @event_id, @action, @reasoning,
-             @escalate_to_human, @signals, @policy_override, @metadata)
+             @escalate_to_human, @policy_version, @signals, @policy_override, @metadata)
      ON CONFLICT(event_id, mode, entry_type) DO UPDATE SET
        timestamp = excluded.timestamp,
        customer_id = excluded.customer_id,
@@ -59,6 +62,7 @@ export function appendAuditLog(db: Database.Database, entry: AppendAuditLogInput
        action = excluded.action,
        reasoning = excluded.reasoning,
        escalate_to_human = excluded.escalate_to_human,
+       policy_version = excluded.policy_version,
        signals = excluded.signals,
        policy_override = excluded.policy_override,
        metadata = excluded.metadata`,
@@ -72,6 +76,7 @@ export function appendAuditLog(db: Database.Database, entry: AppendAuditLogInput
     action: entry.action,
     reasoning: entry.reasoning,
     escalate_to_human: entry.escalate_to_human == null ? null : entry.escalate_to_human ? 1 : 0,
+    policy_version: entry.policyVersion ?? null,
     signals: entry.signals ? JSON.stringify(entry.signals) : null,
     policy_override: entry.policyOverride ? JSON.stringify(entry.policyOverride) : null,
     metadata: entry.metadata ? JSON.stringify(entry.metadata) : null,
@@ -504,7 +509,7 @@ function readAuditLog(
 ): AuditLogEntry[] {
   const rows = db
     .prepare(
-      `SELECT timestamp, agent, entry_type, action, reasoning, metadata FROM audit_log
+      `SELECT timestamp, agent, entry_type, action, reasoning, policy_version, metadata FROM audit_log
        WHERE customer_id = @customerId AND (mode = @mode OR mode IS NULL)
        ${asOf ? "AND timestamp <= @asOf" : ""}
        ORDER BY timestamp ASC`,

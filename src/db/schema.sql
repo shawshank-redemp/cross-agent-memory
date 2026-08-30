@@ -147,6 +147,13 @@ CREATE TABLE IF NOT EXISTS audit_log (
   reasoning TEXT NOT NULL,
   -- NULL on a memory_read row: reading memory decides nothing.
   escalate_to_human INTEGER CHECK (escalate_to_human IN (0, 1)),
+  -- WHICH policy produced this decision: POLICY_VERSION + a hash of the
+  -- thresholds and registry shape (see signals/policyVersion.ts). Without it,
+  -- changing a threshold makes every historical row uninterpretable — the
+  -- signals are still visible but the rules that acted on them are not.
+  -- NULL on memory_read rows for the same reason escalate_to_human is: a read
+  -- decides nothing, so no policy governed it.
+  policy_version TEXT,
   signals TEXT,
   policy_override TEXT,
   metadata TEXT

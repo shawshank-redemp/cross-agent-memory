@@ -27,6 +27,9 @@ export interface DecisionRecord {
   committed_spend_paise: number | null;
   escalate_to_human: boolean;
   escalation_reason: string | null;
+  // Which policy produced this decision. Present on runs from this version
+  // onward; absent on older results files.
+  policy_version?: string;
 }
 
 export function readJson<T>(path: string): T {

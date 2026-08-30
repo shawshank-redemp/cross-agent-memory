@@ -5,7 +5,7 @@ import type Database from "better-sqlite3";
 import { openDb } from "../db/connection.js";
 import type { Scenario, ScenarioLabel } from "../data/generator.js";
 import { appendAuditLog, recordDiscountUsage, type PolicyOverrideRecord } from "../memory/profile.js";
-import type { MemorySignals } from "./policy.js";
+import { POLICY_FINGERPRINT, type MemorySignals } from "./policy.js";
 import type {
   AgentType,
   CartAbandonmentEvent,
@@ -47,6 +47,9 @@ export interface DecisionLike {
   committed_spend_paise: number | null;
   escalate_to_human: boolean;
   escalation_reason: string | null;
+  // Which policy governed this decision — metadata about the RUN, never part of
+  // the prompt payload and never a citable memory factor.
+  policy_version?: string;
   // Memory path only. The baseline path has no memory to compute signals
   // from, so these are absent there by construction rather than by omission.
   signals?: MemorySignals | null;
@@ -412,6 +415,12 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         action: decision.action,
         reasoning: decision.reasoning,
         escalate_to_human: decision.escalate_to_human,
+        // Recorded on BOTH arms. Baseline is governed by
+        // DEFAULT_DISCOUNT_CAP_PERCENT and AGENT_ACTION_POLICY, so it has a
+        // policy too — one fingerprint covering the whole policy surface is
+        // simpler to explain, and to query, than two partial ones that a reader
+        // would have to know how to combine.
+        policyVersion: POLICY_FINGERPRINT,
         signals: decision.signals ?? undefined,
         policyOverride: decision.policy_override ?? null,
         metadata: {
@@ -457,6 +466,7 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         escalate_to_human: decision.escalate_to_human,
         escalation_reason: decision.escalation_reason,
         unsupported_factor_citations: decision.unsupported_factor_citations ?? [],
+        policy_version: POLICY_FINGERPRINT,
       };
       decisions.push(record);
       appendPartial(record);

@@ -89,6 +89,7 @@ export interface DecisionRecord {
   committed_spend_paise: number | null;
   escalation_reason: string | null;
   memory_factors_used: string[];
+  policy_version?: string;
   escalate_to_human: boolean;
   reasoning: string;
 }

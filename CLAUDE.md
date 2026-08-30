@@ -652,6 +652,56 @@ column ordered by `timestamp` held both synthetic batch dates and real ones —
 and an asOf filter would have compared a synthetic date against a real one and
 matched nothing.
 
+### Policy versioning
+
+`audit_log` recorded the signals snapshot and the policy_override but not
+*which policy* turned one into the other. Change `MIN_SUCCESSFUL_PAYMENTS` from
+2 to 3, or `CHURN_LOOKBACK_DAYS` from 14 to 30, and every historical row
+silently becomes uninterpretable — you can still see what the signals said, but
+not what the system did with them. "Why was this customer denied a discount in
+March" needs *March's* policy.
+
+Every `decision` row now carries `policy_version` = `POLICY_FINGERPRINT`, which
+has two halves:
+
+- **`POLICY_VERSION`** — a manually bumped string (`2026-08-30.1`).
+- **`POLICY_THRESHOLDS_HASH`** — sha256 (first 8 hex) of a canonical
+  serialisation of every exported constant in `thresholds.ts` plus each signal's
+  id, scope and kind. Keys are sorted at every depth so the hash cannot move on
+  declaration order or formatting; a version that drifts on unrelated edits is
+  worthless.
+
+**The gap, stated rather than glossed over:** `effects()` are functions and are
+not hashable. A change to a signal's effect logic that touches neither a
+threshold value nor the signal id/scope/kind list will **not** move the hash.
+That is exactly what the manual half covers, and why the fingerprint has two
+parts — hash-only would silently miss effect changes, version-only relies
+entirely on someone remembering.
+
+Recorded on **both arms**: baseline is governed by `DEFAULT_DISCOUNT_CAP_PERCENT`
+and `AGENT_ACTION_POLICY`, so it has a policy too, and one fingerprint covering
+the whole policy surface is simpler to explain and to query than two partial ones
+a reader would have to know how to combine. `memory_read` rows leave it NULL for
+the same reason `escalate_to_human` is NULL there: a read decides nothing.
+
+It is **metadata about the run, not evidence about the customer** — never in the
+prompt payload, never a citable `memory_factors_used` value.
+`npm run policy:version` prints the fingerprint and the resolved thresholds so
+the writeup can cite the exact policy a run used.
+
+### Adding a column is not a migration, but it is not free either
+
+`CREATE TABLE IF NOT EXISTS` is a no-op on a table that already exists, so a db
+file written before a column was added keeps the old shape forever — and
+`load:data` does not help, because it DELETEs rows rather than recreating
+tables. Without a check, the first affected INSERT throws "no such column" in
+the middle of a batch run, after the API calls are paid for.
+
+`openDb()` therefore parses the column list out of `schema.sql` and fails at
+open with an actionable message (`rm -rf data/db && npm run load:data`). The
+data is seed-regenerated and disposable, so deleting is the fix; the point is
+that it is said at open rather than discovered at event 400.
+
 ### Known design limits — deliberate, not oversights
 
 Real production deployments would need these. They are recorded rather than
@@ -664,6 +714,9 @@ built, so their absence is a documented choice:
   so a sufficiently large order permits a large discount.
 - **No rate limits.** Nothing bounds spend per customer per unit time, or across
   the batch as a whole.
+- **No aggregate spend budget and no circuit breaker.** Nothing halts a run that
+  is spending anomalously, and no escalation gating exists beyond the per-signal
+  rules.
 
 
 ## Experimentation layer (recovery incrementality)

@@ -35,6 +35,7 @@ export interface DecisionRecord {
   escalation_reason: string | null;
   reasoning: string;
   memory_factors_used: string[];
+  policy_version?: string;
 }
 
 export interface ComparisonReport {

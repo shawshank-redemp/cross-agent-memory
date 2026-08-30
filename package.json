@@ -17,7 +17,8 @@
     "verify:schema": "tsx scripts/verifySchema.ts",
     "measure:churn": "tsx scripts/measureChurnSignal.ts",
     "verify:prompts": "tsx scripts/verifyPromptInvariants.ts",
-    "verify:fieldorder": "tsx --env-file-if-exists=.env scripts/verifyFieldOrder.ts"
+    "verify:fieldorder": "tsx --env-file-if-exists=.env scripts/verifyFieldOrder.ts",
+    "policy:version": "tsx scripts/printPolicyVersion.ts"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

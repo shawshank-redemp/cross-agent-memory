@@ -15,6 +15,8 @@ export interface AuditLogEntry {
   // Margin this decision committed, lifted out of the metadata JSON blob.
   // Null on memory_read rows and on decisions that committed nothing.
   committed_spend_paise: number | null;
+  // Which policy governed this decision. Null on memory_read rows.
+  policy_version: string | null;
 }
 
 export interface DiscountUsageRecord {
