@@ -285,3 +285,36 @@ tbody tr.selected {
     grid-template-columns: 1fr;
   }
 }
+
+/* Manual, demo-only payment-link trigger — see SendPaymentLinkButton.tsx. */
+.payment-link-trigger {
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--grid-line);
+  font-size: 0.85rem;
+}
+
+.payment-link-trigger button {
+  font: inherit;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--memory-color);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--memory-color) 10%, transparent);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.payment-link-trigger button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.payment-link-result {
+  margin-top: 0.5rem;
+  word-break: break-all;
+}
+
+.payment-link-error {
+  margin-top: 0.5rem;
+  color: var(--danger);
+}

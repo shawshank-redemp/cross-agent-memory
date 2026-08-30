@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatPaise, SCENARIO_LABELS, type CustomerDetail, type DecisionRecord } from "../api";
 import { ProfileTimelineChart } from "./ProfileTimelineChart";
+import { SendPaymentLinkButton } from "./SendPaymentLinkButton";
 
 function decisionSummary(d: DecisionRecord | undefined): string {
   if (!d) return "—";
@@ -20,6 +21,15 @@ function diverged(b: DecisionRecord | undefined, m: DecisionRecord | undefined):
 
 export function CustomerDetailView({ detail }: { detail: CustomerDetail }) {
   const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
+
+  // Fallback amount for the demo payment link when a decision committed no
+  // spend. Reads the event's own value out of the timeline payload, which
+  // carries the raw event under `detail`.
+  function amountForEvent(eventId: string): number {
+    const event = detail.events.find((e) => e.event_id === eventId);
+    const raw = event?.detail as { amount?: number; plan_amount?: number } | undefined;
+    return raw?.amount ?? raw?.plan_amount ?? 0;
+  }
 
   const baselineByEvent = new Map(detail.decisions.baseline.map((d) => [d.event_id, d]));
   const memoryByEvent = new Map(detail.decisions.memory.map((d) => [d.event_id, d]));
@@ -105,6 +115,26 @@ export function CustomerDetailView({ detail }: { detail: CustomerDetail }) {
           <div>
             <h4>Memory-informed reasoning</h4>
             <p>{expanded.memory?.reasoning ?? "No decision for this event in memory mode."}</p>
+            {/*
+              PLACEHOLDER LOCATION. This belongs in the split-panel replay view
+              once that is built — it sits here for now because this is where a
+              single memory-arm decision is already on screen, which is what the
+              button needs to act on.
+
+              Manual and demo-only: one human click, for one chosen event. It is
+              not wired to anything that runs per event.
+            */}
+            {expandedEventId && expanded.memory && (
+              <SendPaymentLinkButton
+                customerId={detail.customer.customer_id}
+                eventId={expandedEventId}
+                // The committed spend when the decision granted one; otherwise
+                // the event's own amount, so the demo still has something real
+                // to charge for on a reminder-only decision.
+                amountPaise={expanded.memory.committed_spend_paise ?? amountForEvent(expandedEventId)}
+                description={`Recovery offer for ${detail.customer.name} (${expanded.memory.action})`}
+              />
+            )}
           </div>
         </div>
       )}

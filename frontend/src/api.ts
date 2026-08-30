@@ -153,10 +153,42 @@ async function getJson<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export interface PaymentLinkRequest {
+  customerId: string;
+  eventId: string;
+  amountPaise: number;
+  description?: string;
+}
+
+export interface PaymentLinkResult {
+  short_url: string;
+  id: string;
+  status: string;
+}
+
+// Unlike getJson, this surfaces the server's own error message rather than a
+// bare status code: the point of the demo button is to show a REAL Razorpay
+// response, and "422" alone would hide whether the key was wrong, the amount
+// was rejected, or the network failed.
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const parsed: unknown = await res.json().catch(() => null);
+  if (!res.ok) {
+    const message = (parsed as { error?: string } | null)?.error;
+    throw new Error(message ?? `${path} -> ${res.status}`);
+  }
+  return parsed as T;
+}
+
 export const api = {
   customers: () => getJson<CustomerSummary[]>("/api/customers"),
   customerDetail: (id: string) => getJson<CustomerDetail>(`/api/customers/${id}`),
   comparison: () => getJson<ComparisonReport>("/api/comparison"),
+  createPaymentLink: (body: PaymentLinkRequest) => postJson<PaymentLinkResult>("/api/payment-links", body),
 };
 
 export const SCENARIO_LABELS: Record<Scenario, string> = {

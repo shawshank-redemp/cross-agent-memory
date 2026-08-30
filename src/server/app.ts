@@ -4,6 +4,23 @@ import type Database from "better-sqlite3";
 import { computeMemoryProfile } from "../memory/profile.js";
 import { getDataStore } from "./dataStore.js";
 
+const RAZORPAY_PAYMENT_LINKS_URL = "https://api.razorpay.com/v1/payment_links";
+
+interface PaymentLinkRequest {
+  customerId?: unknown;
+  eventId?: unknown;
+  amountPaise?: unknown;
+  description?: unknown;
+}
+
+// Razorpay returns errors as { error: { description, code, ... } }.
+function razorpayErrorMessage(body: unknown, status: number): string {
+  const description = (body as { error?: { description?: unknown } } | null)?.error?.description;
+  return typeof description === "string" && description.length > 0
+    ? description
+    : `Razorpay responded ${status}`;
+}
+
 export function createApp(db: Database.Database) {
   const app = express();
   const store = getDataStore();
@@ -102,6 +119,87 @@ export function createApp(db: Database.Database) {
         memory: memoryProfile.audit_log,
       },
     });
+  });
+
+  // DEMO-ONLY, MANUALLY TRIGGERED. Creates a real test-mode Razorpay payment
+  // link for one chosen event, so a demo can show that the decision produces a
+  // genuine artifact rather than a simulated one.
+  //
+  // This is deliberately NOT part of the pipeline. It is never called from
+  // runner.ts, compareRuns.ts, or any batch script — the only route to it is a
+  // human clicking the button in the dashboard, once, for one event. Calling it
+  // per event would turn a 3,202-event batch into 3,202 live API calls against
+  // a payments provider, which is not what the batch is for.
+  //
+  // Nothing is persisted to SQLite. The audit trail records what the agent
+  // DECIDED; whether someone later pressed a button to materialise one of those
+  // decisions as a link is a demo side effect, not evidence about the decision.
+  app.post("/api/payment-links", async (req: Request, res: Response) => {
+    const { customerId, eventId, amountPaise, description } = req.body as PaymentLinkRequest;
+
+    if (typeof customerId !== "string" || typeof eventId !== "string") {
+      res.status(400).json({ error: "customerId and eventId are required strings" });
+      return;
+    }
+    if (typeof amountPaise !== "number" || !Number.isInteger(amountPaise) || amountPaise <= 0) {
+      res.status(400).json({ error: "amountPaise must be a positive integer (paise)" });
+      return;
+    }
+
+    const customer = store.customers.find((c) => c.customer_id === customerId);
+    if (!customer) {
+      res.status(404).json({ error: `no customer with id ${customerId}` });
+      return;
+    }
+
+    const keyId = process.env.RAZORPAY_KEY_ID;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keyId || !keySecret) {
+      res.status(502).json({ error: "RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are not set in the environment" });
+      return;
+    }
+
+    try {
+      const response = await fetch(RAZORPAY_PAYMENT_LINKS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
+        },
+        body: JSON.stringify({
+          amount: amountPaise,
+          currency: "INR",
+          accept_partial: false,
+          description: typeof description === "string" && description.length > 0
+            ? description
+            : "Recovery discount offer",
+          customer: {
+            name: customer.name,
+            email: customer.email,
+            contact: customer.contact,
+          },
+          // These customers are synthetic. Notifying them would mean sending
+          // real SMS/email to fabricated contact details, so both are off: the
+          // point is to prove the link was created, not to reach anyone.
+          notify: { sms: false, email: false },
+          // Makes the link traceable back to the event in the Razorpay test
+          // dashboard afterwards.
+          reference_id: eventId,
+        }),
+      });
+
+      const body: unknown = await response.json().catch(() => null);
+      if (!response.ok) {
+        res.status(502).json({ error: razorpayErrorMessage(body, response.status) });
+        return;
+      }
+
+      const link = body as { short_url?: string; id?: string; status?: string };
+      res.json({ short_url: link.short_url, id: link.id, status: link.status });
+    } catch (err) {
+      // Network failure, DNS, TLS — anything that means we never got an answer.
+      res.status(502).json({ error: err instanceof Error ? err.message : String(err) });
+    }
   });
 
   app.get("/api/customers/:id/trace", (req: Request, res: Response) => {
