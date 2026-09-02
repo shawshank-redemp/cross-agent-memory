@@ -480,19 +480,29 @@
 /* WHERE THE EMPTY RIGHT-HAND SPACE WENT. Prose wants a readable measure and the
    card is wider than that, which left a large blank column beside every
    paragraph. Rather than shrink the card (which pushed lines out to ~120
-   characters) or leave the gap, the explanation and the thing it describes sit
-   side by side. */
-.rp-explain-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr); gap: 24px; align-items: start; }
-@media (max-width: 1080px) { .rp-explain-grid { grid-template-columns: 1fr; gap: 12px; } }
-.rp-explain-grid .rp-prose:last-child { margin-bottom: 0; }
+   characters) or leave the gap, a step may supply an ASIDE that occupies it.
+
+   The split is at the CARD BODY, above the step header, so the aside's heading
+   starts level with the step title. Putting it inside the body and nudging it
+   up with a negative margin would depend on the height of that step's title and
+   subtitle, which differ per step. */
+.rp-card-body.has-aside {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 340px);
+  gap: 26px;
+  align-items: start;
+}
+@media (max-width: 1080px) {
+  .rp-card-body.has-aside { grid-template-columns: 1fr; gap: 14px; }
+}
+.rp-card-main { min-width: 0; }
 
 .rp-sources {
   border: 1px solid var(--rp-border); border-radius: 12px; padding: 13px 15px;
   background: var(--rp-panel-alt);
-  /* The grid aligns the two BOXES, but the panel's own padding then pushed its
-     first line ~14px below the first line of prose beside it, so the two
-     columns read as starting at different heights. Pulled up by the padding so
-     the text aligns, which is what the eye actually compares. */
+  /* Aligns the "Built from" TEXT with the step title's text, not the boxes.
+     The two differ by their own padding plus the cap-height gap between a 23px
+     display face and a 10px mono one, so the offset is empirical. */
   margin-top: -12px;
 }
 .rp-sources h5 {
