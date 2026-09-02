@@ -489,6 +489,11 @@
 .rp-sources {
   border: 1px solid var(--rp-border); border-radius: 12px; padding: 13px 15px;
   background: var(--rp-panel-alt);
+  /* The grid aligns the two BOXES, but the panel's own padding then pushed its
+     first line ~14px below the first line of prose beside it, so the two
+     columns read as starting at different heights. Pulled up by the padding so
+     the text aligns, which is what the eye actually compares. */
+  margin-top: -12px;
 }
 .rp-sources h5 {
   margin: 0 0 10px; font-family: var(--rp-mono); font-size: 10px; font-weight: 500;
