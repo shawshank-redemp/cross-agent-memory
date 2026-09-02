@@ -271,14 +271,12 @@ function ReplayBody({
                   infer it from the event table's name. */}
               <span className="rp-agent-badge">{AGENT_LABEL[event.domain] ?? event.domain} agent</span>
             </h3>
-            {/* Was "7 captured trace steps" beside a 6-node stepper, which read
-                as an off-by-one. They count different things: 6 stages on
-                screen, 7 rows in agent_trace_events (5 memory + 2 baseline).
-                Naming both removes the contradiction. */}
-            <p>
-              {STEP_NAMES.length} stages · {memory.steps.length} memory +{" "}
-              {baseline.steps.length} baseline trace rows
-            </p>
+            {/* Just the stage count. This used to read "7 captured trace steps"
+                beside a six-node stepper, which looked like an off-by-one: the
+                7 was rows in agent_trace_events, not stages. The trace-row
+                counts are visible per arm inside the steps themselves, so
+                naming them here bought a contradiction and nothing else. */}
+            <p>{STEP_NAMES.length} stages</p>
           </div>
           <Stepper current={current} setCurrent={goTo} memory={memory} baseline={baseline} />
           {/* `key` remounts the card so the enter animation replays. There is
