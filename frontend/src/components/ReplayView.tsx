@@ -795,17 +795,19 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
       {/* WHAT THE SHARED PROFILE IS. There is no memory_profile table — the
           question "is this a derived copy or a mirror of Razorpay's own data?"
           has a real answer and the page was not giving it. */}
-      <p className="rp-prose">
-        <b>Not a stored table.</b> It is computed on every read from records Razorpay already holds,
-        plus the discounts this run granted — an aggregation of existing sources, not a new one.
-      </p>
-      <p className="rp-prose">
-        <b>Shared</b> means all three agents read the same profile: Cart Abandonment sees the disputes
-        the Dispute Responder handled, and vice versa. Read as of{" "}
-        <code title={String(step.detail.as_of)}>{formatWhen(String(step.detail.as_of))}</code>, this
-        event's own timestamp, so no later dispute ruling leaks backwards.{" "}
-        <b>The baseline arm reads none of it</b> — that asymmetry is the experiment.
-      </p>
+      <div className="rp-intro">
+        <p className="rp-prose">
+          <b>Not a stored table.</b> It is computed on every read from records Razorpay already holds,
+          plus the discounts this run granted — an aggregation of existing sources, not a new one.
+        </p>
+        <p className="rp-prose">
+          <b>Shared</b> means all three agents read the same profile: Cart Abandonment sees the
+          disputes the Dispute Responder handled, and vice versa. Read as of{" "}
+          <code title={String(step.detail.as_of)}>{formatWhen(String(step.detail.as_of))}</code>, this
+          event's own timestamp, so no later dispute ruling leaks backwards.{" "}
+          <b>The baseline arm reads none of it</b> — that asymmetry is the experiment.
+        </p>
+      </div>
 
       <div className="rp-kv-card">
         <h4>Aggregated from those records</h4>

@@ -489,13 +489,39 @@
 .rp-card-body.has-aside {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(250px, 340px);
-  gap: 26px;
+  gap: 0 26px;
   align-items: start;
 }
+/* display:contents dissolves the wrapper so the step's own blocks become grid
+   items. Without it the aside would sit beside the ENTIRE step — including the
+   wide data table below it, which would then be squeezed into the narrow
+   column with the panel's leftover space empty to its right. */
+.rp-card-body.has-aside .rp-card-main { display: contents; }
+.rp-card-body.has-aside .rp-card-head,
+.rp-card-body.has-aside .rp-card-sub,
+.rp-card-body.has-aside .rp-intro { grid-column: 1; }
+.rp-card-body.has-aside .rp-sources { grid-column: 2; grid-row: 1 / 4; }
+/* Everything after the intro spans the full width — the aside has ended. */
+.rp-card-body.has-aside .rp-kv-card { grid-column: 1 / -1; }
+/* Stacked. The aside is the LAST dom child, so it would fall below the table.
+   Flex ordering handles this without depending on row numbers: with every other
+   item at the default order, DOM order gives head, sub, intro, aside, and
+   pushing only the table to order 1 puts it last. Explicit grid rows were
+   brittle here — the row heights and the aside's own height disagreed by a few
+   pixels and the boxes overlapped. */
 @media (max-width: 1080px) {
-  .rp-card-body.has-aside { grid-template-columns: 1fr; gap: 14px; }
+  .rp-card-body.has-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .rp-card-body.has-aside .rp-sources { grid-column: auto; grid-row: auto; margin: 0; }
+  .rp-card-body.has-aside .rp-kv-card { grid-column: auto; grid-row: auto; order: 1; margin-bottom: 0; }
+  .rp-card-body.has-aside .rp-card-head,
+  .rp-card-body.has-aside .rp-card-sub { margin-bottom: 0; }
 }
 .rp-card-main { min-width: 0; }
+.rp-intro .rp-prose:last-child { margin-bottom: 12px; }
 
 .rp-sources {
   border: 1px solid var(--rp-border); border-radius: 12px; padding: 13px 15px;
@@ -503,7 +529,7 @@
   /* Aligns the "Built from" TEXT with the step title's text, not the boxes.
      The two differ by their own padding plus the cap-height gap between a 23px
      display face and a 10px mono one, so the offset is empirical. */
-  margin-top: -12px;
+  margin-top: -26px;
 }
 .rp-sources h5 {
   margin: 0 0 10px; font-family: var(--rp-mono); font-size: 10px; font-weight: 500;
