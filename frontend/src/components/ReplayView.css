@@ -432,3 +432,23 @@
   font-family: var(--rp-mono); font-size: 11px; color: var(--rp-blue);
   text-align: right; padding: 2px 4px 0;
 }
+
+
+/* Names the point-agent that owns this decision. */
+.rp-agent-badge {
+  font-family: var(--rp-mono); font-size: 10.5px; font-weight: 500; letter-spacing: .04em;
+  text-transform: uppercase; padding: 4px 9px; border-radius: 100px; margin-left: 10px;
+  background: rgba(46,107,224,.1); color: var(--rp-blue); vertical-align: middle;
+}
+
+/* The readable twin of a stored value — paise as rupees, an ISO stamp as a
+   date. Always trails the raw value, never replaces it. */
+.rp-gloss { color: var(--rp-faint); font-size: 11px; margin-left: 8px; }
+
+.rp-recovery-label,
+.rp-outcome-label {
+  display: block; width: 100%; font-family: var(--rp-mono); font-size: 9.5px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--rp-faint);
+}
+.rp-recovery-label { margin-bottom: 2px; }
+.rp-outcome-label { margin-bottom: 4px; }

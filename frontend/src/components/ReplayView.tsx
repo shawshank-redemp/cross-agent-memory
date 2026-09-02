@@ -103,10 +103,15 @@ function formatWhen(iso: string): string {
   });
 }
 
-function relativeDays(from: string, to: string): string {
+// Compact by necessity: the rail is a fixed 310px and the event name has to
+// win the space, so "merchant won" is not truncated to "merchan…". The full
+// phrase is kept on the element's title.
+function relativeDays(from: string, to: string): { short: string; full: string } {
   const days = Math.round((Date.parse(to) - Date.parse(from)) / 86_400_000);
-  if (days === 0) return "same day";
-  return days > 0 ? `${days}d before` : `${-days}d after`;
+  if (days === 0) return { short: "same day", full: "same day as this event" };
+  return days > 0
+    ? { short: `\u2212${days}d`, full: `${days} days before this event` }
+    : { short: `+${-days}d`, full: `${-days} days after this event` };
 }
 
 const DOMAIN_LABEL: Record<string, string> = {
@@ -114,6 +119,38 @@ const DOMAIN_LABEL: Record<string, string> = {
   subscription_recovery: "Sub",
   dispute_responder: "Dispute",
 };
+
+const AGENT_LABEL: Record<string, string> = {
+  cart_abandonment: "Cart Abandonment",
+  subscription_recovery: "Subscription Recovery",
+  dispute_responder: "Dispute Responder",
+};
+
+// RAZORPAY DISPUTE STATUSES ARE MERCHANT-SIDE, and that is the single most
+// misread thing in this domain: a dispute belongs to the merchant, so "won"
+// means the MERCHANT won and the customer's complaint did not hold up. Shown
+// raw, "Dispute · ₹600 · won" reads to almost everyone as the customer winning
+// — the exact inversion the profile's field names were renamed to avoid. Every
+// status is therefore rendered with its subject named.
+const DISPUTE_STATUS_LABEL: Record<string, string> = {
+  won: "merchant won",
+  lost: "merchant conceded",
+  closed: "closed, no ruling",
+  open: "unresolved",
+  under_review: "unresolved",
+};
+
+// Paise are what the database stores and what the event row must show, but a
+// bare 500000 next to a ₹5,000 in the rail invites a mental unit conversion on
+// every read. Amount columns get both.
+const PAISE_COLUMNS = new Set(["amount", "amount_paid", "amount_due", "plan_amount"]);
+
+// "null" is the honest value for committed_spend_paise and it is information
+// rather than an absence — but only where the schema itself is on display.
+// In a SUMMARY it reads as missing data, so summaries say it in words.
+function spendPhrase(paise: number | null | undefined): string {
+  return paise == null ? "no spend" : formatPaise(paise);
+}
 
 export function ReplayView({ customerId }: { customerId: string }) {
   const [trace, setTrace] = useState<ReplayTrace | null>(null);
@@ -206,7 +243,13 @@ function ReplayBody({
         />
         <main className="rp-main">
           <div className="rp-main-head">
-            <h3>Event journey</h3>
+            <h3>
+              Event journey
+              {/* WHICH AGENT IS DECIDING. Three point-agents share this pipeline
+                  and the page never said which one was acting — a reader had to
+                  infer it from the event table's name. */}
+              <span className="rp-agent-badge">{AGENT_LABEL[event.domain] ?? event.domain} agent</span>
+            </h3>
             <p>{memory.steps.length + baseline.steps.length} captured trace steps</p>
           </div>
           <Stepper current={current} setCurrent={goTo} memory={memory} baseline={baseline} />
@@ -385,11 +428,19 @@ function Rail({
                   <span className="rp-tname">
                     {DOMAIN_LABEL[e.domain] ?? e.domain} ·{" "}
                     {amount != null ? formatPaise(amount) : <Missing what="no amount on this row" />}
-                    <em> {String(e.detail.status ?? "")}</em>
+                    <em>
+                      {" "}
+                      {e.domain === "dispute_responder"
+                        ? (DISPUTE_STATUS_LABEL[String(e.detail.status)] ?? String(e.detail.status))
+                        : String(e.detail.status ?? "")}
+                    </em>
                   </span>
                 </span>
-                <span className="rp-ttime">
-                  {isTrigger ? "this event" : relativeDays(e.timestamp, event.timestamp)}
+                <span
+                  className="rp-ttime"
+                  title={isTrigger ? "the event being replayed" : relativeDays(e.timestamp, event.timestamp).full}
+                >
+                  {isTrigger ? "this event" : relativeDays(e.timestamp, event.timestamp).short}
                 </span>
               </div>
             );
@@ -455,6 +506,7 @@ function Rail({
         )}
         {recovery && recovery.length > 0 && (
           <div className="rp-recovery">
+            <span className="rp-recovery-label">Recovery flows triggered</span>
             {recovery.map((r) => (
               <span key={r.agent}>
                 {DOMAIN_LABEL[r.agent] ?? r.agent}: {r.count}
@@ -465,11 +517,12 @@ function Rail({
       </section>
 
       <div className="rp-outcome-zone">
+        <span className="rp-outcome-label">Final decision</span>
         {finalDecision ? (
           <>
             <strong>{finalDecision.action}</strong>
             <span>
-              {money(finalDecision.committed_spend_paise)} committed
+              {spendPhrase(finalDecision.committed_spend_paise)} committed
               {finalDecision.escalate_to_human ? " · ⚑ human review" : ""}
             </span>
             {eventAmount != null && <span className="muted">on {formatPaise(eventAmount)}</span>}
@@ -577,7 +630,22 @@ function EventStep({ trace }: { trace: ReplayTrace }) {
           <div className="rp-kv-row" key={k}>
             <span className="rp-k">{k}</span>
             <span className="rp-v">
-              {row[k] == null ? <em>null</em> : String(row[k])}
+              {row[k] == null ? (
+                <em>null</em>
+              ) : (
+                <>
+                  {String(row[k])}
+                  {/* The stored value stays first and authoritative; the
+                      readable form trails it, so the row is still a faithful
+                      copy of the database. */}
+                  {PAISE_COLUMNS.has(k) && typeof row[k] === "number" && (
+                    <span className="rp-gloss"> {formatPaise(row[k] as number)}</span>
+                  )}
+                  {k === "created_at" && (
+                    <span className="rp-gloss"> {formatWhen(String(row[k]))}</span>
+                  )}
+                </>
+              )}
             </span>
           </div>
         ))}
@@ -635,12 +703,12 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
   return (
     <>
       <p className="rp-prose">
-        Read as of <code>{String(step.detail.as_of)}</code>, the event's own timestamp — so the decision
-        sees only its own past. <b>The baseline arm reads nothing at all;</b> that asymmetry is the
-        experiment.
+        Read as of <code title={String(step.detail.as_of)}>{formatWhen(String(step.detail.as_of))}</code>,
+        the event's own timestamp — so the decision sees only its own past.{" "}
+        <b>The baseline arm reads nothing at all;</b> that asymmetry is the experiment.
       </p>
       <div className="rp-kv-card">
-        <h4>Fields read (src/memory/profile.ts)</h4>
+        <h4>Fields read from the shared profile</h4>
         <ExpandableRow
           label="dispute_breakdown.customer_adverse"
           value={String(breakdown.customer_adverse)}
@@ -761,7 +829,15 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
                 <span className={`rp-kind ${s.kind}`}>{s.kind}</span>
               </>
             }
-            value={hasFired(s.value) ? `fired — ${JSON.stringify(s.value)}` : "not fired"}
+            value={
+              // A counter is not a switch. discountAttemptsForAgent is a number,
+              // and "not fired" for a count of zero says less than the count.
+              typeof s.value === "number"
+                ? `${s.value}`
+                : hasFired(s.value)
+                  ? `fired — ${JSON.stringify(s.value)}`
+                  : "not fired"
+            }
           >
             <p>
               <b>Scope:</b> {s.scope}-scoped ·{" "}
@@ -832,9 +908,19 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
                 </p>
               </ExpandableRow>
               <ExpandableRow
-                label="Signal prose"
-                value={`${String(request.detail.policy_block_chars)} chars`}
+                label="What memory told the model"
+                // Counts the "- " bullets buildSignalPolicyText emits. Splitting
+                // on "\n- " undercounted by one, because the first bullet has no
+                // newline before it.
+                value={(() => {
+                  const n = (String(request.detail.signal_prose).match(/^- /gm) ?? []).length;
+                  return `${n} ${n === 1 ? "finding" : "findings"}`;
+                })()}
               >
+                <p>
+                  Generated from each active signal's own description, so the prompt cannot drift from
+                  what the guardrail enforces — both are read off the same registry entry.
+                </p>
                 <pre className="rp-pre">{String(request.detail.signal_prose)}</pre>
               </ExpandableRow>
               <ExpandableRow
@@ -949,9 +1035,15 @@ function ArmOutput({
         </p>
         <p>
           Self-reported attribution from a fixed enum — evidence about the model's stated reasoning, not
-          proof of what caused the decision. An empty list is correct in the baseline arm, which is given
-          no history at all.
+          proof of what caused the decision.
         </p>
+        {arm.mode === "baseline" && (
+          <p>
+            <b>Empty is the expected value here.</b> The baseline is given no history, so anything cited
+            in this arm would mean memory had leaked into the control. The runner counts those and
+            reports them as <code>baselineMemoryLeaks</code>.
+          </p>
+        )}
         {unsupported.length > 0 && (
           <p className="rp-warn">
             {unsupported.length} unsupported citation{unsupported.length === 1 ? "" : "s"}:{" "}
@@ -986,7 +1078,7 @@ function GuardrailStep({
         <div className="rp-slot proposed">
           <h5>Model proposed</h5>
           <p>
-            {memoryGuard.proposed.action} · {money(memoryGuard.proposed.committed_spend_paise)}
+            {memoryGuard.proposed.action} · {spendPhrase(memoryGuard.proposed.committed_spend_paise)}
           </p>
         </div>
         <div className="rp-slot-arrow">→</div>
@@ -1013,7 +1105,7 @@ function GuardrailStep({
         <div className={`rp-slot final ${memoryGuard.applied ? "changed" : ""}`}>
           <h5>Final action</h5>
           <p>
-            {memoryGuard.final.action} · {money(memoryGuard.final.committed_spend_paise)}
+            {memoryGuard.final.action} · {spendPhrase(memoryGuard.final.committed_spend_paise)}
           </p>
           <span className={`rp-badge ${memoryGuard.applied ? "changed" : "clean"}`}>
             {memoryGuard.applied ? "override applied" : "no override"}
@@ -1154,8 +1246,8 @@ function ExecutionStep({
           <h5>Baseline decided</h5>
           {baseline.decision ? (
             <p>
-              {baseline.decision.action} · {money(baseline.decision.committed_spend_paise)}
-              {baseline.decision.escalate_to_human && " · ⚑"}
+              {baseline.decision.action} · {spendPhrase(baseline.decision.committed_spend_paise)}
+              {baseline.decision.escalate_to_human && " · ⚑ human review"}
             </p>
           ) : (
             <Missing what="no baseline decision row" />
@@ -1164,8 +1256,8 @@ function ExecutionStep({
         <div className="rp-final-col">
           <h5>Memory decided</h5>
           <p>
-            {decision.action} · {money(spend)}
-            {decision.escalate_to_human && " · ⚑"}
+            {decision.action} · {spendPhrase(spend)}
+            {decision.escalate_to_human && " · ⚑ human review"}
           </p>
         </div>
         <div className={`rp-final-verdict ${diverged ? "diverged" : "same"}`}>
