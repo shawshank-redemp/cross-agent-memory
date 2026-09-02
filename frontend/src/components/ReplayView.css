@@ -275,15 +275,22 @@
 }
 .rp-xrow-main:hover .rp-k { color: var(--rp-text); }
 .rp-vgroup { display: flex; align-items: center; gap: 10px; }
-.rp-chev { color: var(--rp-faint); font-size: 11px; transition: transform .2s ease, color .2s ease; }
-.rp-xrow.open .rp-chev { color: var(--rp-blue); }
-.rp-dot-i {
-  width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--rp-faint); color: var(--rp-faint);
-  font-size: 9.5px; font-family: var(--rp-mono); display: inline-flex; align-items: center;
-  justify-content: center; flex-shrink: 0; transition: background .15s ease, color .15s ease, border-color .15s ease;
+/* The affordance. At 11px this read as punctuation and people did not know the
+   row opened, so it is now a bordered target that rotates when expanded. */
+.rp-chev {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+  border: 1px solid var(--rp-border); background: var(--rp-panel);
+  color: var(--rp-dim); font-size: 13px; line-height: 1;
+  transition: transform .22s ease, color .22s ease, background .22s ease, border-color .22s ease;
 }
-.rp-xrow.open .rp-dot-i { background: var(--rp-blue); border-color: var(--rp-blue); color: #fff; }
-.rp-xpanel {
+.rp-xrow-main:hover .rp-chev { border-color: var(--rp-blue); color: var(--rp-blue); }
+.rp-xrow.open .rp-chev {
+  transform: rotate(180deg); background: var(--rp-blue); border-color: var(--rp-blue); color: #fff;
+}
+.rp-xrow-main { cursor: pointer; }
+.rp-xrow-main:hover { background: rgba(46,107,224,.035); border-radius: 8px; }
+.rp-xrow.open .rp-xpanel {
   padding: 2px 10px 14px 24px; font-size: 13px; line-height: 1.6; color: var(--rp-dim);
   border-left: 2px solid var(--rp-border); margin: 0 4px 10px 12px;
   animation: rp-panel .16s ease both;
@@ -446,3 +453,14 @@
 }
 .rp-recovery-label { margin-bottom: 2px; }
 .rp-outcome-label { margin-bottom: 4px; }
+
+
+/* Names the kind of event, and where the row lives. Replaces a small grey
+   table name that was not communicating either. */
+.rp-source { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--rp-border); }
+.rp-source-kind {
+  display: inline-block; font-family: var(--rp-display); font-size: 15px; font-weight: 600;
+  margin-bottom: 3px;
+}
+.rp-source-table { display: block; font-size: 11.5px; color: var(--rp-faint); line-height: 1.5; }
+.rp-source-table code { font-size: 11px; color: var(--rp-dim); }

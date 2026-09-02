@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useId, useState } from "react";
 import {
   api,
   formatPaise,
@@ -55,8 +55,25 @@ function MissingBlock({ what }: { what: string }) {
   );
 }
 
-// A row that expands to explain itself. The label/value are real data; the
-// explanation is static prose about what the field means.
+// ACCORDION, one open row per group.
+//
+// Rows used to open independently, which looked harmless and was not: opening
+// one pushes every row below it down, so a second click lands on whatever row
+// slid into that spot instead of closing the first. The reported symptom was
+// "clicking the middle doesn't collapse it" — the click was landing on a
+// different row. One-at-a-time keeps positions stable and the panel readable.
+const AccordionContext = createContext<{
+  openId: string | null;
+  setOpenId: (id: string | null) => void;
+} | null>(null);
+
+function Accordion({ children }: { children: React.ReactNode }) {
+  const [openId, setOpenId] = useState<string | null>(null);
+  return <AccordionContext.Provider value={{ openId, setOpenId }}>{children}</AccordionContext.Provider>;
+}
+
+// A row that expands to explain itself. Falls back to independent local state
+// when it is not inside an <Accordion>, so a lone row still works.
 function ExpandableRow({
   label,
   value,
@@ -68,17 +85,21 @@ function ExpandableRow({
   children: React.ReactNode;
   rowClass?: string;
 }) {
-  const [open, setOpen] = useState(false);
+  const id = useId();
+  const group = useContext(AccordionContext);
+  const [localOpen, setLocalOpen] = useState(false);
+  const open = group ? group.openId === id : localOpen;
+  const toggle = () => (group ? group.setOpenId(open ? null : id) : setLocalOpen(!open));
+
   return (
     <div className={`rp-xrow ${rowClass} ${open ? "open" : ""}`}>
-      <button type="button" className="rp-xrow-main" onClick={() => setOpen(!open)}>
-        <span className="rp-k">
-          <span className="rp-dot-i">i</span>
-          {label}
-        </span>
+      <button type="button" className="rp-xrow-main" onClick={toggle} aria-expanded={open}>
+        <span className="rp-k">{label}</span>
         <span className="rp-vgroup">
           <span className="rp-v">{value}</span>
-          <span className="rp-chev">{open ? "▾" : "▸"}</span>
+          <span className="rp-chev" aria-hidden="true">
+            ⌄
+          </span>
         </span>
       </button>
       {open && <div className="rp-xpanel">{children}</div>}
@@ -250,7 +271,14 @@ function ReplayBody({
                   infer it from the event table's name. */}
               <span className="rp-agent-badge">{AGENT_LABEL[event.domain] ?? event.domain} agent</span>
             </h3>
-            <p>{memory.steps.length + baseline.steps.length} captured trace steps</p>
+            {/* Was "7 captured trace steps" beside a 6-node stepper, which read
+                as an off-by-one. They count different things: 6 stages on
+                screen, 7 rows in agent_trace_events (5 memory + 2 baseline).
+                Naming both removes the contradiction. */}
+            <p>
+              {STEP_NAMES.length} stages · {memory.steps.length} memory +{" "}
+              {baseline.steps.length} baseline trace rows
+            </p>
           </div>
           <Stepper current={current} setCurrent={goTo} memory={memory} baseline={baseline} />
           {/* `key` remounts the card so the enter animation replays. There is
@@ -556,10 +584,13 @@ function StepCard(props: {
   const heads = [
     {
       t: "Event received",
-      s: "The stored row that triggered this decision — field-for-field a line of Razorpay's own Orders report, so a merchant needs no new instrumentation.",
+      s: "A customer filled a cart, tried to pay, and the payment failed. Razorpay already recorded that as an order — this is that record, and it is what wakes the agent up.",
     },
-    { t: "Memory read", s: "The shared profile, scoped to this event's own past. Click any field." },
-    { t: "Signals derived", s: "Every registered signal, fired or not. Click one to see what it checks." },
+    {
+      t: "Memory read",
+      s: "What all three agents already know about this customer, as it stood the moment this event arrived.",
+    },
+    { t: "Signals derived", s: "What that history means in policy terms — the rules that read the profile." },
     { t: "Model proposes", s: "A real Claude call. Input left, raw output right — both arms." },
     { t: "Guardrails", s: "What policy permitted, and whether it changed anything." },
     { t: "Execution", s: "The final decision, and a real Razorpay test-mode link on request." },
@@ -620,8 +651,21 @@ function EventStep({ trace }: { trace: ReplayTrace }) {
 
   return (
     <>
+      {/* WHAT KIND OF EVENT THIS IS, said plainly. The table name alone, set
+          small and grey, was not carrying it.
+          Deliberately NOT a stored event_type column: every row of this table
+          would hold the same constant, no signal or decision reads it, and
+          Razorpay's Orders report has no such field — so it would weaken the
+          "this mirrors real data" claim this very step is making. The event
+          type is established by which table the row lives in. */}
       <div className="rp-kv-card">
-        <h4>{event.domain}_events row</h4>
+        <div className="rp-source">
+          <span className="rp-source-kind">Cart abandonment</span>
+          <span className="rp-source-table">
+            stored in <code>{event.domain}_events</code> — the table it lives in is what makes it a
+            cart-abandonment event; there is no event_type column repeating that on every row
+          </span>
+        </div>
         {keys.map((k) => (
           <div className="rp-kv-row" key={k}>
             <span className="rp-k">{k}</span>
@@ -698,21 +742,36 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
 
   return (
     <>
+      {/* WHAT THE SHARED PROFILE IS. There is no memory_profile table — the
+          question "is this a derived copy or a mirror of Razorpay's own data?"
+          has a real answer and the page was not giving it. */}
       <p className="rp-prose">
-        Read as of <code title={String(step.detail.as_of)}>{formatWhen(String(step.detail.as_of))}</code>,
-        the event's own timestamp — so the decision sees only its own past.{" "}
-        <b>The baseline arm reads nothing at all;</b> that asymmetry is the experiment.
+        <b>Not a stored table.</b> It is computed on every read from records Razorpay already holds —
+        orders, subscription charges, disputes — plus the discounts this run granted. An aggregation of
+        existing sources, not a new one.
+      </p>
+      <p className="rp-prose">
+        <b>Shared</b> means all three agents read the same profile: Cart Abandonment sees the disputes
+        the Dispute Responder handled, and vice versa. Read as of{" "}
+        <code title={String(step.detail.as_of)}>{formatWhen(String(step.detail.as_of))}</code>, this
+        event's own timestamp, so no later dispute ruling leaks backwards.{" "}
+        <b>The baseline arm reads none of it</b> — that asymmetry is the experiment.
       </p>
       <div className="rp-kv-card">
-        <h4>Fields read from the shared profile</h4>
+        <h4>Aggregated from those records</h4>
+        <Accordion>
         <ExpandableRow
           label="dispute_breakdown.customer_adverse"
           value={String(breakdown.customer_adverse)}
         >
           <p>
-            <b>What it means:</b> disputes the merchant contested and won — the customer's claim did not
-            hold up. Razorpay's status words are merchant-side, so status <code>won</code> is the
-            customer-adverse outcome.
+            <b>What it means:</b> the customer raised a chargeback, the merchant challenged it with
+            evidence, and the bank ruled for the merchant. The customer's claim did not hold up.
+          </p>
+          <p>
+            Razorpay stores that outcome as <code>won</code> — won <i>by the merchant</i>, since a
+            dispute belongs to the merchant. It is the one dispute outcome that counts against a
+            customer.
           </p>
           <p>
             <b>Why it matters:</b> it is the strongest dispute-caution level, and the only one of the four
@@ -776,6 +835,7 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             discount cap to 25%.
           </p>
         </ExpandableRow>
+        </Accordion>
       </div>
     </>
   );
@@ -814,6 +874,7 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
         did not.
       </p>
       <div className="rp-signals">
+        <Accordion>
         {evaluated.map((s) => (
           <ExpandableRow
             key={s.id}
@@ -866,6 +927,7 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
             </p>
           </ExpandableRow>
         ))}
+        </Accordion>
       </div>
     </>
   );
@@ -896,6 +958,7 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
           </div>
           {request ? (
             <div className="rp-io-body">
+              <Accordion>
               <ExpandableRow label="System objective" value="identical in both arms">
                 <p>
                   One exported constant used by both arms word-for-word, which is what keeps the baseline
@@ -945,6 +1008,7 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
                   carries magnitudes badly.
                 </p>
               </ExpandableRow>
+              </Accordion>
             </div>
           ) : (
             <MissingBlock what="No model_request step was captured, so which keys were sent on this call is unknown." />
@@ -965,8 +1029,10 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
             <span className="rp-io-sub">raw, before guardrails</span>
           </div>
           <div className="rp-io-body">
-            <ArmOutput label="Memory arm" proposal={memProposal} arm={memory} />
-            <ArmOutput label="Baseline arm" proposal={baseProposal} arm={baseline} />
+            <Accordion>
+              <ArmOutput label="Memory arm" proposal={memProposal} arm={memory} />
+              <ArmOutput label="Baseline arm" proposal={baseProposal} arm={baseline} />
+            </Accordion>
           </div>
         </div>
       </div>
