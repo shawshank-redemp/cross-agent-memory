@@ -605,7 +605,9 @@ function StepCard(props: {
       </div>
       <p className="rp-card-sub">{head.s}</p>
       {index === 0 && <EventStep trace={props.trace} />}
-      {index === 1 && <MemoryStep memory={props.memory} profile={props.profile} />}
+      {index === 1 && (
+        <MemoryStep memory={props.memory} profile={props.profile} timeline={props.trace.timeline} />
+      )}
       {index === 2 && <SignalsStep evaluated={props.evaluated} />}
       {index === 3 && <DecisionStep memory={props.memory} baseline={props.baseline} />}
       {index === 4 && <GuardrailStep memoryGuard={props.memoryGuard} baselineGuard={props.baselineGuard} />}
@@ -727,7 +729,15 @@ function EventStep({ trace }: { trace: ReplayTrace }) {
   );
 }
 
-function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<string, unknown> | null }) {
+function MemoryStep({
+  memory,
+  profile,
+  timeline,
+}: {
+  memory: TraceArm;
+  profile: Record<string, unknown> | null;
+  timeline: ReplayTrace["timeline"];
+}) {
   const step = stepOf(memory, "read_memory_profile");
   if (!step || !profile) {
     return (
@@ -737,24 +747,56 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
   const breakdown = profile.dispute_breakdown as Record<string, number>;
   const discounts = profile.discount_usage_history as unknown[];
   const recovery = profile.recovery_frequency as { agent: string; count: number }[];
+  const cartCount = timeline.filter((e) => e.domain === "cart_abandonment").length;
+  const subCount = timeline.filter((e) => e.domain === "subscription_recovery").length;
 
   return (
     <>
       {/* WHAT THE SHARED PROFILE IS. There is no memory_profile table — the
           question "is this a derived copy or a mirror of Razorpay's own data?"
           has a real answer and the page was not giving it. */}
-      <p className="rp-prose">
-        <b>Not a stored table.</b> It is computed on every read from records Razorpay already holds —
-        orders, subscription charges, disputes — plus the discounts this run granted. An aggregation of
-        existing sources, not a new one.
-      </p>
-      <p className="rp-prose">
-        <b>Shared</b> means all three agents read the same profile: Cart Abandonment sees the disputes
-        the Dispute Responder handled, and vice versa. Read as of{" "}
-        <code title={String(step.detail.as_of)}>{formatWhen(String(step.detail.as_of))}</code>, this
-        event's own timestamp, so no later dispute ruling leaks backwards.{" "}
-        <b>The baseline arm reads none of it</b> — that asymmetry is the experiment.
-      </p>
+      <div className="rp-explain-grid">
+        <div>
+          <p className="rp-prose">
+            <b>Not a stored table.</b> It is computed on every read from records Razorpay already
+            holds, plus the discounts this run granted — an aggregation of existing sources, not a new
+            one.
+          </p>
+          <p className="rp-prose">
+            <b>Shared</b> means all three agents read the same profile: Cart Abandonment sees the
+            disputes the Dispute Responder handled, and vice versa. Read as of{" "}
+            <code title={String(step.detail.as_of)}>{formatWhen(String(step.detail.as_of))}</code>,
+            this event's own timestamp, so no later dispute ruling leaks backwards.{" "}
+            <b>The baseline arm reads none of it</b> — that asymmetry is the experiment.
+          </p>
+        </div>
+
+        {/* The counts are this customer's own, as of this event, so the panel
+            shows what the profile was actually built from rather than naming
+            tables in the abstract. */}
+        <div className="rp-sources">
+          <h5>Built from</h5>
+          <div className="rp-source-item">
+            <code>orders</code>
+            <span>{cartCount} for this customer</span>
+          </div>
+          <div className="rp-source-item">
+            <code>subscription charges</code>
+            <span>{subCount}</span>
+          </div>
+          <div className="rp-source-item">
+            <code>disputes</code>
+            <span>{profile.dispute_count as number}</span>
+          </div>
+          <div className="rp-source-item">
+            <code>discounts granted</code>
+            <span>{discounts.length}</span>
+          </div>
+          <div className="rp-sources-foot">
+            The first three are Razorpay's own records. Only the last is produced by this system.
+          </div>
+        </div>
+      </div>
       <div className="rp-kv-card">
         <h4>Aggregated from those records</h4>
         <Accordion>

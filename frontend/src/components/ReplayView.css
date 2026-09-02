@@ -141,7 +141,18 @@
 .rp-outcome-zone .muted { color: var(--rp-faint); font-size: 11.5px; }
 
 /* ------------------------------------------------------------------- main */
-.rp-main { padding: 16px 26px 10px; min-width: 0; }
+/* CONTENT MEASURE. The main column used to stretch to whatever the viewport
+   gave it — 1530px at 1920 wide — while the prose inside it capped at a
+   readable 760px. That left ~780px of dead space to the right of every
+   paragraph, and pushed each table value ~1160px from the label it belongs to,
+   far enough that the eye cannot pair them.
+   Capping the column and centring it fixes both: the whitespace sits evenly on
+   both sides and reads as margin, and label/value land close enough to
+   associate. */
+/* Capped so the column does not sprawl on a wide screen, but wide enough that
+   the data tables still breathe. Prose inside keeps its own readable measure
+   and the leftover width is used, not left blank — see .rp-explain-grid. */
+.rp-main { padding: 16px 26px 10px; min-width: 0; max-width: 1320px; margin-inline: auto; width: 100%; }
 .rp-main-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
 .rp-main-head h3 { margin: 0; font-size: 16px; }
 .rp-main-head p { margin: 0; color: var(--rp-faint); font-size: 12.5px; font-family: var(--rp-mono); }
@@ -244,8 +255,8 @@
   background: var(--rp-panel-alt); flex-shrink: 0;
 }
 .rp-card-title { font-family: var(--rp-display); font-size: 23px; font-weight: 600; letter-spacing: -.015em; margin: 0; }
-.rp-card-sub { color: var(--rp-dim); font-size: 13.5px; line-height: 1.45; margin: 0 0 14px; max-width: 720px; }
-.rp-prose { font-size: 14px; line-height: 1.55; color: var(--rp-dim); margin: 0 0 12px; max-width: 760px; }
+.rp-card-sub { color: var(--rp-dim); font-size: 13.5px; line-height: 1.45; margin: 0 0 14px; }
+.rp-prose { font-size: 14px; line-height: 1.55; color: var(--rp-dim); margin: 0 0 12px; max-width: 86ch; }
 .rp-prose b { color: var(--rp-text); }
 
 .rp-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rp-border-soft); }
@@ -464,3 +475,46 @@
 }
 .rp-source-table { display: block; font-size: 11.5px; color: var(--rp-faint); line-height: 1.5; }
 .rp-source-table code { font-size: 11px; color: var(--rp-dim); }
+
+
+/* WHERE THE EMPTY RIGHT-HAND SPACE WENT. Prose wants a readable measure and the
+   card is wider than that, which left a large blank column beside every
+   paragraph. Rather than shrink the card (which pushed lines out to ~120
+   characters) or leave the gap, the explanation and the thing it describes sit
+   side by side. */
+.rp-explain-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.65fr); gap: 24px; align-items: start; }
+@media (max-width: 1080px) { .rp-explain-grid { grid-template-columns: 1fr; gap: 12px; } }
+.rp-explain-grid .rp-prose:last-child { margin-bottom: 0; }
+
+.rp-sources {
+  border: 1px solid var(--rp-border); border-radius: 12px; padding: 13px 15px;
+  background: var(--rp-panel-alt);
+}
+.rp-sources h5 {
+  margin: 0 0 10px; font-family: var(--rp-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--rp-faint);
+}
+.rp-source-item { display: flex; align-items: baseline; gap: 8px; padding: 5px 0; font-size: 12px; }
+.rp-source-item + .rp-source-item { border-top: 1px solid var(--rp-border-soft); }
+.rp-source-item code { font-family: var(--rp-mono); font-size: 11px; color: var(--rp-text); }
+.rp-source-item span { color: var(--rp-faint); margin-left: auto; white-space: nowrap; }
+.rp-sources-foot {
+  margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--rp-border);
+  font-size: 11.5px; color: var(--rp-faint); line-height: 1.5;
+}
+
+
+/* LEADER LINES. In a card this wide a value sits ~900px from the label it
+   belongs to, which is past the distance an eye can pair across empty space.
+   Narrowing the tables would just move the blank column somewhere else, so a
+   faint dotted rule connects the two the way a table of contents does. */
+.rp-kv-row .rp-k,
+.rp-xrow-main .rp-k { flex: 1; min-width: 0; }
+.rp-kv-row .rp-k::after,
+.rp-xrow-main .rp-k::after {
+  content: ""; flex: 1; min-width: 18px; align-self: flex-end;
+  margin: 0 4px 5px 2px;
+  border-bottom: 1px dotted color-mix(in srgb, var(--rp-faint) 42%, transparent);
+}
+/* The source panel's rows are short enough to pair without help. */
+.rp-source-item .rp-k::after { display: none; }
