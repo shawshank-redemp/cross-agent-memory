@@ -1,10 +1,39 @@
 import cors from "cors";
 import express, { type Request, type Response } from "express";
 import type Database from "better-sqlite3";
+import type {
+  CartAbandonmentEvent,
+  DisputeEvent,
+  SubscriptionFailureEvent,
+} from "../types/index.js";
 import { computeMemoryProfile } from "../memory/profile.js";
-import { getDataStore } from "./dataStore.js";
+import { isCartEligible, isDisputeEligible, isSubscriptionEligible } from "../db/eligibility.js";
+import { readTraceDetail } from "../agents/trace.js";
+import { getDataStore, type TimelineEvent } from "./dataStore.js";
 
 const RAZORPAY_PAYMENT_LINKS_URL = "https://api.razorpay.com/v1/payment_links";
+
+// The link already created for this event, if there is one. Used only to
+// recover from Razorpay's duplicate-reference_id rejection, so a repeated click
+// returns the existing link instead of an error.
+async function fetchLinkByReference(
+  auth: string,
+  referenceId: string,
+): Promise<{ short_url?: string; id?: string; status?: string } | null> {
+  try {
+    const url = `${RAZORPAY_PAYMENT_LINKS_URL}?reference_id=${encodeURIComponent(referenceId)}`;
+    const res = await fetch(url, { headers: { Authorization: auth } });
+    if (!res.ok) return null;
+    const body = (await res.json().catch(() => null)) as
+      | { payment_links?: { short_url?: string; id?: string; status?: string }[] }
+      | null;
+    return body?.payment_links?.[0] ?? null;
+  } catch {
+    // The lookup is a convenience, not the operation. If it fails, the caller
+    // reports Razorpay's original message rather than inventing a link.
+    return null;
+  }
+}
 
 interface PaymentLinkRequest {
   customerId?: unknown;
@@ -19,6 +48,129 @@ function razorpayErrorMessage(body: unknown, status: number): string {
   return typeof description === "string" && description.length > 0
     ? description
     : `Razorpay responded ${status}`;
+}
+
+
+// The trace steps a complete replay expects, per arm. The baseline arm reads
+// no memory and computes no signals, so its sequence is genuinely shorter —
+// that is the control working, not a capture gap, which is why the two lists
+// are separate rather than one list with holes.
+const EXPECTED_STEPS: Record<"baseline" | "memory", string[]> = {
+  baseline: ["agent_reasoning", "policy_override"],
+  memory: [
+    "read_memory_profile",
+    "evaluate_policy_signals",
+    "model_request",
+    "agent_reasoning",
+    "policy_override",
+  ],
+};
+
+interface TraceRow {
+  event_id: string;
+  agent: string;
+  mode: "baseline" | "memory";
+  step_order: number;
+  step_name: string;
+  detail: string;
+  duration_ms: number;
+  started_at: string;
+}
+
+interface AuditDecisionRow {
+  action: string;
+  reasoning: string;
+  escalate_to_human: number | null;
+  policy_version: string | null;
+  signals: string | null;
+  policy_override: string | null;
+  metadata: string | null;
+  timestamp: string;
+}
+
+function parseJsonColumn(value: string | null): unknown {
+  if (value == null) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    // A malformed JSON column is corruption, not something to paper over with
+    // a default. Surfaced as null and reported by the arm's `missing` list.
+    return null;
+  }
+}
+
+// Discriminates on `domain` so each branch narrows to its own event type and
+// its own status enum — the same three-way split db/eligibility.ts defines, and
+// the compiler checks the status value against the right union in each arm.
+function isEligibleTimelineEvent(e: TimelineEvent): boolean {
+  switch (e.domain) {
+    case "cart_abandonment":
+      return isCartEligible((e.detail as CartAbandonmentEvent).status);
+    case "subscription_recovery":
+      return isSubscriptionEligible((e.detail as SubscriptionFailureEvent).status);
+    case "dispute_responder":
+      return isDisputeEligible((e.detail as DisputeEvent).status);
+  }
+}
+
+// One arm's replay: its captured steps, the decision row it produced, and an
+// explicit account of anything expected that is not there.
+function buildArm(
+  db: Database.Database,
+  rows: TraceRow[],
+  eventId: string,
+  mode: "baseline" | "memory",
+) {
+  const steps = rows
+    .filter((r) => r.event_id === eventId && r.mode === mode)
+    .sort((a, b) => a.step_order - b.step_order)
+    .map((r) => ({
+      step_order: r.step_order,
+      step_name: r.step_name,
+      duration_ms: r.duration_ms,
+      started_at: r.started_at,
+      // Rows written before the structured payload landed hold plain prose.
+      // readTraceDetail normalises both to one shape so the UI never has to
+      // know which run vintage it is looking at — but a prose-only row will
+      // carry nothing beyond `summary`, and the UI must show that as a gap
+      // rather than filling it in.
+      detail: readTraceDetail(r.detail),
+    }));
+
+  const row = db
+    .prepare(
+      `SELECT action, reasoning, escalate_to_human, policy_version, signals, policy_override, metadata, timestamp
+       FROM audit_log WHERE event_id = ? AND mode = ? AND entry_type = 'decision'`,
+    )
+    .get(eventId, mode) as AuditDecisionRow | undefined;
+
+  const metadata = parseJsonColumn(row?.metadata ?? null) as Record<string, unknown> | null;
+
+  const decision = row
+    ? {
+        action: row.action,
+        reasoning: row.reasoning,
+        escalate_to_human: row.escalate_to_human === 1,
+        // DB column names predate the decision-schema rename; the mapping back
+        // to the schema's vocabulary happens here, at the boundary, exactly as
+        // the runner maps it on the way in.
+        committed_spend_paise: (metadata?.discount_amount as number | null) ?? null,
+        escalation_reason: (metadata?.escalation_reason as string | null) ?? null,
+        memory_factors_used: (metadata?.memory_factors_used as string[] | undefined) ?? [],
+        unsupported_factor_citations:
+          (metadata?.unsupported_factor_citations as string[] | undefined) ?? [],
+        policy_version: row.policy_version,
+        signals: parseJsonColumn(row.signals),
+        policy_override: parseJsonColumn(row.policy_override),
+        timestamp: row.timestamp,
+      }
+    : null;
+
+  const present = new Set(steps.map((s) => s.step_name));
+  const missing = EXPECTED_STEPS[mode].filter((name) => !present.has(name));
+  if (!decision) missing.push("decision_row");
+
+  return { mode, steps, decision, missing };
 }
 
 export function createApp(db: Database.Database) {
@@ -152,19 +304,29 @@ export function createApp(db: Database.Database) {
       return;
     }
 
-    const keyId = process.env.RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    // Razorpay's dashboard hands the credentials over labelled `key_id` and
+    // `key_secret`, and that is how they tend to get pasted into a .env. Both
+    // spellings are accepted so a correctly-copied key pair does not fail with
+    // a message about a variable the user was never told to create; the
+    // prefixed names win when both are present.
+    const keyId = process.env.RAZORPAY_KEY_ID ?? process.env.key_id;
+    const keySecret = process.env.RAZORPAY_KEY_SECRET ?? process.env.key_secret;
     if (!keyId || !keySecret) {
-      res.status(502).json({ error: "RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET are not set in the environment" });
+      res.status(502).json({
+        error:
+          "Razorpay credentials are not set. Add RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET " +
+          "(or key_id / key_secret) to .env and restart the server.",
+      });
       return;
     }
 
     try {
+      const auth = `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`;
       const response = await fetch(RAZORPAY_PAYMENT_LINKS_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString("base64")}`,
+          Authorization: auth,
         },
         body: JSON.stringify({
           amount: amountPaise,
@@ -190,26 +352,117 @@ export function createApp(db: Database.Database) {
 
       const body: unknown = await response.json().catch(() => null);
       if (!response.ok) {
-        res.status(502).json({ error: razorpayErrorMessage(body, response.status) });
+        // reference_id IS the event id, deliberately — that is what makes a
+        // link traceable back to the decision that produced it in the Razorpay
+        // dashboard. Razorpay enforces uniqueness on it, so a SECOND click for
+        // the same event is rejected.
+        //
+        // That rejection is not really an error: a link for this event already
+        // exists, and it is the correct one to show. Fetching and returning it
+        // makes the button idempotent — click it as many times as a demo needs
+        // and it keeps resolving to the same real link. The alternative,
+        // salting reference_id with a nonce, would clear the error by creating
+        // a fresh link per click, littering the account and breaking the
+        // one-link-per-event traceability the field exists for.
+        const message = razorpayErrorMessage(body, response.status);
+        if (/already exists/i.test(message)) {
+          const existing = await fetchLinkByReference(auth, eventId);
+          if (existing) {
+            // Narrowed to the same three fields the create path returns.
+            // Spreading Razorpay's whole object here would make the response
+            // shape depend on which branch ran, and hand the browser the full
+            // customer contact block for no reason.
+            res.json({
+              short_url: existing.short_url,
+              id: existing.id,
+              status: existing.status,
+              reused: true,
+            });
+            return;
+          }
+        }
+        res.status(502).json({ error: message });
         return;
       }
 
       const link = body as { short_url?: string; id?: string; status?: string };
-      res.json({ short_url: link.short_url, id: link.id, status: link.status });
+      res.json({ short_url: link.short_url, id: link.id, status: link.status, reused: false });
     } catch (err) {
       // Network failure, DNS, TLS — anything that means we never got an answer.
       res.status(502).json({ error: err instanceof Error ? err.message : String(err) });
     }
   });
 
+  // ONE RESPONSE PER REPLAYED EVENT, carrying everything the six replay steps
+  // need for BOTH arms.
+  //
+  // The steps are assembled here rather than in the browser because the join is
+  // a database join — trace rows, the audit_log decision row, and the event's
+  // own row live in three places, keyed differently. Doing it client-side would
+  // mean three round trips and a reimplementation of the event-id normalisation
+  // the runner already owns.
+  //
+  // NOTHING IS SUBSTITUTED WHEN A STEP IS ABSENT. Each arm reports a `missing`
+  // list naming the expected steps that have no row, and every field that could
+  // not be read comes back null. A replay of an event that was never decided
+  // must look empty, not plausible — an invented number here would be
+  // indistinguishable from a real one on screen, which is the one failure this
+  // page cannot afford.
   app.get("/api/customers/:id/trace", (req: Request, res: Response) => {
+    const customerId = req.params.id as string;
+    const customer = store.customers.find((c) => c.customer_id === customerId);
+    if (!customer) {
+      res.status(404).json({ error: `no customer with id ${customerId}` });
+      return;
+    }
+
     const rows = db
       .prepare(
         `SELECT event_id, agent, mode, step_order, step_name, detail, duration_ms, started_at
          FROM agent_trace_events WHERE customer_id = ? ORDER BY event_id, mode, step_order`,
       )
-      .all(req.params.id);
-    res.json(rows);
+      .all(customerId) as TraceRow[];
+
+    const events = store.eventsByCustomer.get(customerId) ?? [];
+    const tracedEventIds = new Set(rows.map((r) => r.event_id));
+
+    // Which events this endpoint can replay at all: the ones with an open
+    // recovery question (the same definition the runner decides on — see
+    // db/eligibility.ts) AND at least one captured trace row.
+    const replayable = events
+      .filter((e) => isEligibleTimelineEvent(e) && tracedEventIds.has(e.event_id))
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+
+    const requested = typeof req.query.eventId === "string" ? req.query.eventId : null;
+    const selected = requested
+      ? (replayable.find((e) => e.event_id === requested) ?? null)
+      : (replayable[replayable.length - 1] ?? null);
+
+    if (requested && !selected) {
+      res.status(404).json({
+        error: `no replayable trace for event ${requested} on customer ${customerId}`,
+        replayableEventIds: replayable.map((e) => e.event_id),
+      });
+      return;
+    }
+
+    res.json({
+      customer,
+      scenario: store.scenarioByCustomer.get(customerId) ?? null,
+      note: store.noteByCustomer.get(customerId) ?? "",
+      // The customer's whole timeline, for the rail. Not filtered to eligible
+      // events: the rail is a history, and a paid order or a settled dispute is
+      // exactly the context that explains the signals.
+      timeline: events,
+      replayableEventIds: replayable.map((e) => e.event_id),
+      event: selected,
+      arms: selected
+        ? {
+            baseline: buildArm(db, rows, selected.event_id, "baseline"),
+            memory: buildArm(db, rows, selected.event_id, "memory"),
+          }
+        : null,
+    });
   });
 
   return app;

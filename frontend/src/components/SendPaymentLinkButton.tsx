@@ -55,16 +55,18 @@ export function SendPaymentLinkButton({
         {payable ? `${formatPaise(amountPaise)} · ${eventId}` : "nothing to charge for on this event"}
       </span>
 
+      {/* Inline, on the same row as the amount and event id — the link and its
+          plink id are the whole result, and Razorpay's status plus whether the
+          link was newly made or already existed were detail nobody reads. */}
       {result && (
-        <div className="payment-link-result">
+        <span className="payment-link-result">
+          {" · "}
           <a href={result.short_url} target="_blank" rel="noreferrer">
             {result.short_url}
           </a>
-          <span className="muted">
-            {" "}
-            · {result.id} · {result.status}
-          </span>
-        </div>
+          {" · "}
+          {result.id}
+        </span>
       )}
 
       {error && <div className="payment-link-error">{error}</div>}

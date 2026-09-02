@@ -1,13 +1,12 @@
 import type Database from "better-sqlite3";
 import type { Customer, DisputeEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
-import { applyBaselinePolicy } from "./enforcement.js";
+import { applyBaselinePolicyWithTrace } from "./enforcement.js";
 import type { PolicyOverrideRecord } from "../memory/profile.js";
 import { DISPUTE_COST_MODEL, OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import type { TriggeringEventFacts } from "./policy.js";
 import { DisputeResponderDecisionSchema, type DisputeResponderDecision } from "./schema.js";
-import { emitTrace } from "./trace.js";
 
 export const DISPUTE_BASELINE_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
 ${OBJECTIVE_BLOCK}
@@ -59,23 +58,14 @@ export async function decideDisputeResponderBaseline(
   // control would be the only path where model output reaches the ledger
   // unchecked, which is both a safety gap and a confound — see
   // enforcement.ts.
-  const decision = applyBaselinePolicy(raw, {
+  const decision = applyBaselinePolicyWithTrace(raw, {
     agent: "dispute_responder",
     eventAmount: eventFacts(event).amount,
+    db,
+    customerId: customer.customer_id,
+    eventId: event.dispute_id,
+    modelDurationMs: Date.now() - stepStart,
   });
-  emitTrace(
-    {
-      db,
-      customerId: customer.customer_id,
-      eventId: event.dispute_id,
-      agent: "dispute_responder",
-      mode: "baseline",
-      stepOrder: 1,
-    },
-    "agent_reasoning",
-    decision.reasoning,
-    Date.now() - stepStart,
-  );
   return decision;
 }
 

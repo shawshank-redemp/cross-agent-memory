@@ -299,6 +299,27 @@ export interface RunAgentBatchParams {
   decide: (item: TaggedEvent, customer: Customer, db: Database.Database) => Promise<DecisionLike>;
 }
 
+// --out= redirects this run's results file.
+//
+// The results file is REWRITTEN, not merged, with exactly the decisions this
+// run produced. That is correct for a full batch and destructive for a targeted
+// one: `--customer=X` without this flag replaces a 1,720-decision batch file
+// with a single decision, discarding a run that cost real API calls. Analysis
+// scripts read the default filenames, so a targeted run should write somewhere
+// else and leave the batch alone.
+function parseOutputFile(fallback: string): string {
+  const arg = process.argv.find((a) => a.startsWith("--out="));
+  if (!arg) return fallback;
+  const value = arg.slice("--out=".length).trim();
+  if (value.length === 0) return fallback;
+  // Confined to RESULTS_DIR: this is a filename, not a path, so a stray
+  // "../../src/something" cannot be handed to writeFileSync.
+  if (value.includes("/") || value.includes("\\")) {
+    throw new Error(`--out must be a bare filename (no path separators), got "${value}"`);
+  }
+  return value;
+}
+
 export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> {
   const selection = parseSelection();
   const resume = parseResume();
@@ -306,7 +327,11 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   const { customerById, tagged } = loadTaggedEvents(db);
 
   mkdirSync(RESULTS_DIR, { recursive: true });
-  const outputPath = join(RESULTS_DIR, params.outputFile);
+  const outputFile = parseOutputFile(params.outputFile);
+  const outputPath = join(RESULTS_DIR, outputFile);
+  if (outputFile !== params.outputFile) {
+    console.log(`Writing results to ${outputFile} (--out) instead of ${params.outputFile}`);
+  }
   const partialPath = `${outputPath}.partial.jsonl`;
 
   let toProcess = applySelection(tagged, selection);

@@ -17,9 +17,11 @@
 //
 // The memory arm passes its (possibly tighter) resolved cap into this function
 // rather than clamping separately, so the clamping logic exists exactly once.
+import type Database from "better-sqlite3";
 import type { PolicyOverrideRecord } from "../memory/profile.js";
 import { AGENT_ACTION_POLICY } from "./schema.js";
 import { DEFAULT_DISCOUNT_CAP_PERCENT } from "./signals/thresholds.js";
+import { clearTrace, emitTrace, guardrailPayload, toTracedDecision } from "./trace.js";
 import type { AgentType } from "../types/index.js";
 
 export interface EnforceableDecision {
@@ -132,6 +134,61 @@ export function normalizeEscalationReason(escalated: boolean, reason: string | n
   return reason ?? "ambiguous_case";
 }
 
+// Baseline-arm enforcement, in ONE implementation with two entry points.
+//
+// applyBaselinePolicy is the pure, database-free core (what the tests exercise);
+// applyBaselinePolicyWithTrace wraps it with the two trace rows a replay needs.
+// They share this function rather than each building the override record,
+// because two copies of "what did policy change" is precisely how the recorded
+// override and the recorded decision would drift apart.
+interface BaselinePolicyResult<D> {
+  decision: D & { policy_override: PolicyOverrideRecord | null };
+  notes: string[];
+  triggeredBy: string[];
+  capPercent: number;
+}
+
+function applyBaselinePolicyDetailed<D extends EnforceableDecision>(
+  raw: D,
+  options: UniversalPolicyOptions,
+): BaselinePolicyResult<D> {
+  const result = enforceUniversalPolicy(raw, options);
+  const escalated = result.decision.escalate_to_human;
+  const normalized = {
+    ...result.decision,
+    escalation_reason: normalizeEscalationReason(escalated, result.decision.escalation_reason),
+  };
+  const capPercent = options.capPercent ?? DEFAULT_DISCOUNT_CAP_PERCENT;
+
+  if (result.notes.length === 0) {
+    return {
+      decision: { ...normalized, policy_override: null },
+      notes: result.notes,
+      triggeredBy: result.triggeredBy,
+      capPercent,
+    };
+  }
+
+  const notesJoined = result.notes.join("; ");
+  return {
+    decision: {
+      ...normalized,
+      reasoning: `${normalized.reasoning}\n\n[POLICY OVERRIDE] ${notesJoined}.`,
+      policy_override: {
+        original_action: raw.action,
+        original_committed_spend_paise: raw.committed_spend_paise,
+        original_escalate_to_human: raw.escalate_to_human,
+        triggered_by: result.triggeredBy,
+        notes: notesJoined,
+        escalation_reason_forced: false,
+      },
+    },
+    notes: result.notes,
+    triggeredBy: result.triggeredBy,
+    capPercent,
+  };
+}
+
 // Baseline-arm entry point: universal policy only, packaged with an override
 // record so the runner records it exactly as it does for the memory arm.
 // A baseline override row carries no `signals` value, which is coherent —
@@ -140,28 +197,64 @@ export function applyBaselinePolicy<D extends EnforceableDecision>(
   decision: D,
   options: UniversalPolicyOptions,
 ): D & { policy_override: PolicyOverrideRecord | null } {
-  const result = enforceUniversalPolicy(decision, options);
-  const escalated = result.decision.escalate_to_human;
-  const normalized = {
-    ...result.decision,
-    escalation_reason: normalizeEscalationReason(escalated, result.decision.escalation_reason),
-  };
+  return applyBaselinePolicyDetailed(decision, options).decision;
+}
 
-  if (result.notes.length === 0) {
-    return { ...normalized, policy_override: null };
-  }
+// BASELINE ARM, GUARDRAIL + TRACE IN ONE STEP.
+//
+// The baseline used to emit a single "agent_reasoning" trace row and nothing
+// else, so its guardrail was invisible: a replay of a baseline decision could
+// show what the model said and what was ultimately recorded, with no way to see
+// whether anything had been enforced in between. That asymmetry also made the
+// two arms non-comparable in a replay UI, since only one of them had a
+// guardrail step to render.
+//
+// Both trace rows are written here rather than in each agent module because all
+// three baseline agents did the identical thing, and three copies of a step
+// sequence is exactly how the arms drift apart.
+export function applyBaselinePolicyWithTrace<D extends EnforceableDecision>(
+  raw: D,
+  options: UniversalPolicyOptions & {
+    db: Database.Database;
+    customerId: string;
+    eventId: string;
+    // Milliseconds spent in the model call that produced `raw`. Measured by the
+    // caller, since only it knows when the call started.
+    modelDurationMs: number;
+  },
+): D & { policy_override: PolicyOverrideRecord | null } {
+  const { db, customerId, eventId, modelDurationMs, ...policyOptions } = options;
+  const guardrailStart = Date.now();
+  const result = applyBaselinePolicyDetailed(raw, policyOptions);
 
-  const notesJoined = result.notes.join("; ");
-  return {
-    ...normalized,
-    reasoning: `${normalized.reasoning}\n\n[POLICY OVERRIDE] ${notesJoined}.`,
-    policy_override: {
-      original_action: decision.action,
-      original_committed_spend_paise: decision.committed_spend_paise,
-      original_escalate_to_human: decision.escalate_to_human,
-      triggered_by: result.triggeredBy,
-      notes: notesJoined,
-      escalation_reason_forced: false,
-    },
-  };
+  const traceBase = { db, customerId, eventId, agent: options.agent, mode: "baseline" as const };
+  clearTrace(db, { eventId, mode: "baseline" });
+
+  emitTrace(
+    { ...traceBase, stepOrder: 1 },
+    "agent_reasoning",
+    { summary: raw.reasoning, decision: toTracedDecision(raw) },
+    modelDurationMs,
+  );
+
+  emitTrace(
+    { ...traceBase, stepOrder: 2 },
+    "policy_override",
+    guardrailPayload({
+      applied: result.notes.length > 0,
+      proposed: toTracedDecision(raw),
+      final: toTracedDecision(result.decision),
+      capPercent: result.capPercent,
+      capPaise: spendCeilingPaise(policyOptions.eventAmount, result.capPercent),
+      eventAmount: policyOptions.eventAmount,
+      // Null, and meaningfully so: the baseline's ceiling is the standing
+      // default, not something a memory signal set.
+      cappingSignal: null,
+      notes: result.notes,
+      triggeredBy: result.triggeredBy,
+    }),
+    Date.now() - guardrailStart,
+  );
+
+  return result.decision;
 }
