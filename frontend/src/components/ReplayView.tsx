@@ -312,10 +312,6 @@ function TopBar({ scenario }: { scenario: ReplayTrace["scenario"] }) {
             Cross-agent gaming
           </span>
         </div>
-        <span className="rp-live">
-          <i />
-          LIVE REPLAY
-        </span>
       </div>
     </div>
   );

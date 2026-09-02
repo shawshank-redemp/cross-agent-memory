@@ -56,12 +56,6 @@
 }
 .rp-pill.active { background: rgba(46,107,224,.1); border-color: var(--rp-blue); color: var(--rp-blue); }
 .rp-pill[aria-disabled="true"] { opacity: .38; cursor: not-allowed; }
-.rp-live {
-  display: flex; align-items: center; gap: 6px; font-family: var(--rp-mono); font-size: 10.5px;
-  letter-spacing: .08em; color: var(--rp-coral); padding: 5px 11px; border-radius: 100px;
-  border: 1px solid rgba(224,71,90,.35); background: rgba(224,71,90,.06); white-space: nowrap;
-}
-.rp-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--rp-coral); animation: rp-pulse 1.4s infinite; }
 @keyframes rp-pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
 
 /* ------------------------------------------------------------------ shell */
