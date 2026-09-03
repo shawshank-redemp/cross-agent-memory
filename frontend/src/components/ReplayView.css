@@ -524,12 +524,18 @@
 .rp-intro .rp-prose:last-child { margin-bottom: 12px; }
 
 .rp-sources {
-  border: 1px solid var(--rp-border); border-radius: 12px; padding: 13px 15px;
+  border: 1px solid var(--rp-border); border-radius: 12px;
   background: var(--rp-panel-alt);
-  /* Aligns the "Built from" TEXT with the step title's text, not the boxes.
-     The two differ by their own padding plus the cap-height gap between a 23px
-     display face and a 10px mono one, so the offset is empirical. */
-  margin-top: -26px;
+  /* NO NEGATIVE MARGIN. Aligning the heading with the step title used to be
+     done with margin-top: -26px, which lifted the box out of the card's 18px
+     top padding and left it protruding above the card's own first element —
+     visually colliding with the row above. A negative offset here can only ever
+     escape, because nothing clips it: the card sets no overflow and the panel
+     carries its own background and border.
+     The heading is raised INSIDE the box instead, via a smaller top padding.
+     The box stays exactly where the grid puts it, so it is contained at every
+     viewport by construction rather than by a value that happened to fit one. */
+  padding: 6px 15px 13px;
 }
 .rp-sources h5 {
   margin: 0 0 10px; font-family: var(--rp-mono); font-size: 10px; font-weight: 500;
