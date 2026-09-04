@@ -74,7 +74,9 @@ const disputeCautionLevel: SignalDefinition<DisputeCautionLevel> = {
     // `adverse` blocks outright and sets no ceiling — see the cap table in
     // thresholds.ts for why it is deliberately absent from it. It does NOT
     // escalate: a ruled dispute is unambiguous, and a person adds nothing.
-    if (value === "adverse") return { blocksDiscount: true };
+    // A ruling has been made against this customer. Policy neither spends on
+    // them nor keeps contacting them — see SignalEffects.suppressesOutreach.
+    if (value === "adverse") return { blocksDiscount: true, suppressesOutreach: true };
     const cap = DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL[value];
     // A level at or above the standing default is NOT a brake — it contributes
     // no cap at all, so it cannot hold a proven payer back from the wider

@@ -196,10 +196,12 @@ test("two active caps: the LOWER wins (brakes beat accelerators)", () => {
 // share the 10% ceiling with unresolved_customer_fault, which treated a bank's
 // actual ruling as equivalent to an unproven allegation whose only evidence is
 // which reason the customer picked from a dropdown.
-test("adverse blocks outright rather than capping", () => {
+test("adverse blocks spend AND suppresses outreach", () => {
   const out = run(decision({ committed_spend_paise: 5_000 }), signals({ disputeCautionLevel: "adverse" }));
   assert.equal(out.committed_spend_paise, null, "a ruled dispute blocks spend at ANY amount");
-  assert.equal(out.action, "send_reminder");
+  // Suppression outranks the block's reminder fallback: no point swapping a
+  // discount for a message we have also decided not to send.
+  assert.equal(out.action, "no_action", "and we stop contacting them entirely");
   assert.ok(out.policy_override);
   assert.ok(out.policy_override.triggered_by.includes("disputeCautionLevel"));
   // The signal itself declares only blocksDiscount, never forcesEscalation —

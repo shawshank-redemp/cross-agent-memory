@@ -104,12 +104,11 @@ more than the recovery is worth.
 
 - A reminder or retry costs little, but it is weak: it asks the customer to do
   what they already chose not to do.
-- A discount is the only lever whose cost you choose, and the only one that
-  changes the terms of the customer's decision rather than repeating the
-  request. It costs nothing unless it is used: if the customer does not
-  return, the offer expires unspent. What it risks is not margin spent on
-  someone who was never going to buy — that case costs nothing. It is margin
-  given to someone who would have bought without it.
+- A discount is the only lever whose cost you choose. It is not compensation
+  for a fault, and you will not find one — an abandoned checkout does not
+  explain itself. It is a reason to come back now, which a reminder cannot
+  supply. It also costs nothing unless it is used: if the customer does not
+  return, the offer expires unspent.
 - Escalating costs a person's time, and only a few cases can reach one. It
   buys judgment automation cannot supply, and is worth it only when an
   automated decision would be wrong.

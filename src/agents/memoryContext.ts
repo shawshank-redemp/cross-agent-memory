@@ -488,6 +488,9 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   const afterUniversal = universal.decision;
 
   const mustBlockDiscount = resolved.blocksDiscount && afterUniversal.committed_spend_paise != null;
+  // Suppression outranks the block's reminder fallback: there is no point
+  // swapping a discount for a message we have also decided not to send.
+  const mustSuppressOutreach = resolved.suppressesOutreach && afterUniversal.action !== "no_action";
   // claimForcedEscalation() consumes one unit of the run's escalation budget, so
   // it must only be called when an escalation would actually be forced —
   // short-circuit order matters here. The breaker counts POLICY-forced
@@ -499,6 +502,10 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
 
   const notes = [...universal.notes];
   const triggeredBy = new Set<string>(universal.triggeredBy);
+  if (mustSuppressOutreach) {
+    notes.push(`outreach suppressed by: ${resolved.blockingSignals.join(", ")}`);
+    for (const id of resolved.blockingSignals) triggeredBy.add(id);
+  }
   if (mustBlockDiscount) {
     notes.push(`spend blocked by: ${resolved.blockingSignals.join(", ")}`);
     for (const id of resolved.blockingSignals) triggeredBy.add(id);
@@ -585,8 +592,13 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
 
   const final = {
     ...afterUniversal,
-    action: mustBlockDiscount ? fallbackNonSpendAction : afterUniversal.action,
-    committed_spend_paise: mustBlockDiscount ? null : afterUniversal.committed_spend_paise,
+    action: mustSuppressOutreach
+      ? ("no_action" as D["action"])
+      : mustBlockDiscount
+        ? fallbackNonSpendAction
+        : afterUniversal.action,
+    committed_spend_paise:
+      mustSuppressOutreach || mustBlockDiscount ? null : afterUniversal.committed_spend_paise,
     // Capping alone does not force escalation — the decision still stands, it
     // is just priced within policy.
     escalate_to_human: escalated,

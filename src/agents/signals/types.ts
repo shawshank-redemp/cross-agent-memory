@@ -48,6 +48,22 @@ export interface SignalContext {
 // value" as the same thing.
 export interface SignalEffects {
   blocksDiscount?: boolean;
+  // Stop contacting this customer at all — not "spend less", but "send
+  // nothing". The only memory effect that does not run through spend.
+  //
+  // Every other effect regulates margin, so memory could only ever show up as
+  // spending less than the baseline. Measured across six prompt revisions, the
+  // model declines to discount a first-touch abandonment under every framing —
+  // a defensible position, since a free reminder is real business practice. But
+  // it means the discount lever is never pulled, so the caps and blocks pointed
+  // at it never fire and memory has nothing to grip.
+  //
+  // This is not a demo device. It is a standing risk rule: a customer whose
+  // chargeback was ruled against them, who has since failed repeatedly across
+  // agents, is one you stop marketing to. No single agent can make that call —
+  // Cart Abandonment cannot see the ruling, and the Dispute Responder cannot see
+  // the abandonment.
+  suppressesOutreach?: boolean;
   forcesEscalation?: boolean;
   // Ceiling as a percentage of the triggering event's amount. Resolved by
   // taking the MINIMUM across every active signal — see resolveSignalEffects.

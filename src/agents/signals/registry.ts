@@ -118,6 +118,7 @@ export function computeMemorySignals(
 
 export interface ResolvedEffects {
   blocksDiscount: boolean;
+  suppressesOutreach: boolean;
   forcesEscalation: boolean;
   discountCapPercent: number;
   // Which signals produced a blocking or escalating effect, by registry id.
@@ -157,6 +158,7 @@ export function resolveSignalEffects(
   eventAmountPaise?: number,
 ): ResolvedEffects {
   let blocksDiscount = false;
+  let suppressesOutreach = false;
   let forcesEscalation = false;
   const blockingSignals: SignalId[] = [];
   const escalatingSignals: SignalId[] = [];
@@ -167,6 +169,10 @@ export function resolveSignalEffects(
     if (effects.blocksDiscount) {
       blocksDiscount = true;
       blockingSignals.push(id);
+    }
+    if (effects.suppressesOutreach) {
+      suppressesOutreach = true;
+      if (!blockingSignals.includes(id)) blockingSignals.push(id);
     }
     if (effects.forcesEscalation) {
       // A handoff has to be worth the person's time. Measured on the batch, the
@@ -190,6 +196,7 @@ export function resolveSignalEffects(
 
   return {
     blocksDiscount,
+    suppressesOutreach,
     forcesEscalation,
     discountCapPercent: winner?.percent ?? DEFAULT_DISCOUNT_CAP_PERCENT,
     blockingSignals,

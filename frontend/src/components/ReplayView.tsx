@@ -790,11 +790,15 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
   }
   const breakdown = profile.dispute_breakdown as Record<string, number>;
   const discounts = profile.discount_usage_history as unknown[];
-  const recovery = (profile.recovery_activity as { by_agent: unknown }).by_agent as {
-    agent: string;
-    count_all_time: number;
-    count_recent: number;
-  }[];
+  // recovery_activity is the merged replacement for the old
+  // recovery_frequency + recent_events pair. A trace row captured before that
+  // merge carries the OLD shape, and this step replays stored rows rather than
+  // recomputing, so the field can legitimately be absent. null therefore means
+  // "this run did not capture it" and is kept distinct from an empty array,
+  // which means "captured, and no agent has fired a recovery flow". Collapsing
+  // the two would print "none" over a value the row does not contain.
+  const recovery = ((profile.recovery_activity as { by_agent?: unknown } | undefined)?.by_agent ??
+    null) as { agent: string; count_all_time: number; count_recent: number }[] | null;
 
   return (
     <>
@@ -876,11 +880,18 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
         <ExpandableRow
           label="recovery_activity"
           value={
-            recovery.length === 0
-              ? "none"
-              : recovery.map((r) => `${r.agent}: ${r.count_all_time} (${r.count_recent} recent)`).join(", ")
+            recovery === null
+              ? "—"
+              : recovery.length === 0
+                ? "none"
+                : recovery.map((r) => `${r.agent}: ${r.count_all_time} (${r.count_recent} recent)`).join(", ")
           }
         >
+          {recovery === null && (
+            <p>
+              <Missing what="this trace row predates the recovery_activity merge; re-run `npm run agents:memory --customer=<id>` to recapture it" />
+            </p>
+          )}
           <p>
             <b>What it means:</b> how often each agent's recovery flow has fired for this customer —
             all-time, and within the last 90 days.
