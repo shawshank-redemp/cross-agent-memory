@@ -959,10 +959,10 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
         <b>
           {fired.length} of {evaluated.length} signals fired.
         </b>{" "}
-        All nine go to the agent on every call, each carrying the measurement behind it rather than a
-        yes or no — &ldquo;2 payments, ₹1,699 lifetime&rdquo; tells it more than &ldquo;not an
-        established customer&rdquo;. The ones that did not fire are sent too: knowing a limit was
-        nowhere near being reached is part of the reasoning.
+        All nine go to the agent on every call, each carrying the number behind it rather than a yes
+        or no — how many payments and how much spent, not just &ldquo;not an established
+        customer&rdquo;. The ones that did not fire are sent too: knowing a limit was nowhere near
+        being reached is part of the reasoning.
       </p>
       <div className="rp-signals">
         <Accordion>
