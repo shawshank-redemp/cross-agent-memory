@@ -110,11 +110,30 @@ export interface TimelineEvent {
   detail: Record<string, unknown>;
 }
 
-export interface RecoveryFrequencyRecord {
+export interface RecoveryAgentActivity {
   agent: string;
-  count: number;
+  // Two counts because the backend now holds both: all-time and the
+  // last-90-days subset. They used to be two separate profile fields computed
+  // from the same events, and they disagreed.
+  count_all_time: number;
+  count_recent: number;
   window_start: string;
   window_end: string;
+}
+
+export interface RecoveryActivity {
+  by_agent: RecoveryAgentActivity[];
+  recent_events: { agent: string; timestamp: string }[];
+}
+
+// What we did to this customer before, and whether it worked.
+export interface InterventionOutcomeSummary {
+  agent: string;
+  action: string;
+  attempts: number;
+  conversions: number;
+  spend_paise: number;
+  collected_paise: number;
 }
 
 export interface AuditLogEntry {
@@ -149,7 +168,8 @@ export interface CustomerDetail {
   profileCore: {
     dispute_count: number;
     total_disputed_amount: number;
-    recovery_frequency: RecoveryFrequencyRecord[];
+    recovery_activity: RecoveryActivity;
+    intervention_outcomes: InterventionOutcomeSummary[];
     rolling_health_score: number;
   };
   discountHistory: { baseline: unknown[]; memory: unknown[] };

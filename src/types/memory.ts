@@ -45,11 +45,78 @@ export interface RecentEventRecord {
   timestamp: string;
 }
 
-export interface RecoveryFrequencyRecord {
+// One agent's recovery-flow activity for this customer, as of the read.
+//
+// TWO COUNTS, DELIBERATELY. `count_all_time` and `count_recent` used to live in
+// two separate profile fields (recovery_frequency, all-time; recent_events,
+// 90-day) computed from the SAME population with the SAME filters. They
+// routinely disagreed — one real customer showed 2 cart events all-time and 1
+// in recent_events, because the older cart fell outside the 90-day bound — and
+// whichever field a signal happened to read decided whether it fired. Holding
+// both on one record removes the contradiction without forcing a single window
+// on every signal: a stopping rule legitimately wants "ever", a churn rule
+// legitimately wants "lately".
+export interface RecoveryAgentActivity {
   agent: AgentType;
-  count: number;
+  // Every qualifying event for this agent, no time bound.
+  count_all_time: number;
+  // The subset within PROFILE_RECENT_EVENTS_LOOKBACK_DAYS of the read.
+  count_recent: number;
+  // First and last qualifying event, all-time. Kept for the dashboard; no
+  // signal reads them.
   window_start: string;
   window_end: string;
+}
+
+// The merged replacement for recovery_frequency + recent_events. Counts and
+// the raw event list are the same facts at two levels of detail, so they now
+// travel together and cannot drift apart.
+export interface RecoveryActivity {
+  by_agent: RecoveryAgentActivity[];
+  // Raw asOf-scoped events, ascending, bounded to
+  // PROFILE_RECENT_EVENTS_LOOKBACK_DAYS. Facts only — the rule that reads them
+  // (how recent counts as "recent") lives in the signal registry, not here.
+  recent_events: RecentEventRecord[];
+}
+
+// WHAT WE DID, AND WHETHER IT WORKED.
+//
+// Every other field in this profile records what the CUSTOMER did. This one
+// records what WE did and how it turned out, which is the only way an agent
+// facing its fourth decision on a customer can learn "discounts do not work on
+// this person". Without it the memory layer has no feedback loop at all: it
+// knows a discount was granted and never whether it was redeemed.
+//
+// DELIBERATELY NOT DISCOUNT-SPECIFIC. `action` is the agent's own action
+// string, so a reminder, a retry, an escalation and a discount are all recorded
+// the same way, and an agent added later records its own actions with no schema
+// change. Scoping this to discounts would have made it useless to any agent
+// whose main lever is not a discount.
+export interface InterventionOutcomeRecord {
+  agent: AgentType;
+  action: string;
+  committed_spend_paise: number | null;
+  converted: boolean;
+  amount_collected_paise: number;
+  event_id: string;
+  // When we acted, and when the result became knowable. observed_at is
+  // decided_at + INTERVENTION_OBSERVATION_LAG_DAYS: a customer does not pay the
+  // instant an offer is sent, and writing the result at decision time would let
+  // the next decision read an outcome that had not happened yet. Same bug class
+  // as reading a dispute's `status` before its `resolved_at`.
+  decided_at: string;
+  observed_at: string;
+}
+
+// Rolled up per (agent, action) so the payload carries a hit rate rather than a
+// transcript. The raw records stay in the table for audit.
+export interface InterventionOutcomeSummary {
+  agent: AgentType;
+  action: string;
+  attempts: number;
+  conversions: number;
+  spend_paise: number;
+  collected_paise: number;
 }
 
 // Disputes split by what is actually KNOWN as of the read, not by their
@@ -107,17 +174,27 @@ export interface CustomerMemoryProfile {
   // uses it lives in the policy layer; this is the raw fact.
   unresolved_dispute_reasons: string[];
   discount_usage_history: DiscountUsageRecord[];
-  recovery_frequency: RecoveryFrequencyRecord[];
-  // Raw asOf-scoped event timestamps, ascending, bounded to the last
-  // PROFILE_RECENT_EVENTS_LOOKBACK_DAYS. Facts only — the rule that reads them
-  // (how recent counts as "recent") lives in policy.ts, not here.
-  recent_events: RecentEventRecord[];
+  // Replaces the old recovery_frequency + recent_events pair, which computed
+  // the same population twice and disagreed. See RecoveryActivity.
+  recovery_activity: RecoveryActivity;
+  // What we did to this customer before, and whether it worked. The feedback
+  // loop: every other field says what the customer did.
+  intervention_outcomes: InterventionOutcomeSummary[];
   // Successful transactions across ALL domains as of this read: paid orders
   // plus successful subscription cycles. Expressed in payment vocabulary
   // rather than cart/subscription vocabulary precisely so a fourth agent can
   // read it without translation.
   successful_payment_count: number;
   total_paid_amount: number; // paise
-  rolling_health_score: number; // 0-100, higher is healthier
+  // 0-100, higher is healthier. DASHBOARD ONLY — deliberately not sent to the
+  // model any more. It subtracts a fixed penalty per event and looks at neither
+  // recency nor density, so it measures event VOLUME rather than risk: measured
+  // on the committed batch it scored the churn_signal cohort (median 91)
+  // healthier than repeat_offender_cart (88) and cross_agent_gaming (76),
+  // i.e. it argued the wrong way on the highest-risk group. A wrong summary is
+  // worse than no summary when the model already receives the counts it is
+  // built from. A version the model could trust would be a RATIO (failures over
+  // total activity) rather than a subtraction from 100; that is separate work.
+  rolling_health_score: number;
   audit_log: AuditLogEntry[];
 }

@@ -112,7 +112,14 @@ const gamingSuspected: SignalDefinition<boolean> = {
   scope: "agent",
   kind: "brake",
   compute: (ctx) =>
-    (ctx.profile.recovery_frequency.find((r) => r.agent === ctx.agent)?.count ?? 0) >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
+    // OPEN DECISION (Signals stage): count_all_time preserves this signal's
+    // previous behaviour exactly, because recovery_frequency was all-time. It
+    // means the rule has NO recency bound — three abandoned carts across two
+    // years fire identically to three in a week, which is the same "nothing
+    // ages out" defect already fixed in compositeChurnSignal. count_recent is
+    // now available on the same record if we decide this should age out.
+    (ctx.profile.recovery_activity.by_agent.find((r) => r.agent === ctx.agent)?.count_all_time ?? 0) >=
+      MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
   describe: (value) =>
     value
       ? `gaming_suspected: this customer has triggered this agent's recovery flow ${MAX_DISCOUNT_ATTEMPTS_PER_AGENT}+ times, a pattern more consistent with farming the recovery nudge than with genuine difficulty paying. Policy does not permit spending margin on a customer in this state, and cases like this are handled by a person rather than automation.`
@@ -124,10 +131,13 @@ const crossAgentGamingSuspected: SignalDefinition<boolean> = {
   id: "crossAgentGamingSuspected",
   scope: "customer",
   kind: "brake",
-  // recovery_frequency is already asOf-scoped (see profile.ts), so summing it
+  // recovery_activity is already asOf-scoped (see profile.ts), so summing it
   // here stays causal for free.
   compute: (ctx) =>
-    ctx.profile.recovery_frequency.reduce((sum, r) => sum + r.count, 0) >= MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS,
+    // Same open decision as gamingSuspected above: all-time preserves prior
+    // behaviour; count_recent is available if this should age out.
+    ctx.profile.recovery_activity.by_agent.reduce((sum, r) => sum + r.count_all_time, 0) >=
+      MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS,
   describe: (value) =>
     value
       ? `cross_agent_gaming_suspected: this customer has triggered recovery flows ${MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS}+ times in total across multiple agents, no single agent's flow having reached its own threshold. Spreading triggers across agents rather than repeating one is the same pattern seen from a different angle. Policy does not permit spending margin on a customer in this state, and cases like this are handled by a person rather than automation.`
@@ -151,7 +161,7 @@ const compositeChurnSignal: SignalDefinition<boolean> = {
     const asOfMs = Date.parse(ctx.event.timestamp);
     const floorMs = asOfMs - CHURN_LOOKBACK_DAYS * DAY_MS;
     const domains = new Set<AgentType>();
-    for (const e of ctx.profile.recent_events) {
+    for (const e of ctx.profile.recovery_activity.recent_events) {
       const ts = Date.parse(e.timestamp);
       if (ts <= asOfMs && ts >= floorMs) domains.add(e.agent);
     }

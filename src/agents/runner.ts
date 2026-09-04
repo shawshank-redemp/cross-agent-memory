@@ -11,7 +11,17 @@ import {
   SUBSCRIPTION_ELIGIBLE_SQL,
 } from "../db/eligibility.js";
 import type { Scenario, ScenarioLabel } from "../data/generator.js";
-import { appendAuditLog, recordDiscountUsage, type PolicyOverrideRecord } from "../memory/profile.js";
+import {
+  appendAuditLog,
+  recordDiscountUsage,
+  recordInterventionOutcome,
+  type PolicyOverrideRecord,
+} from "../memory/profile.js";
+import {
+  resolveDisputeResponseOutcome,
+  resolveRecoveryOutcome,
+  rollsForEvent,
+} from "../outcomes/resolveOutcomes.js";
 import { POLICY_FINGERPRINT, type MemorySignals } from "./policy.js";
 import type {
   AgentType,
@@ -181,14 +191,46 @@ function parseSelection(): EventSelection {
 
 // Scenario labels live alongside the generated batch rather than in the DB —
 // they are generator ground truth about how a customer was planted, not an
-// observed fact an agent is allowed to read. Loaded only when --scenario is
-// actually used, so a plain run never depends on the file being present.
+// observed fact an agent is allowed to read.
+//
+// The OUTCOME MODEL is allowed to read them, and does: it is the hidden ground
+// truth that decides what actually happens, exactly as it already does in
+// compareRuns.ts. The AGENT never sees a scenario. That boundary is what keeps
+// the feedback loop honest — memory records what happened, never the
+// probability that made it happen.
 function loadScenarioLabels(): ScenarioLabel[] {
   const path = join(GENERATED_DIR, "scenario_labels.json");
   try {
     return JSON.parse(readFileSync(path, "utf-8")) as ScenarioLabel[];
   } catch {
     throw new Error(`--scenario needs ${path}; run \`npm run generate:data\` first.`);
+  }
+}
+
+// customer_id -> planted scenario, for the OUTCOME MODEL only. Tolerates a
+// missing labels file: without it the feedback loop simply records nothing,
+// which is better than failing a paid run over a ground-truth file the agents
+// never read.
+function loadScenarioByCustomer(): Map<string, Scenario> {
+  try {
+    return new Map(loadScenarioLabels().map((l) => [l.customer_id, l.scenario]));
+  } catch {
+    console.warn("  warning: scenario_labels.json not found — intervention outcomes will not be recorded.");
+    return new Map();
+  }
+}
+
+// The gross amount this decision was about, in paise. Each event type keeps its
+// own vocabulary here rather than in the outcome model, the same way
+// TriggeringEventFacts does for signals.
+function grossAmountFor(item: TaggedEvent): number {
+  switch (item.agent) {
+    case "cart_abandonment":
+      return item.event.amount;
+    case "subscription_recovery":
+      return item.event.plan_amount;
+    case "dispute_responder":
+      return item.event.amount;
   }
 }
 
@@ -325,6 +367,8 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   const resume = parseResume();
   const db = openDb();
   const { customerById, tagged } = loadTaggedEvents(db);
+  // Read once per run, for the outcome model only — never handed to an agent.
+  const scenarioByCustomer = loadScenarioByCustomer();
 
   mkdirSync(RESULTS_DIR, { recursive: true });
   const outputFile = parseOutputFile(params.outputFile);
@@ -486,6 +530,62 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
           // wrong. event_id above is the universal trace back to the cause.
           order_id: item.agent === "cart_abandonment" ? item.event.order_id : undefined,
           timestamp: item.timestamp,
+        });
+      }
+
+      // CLOSE THE FEEDBACK LOOP.
+      //
+      // Resolve what this intervention actually achieved and write it down, so a
+      // LATER decision on the same customer can read "we tried this and it did
+      // not work". Every other memory field records what the customer did; this
+      // is the only one that records what we did and how it turned out.
+      //
+      // Two properties make this safe rather than circular:
+      //
+      //   The dice are the SAME dice the comparison uses. rollsForEvent is
+      //   seeded from event_id alone, so resolving here gives byte-identical
+      //   outcomes to resolving at analysis time. Recording early changes what
+      //   is KNOWN during the run, never what HAPPENED.
+      //
+      //   Memory reads the realised OUTCOME, never the PROBABILITY. The scenario
+      //   and OUTCOME_PROBABILITIES stay on this side of the boundary; the
+      //   profile stores only "we discounted, they paid". That is exactly what a
+      //   production payment webhook would deliver.
+      //
+      // recordInterventionOutcome stamps observed_at = timestamp + the
+      // observation lag, and the profile read filters on observed_at — so a
+      // decision can never see an outcome that had not happened yet.
+      const scenario = scenarioByCustomer.get(customer.customer_id);
+      if (scenario) {
+        const outcome =
+          item.agent === "dispute_responder"
+            ? resolveDisputeResponseOutcome(item.event_id, scenario, grossAmountFor(item), {
+                action: decision.action,
+                escalate_to_human: decision.escalate_to_human,
+              })
+            : resolveRecoveryOutcome(
+                item.event_id,
+                item.agent,
+                scenario,
+                grossAmountFor(item),
+                {
+                  committed_spend_paise: decision.committed_spend_paise,
+                  escalate_to_human: decision.escalate_to_human,
+                },
+                rollsForEvent(item.event_id),
+              );
+        recordInterventionOutcome(db, {
+          customerId: customer.customer_id,
+          agent: item.agent,
+          mode: params.mode,
+          eventId: item.event_id,
+          // The FINAL action after enforcePolicy, not what the model first
+          // asked for: the loop must learn from what was actually done.
+          action: decision.action,
+          committedSpendPaise: decision.committed_spend_paise,
+          converted: outcome.paid === true,
+          amountCollectedPaise: outcome.money_collected,
+          decidedAt: item.timestamp,
         });
       }
 

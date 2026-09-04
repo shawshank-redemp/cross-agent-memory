@@ -426,7 +426,9 @@ function Rail({
 
   const breakdown = (profile?.dispute_breakdown ?? null) as Record<string, number> | null;
   const discountHistory = (profile?.discount_usage_history ?? null) as unknown[] | null;
-  const recovery = (profile?.recovery_frequency ?? null) as { agent: string; count: number }[] | null;
+  const recovery = ((profile?.recovery_activity as { by_agent?: unknown } | undefined)?.by_agent ?? null) as
+    | { agent: string; count_all_time: number; count_recent: number }[]
+    | null;
 
   return (
     <aside className="rp-rail">
@@ -542,7 +544,7 @@ function Rail({
             <span className="rp-recovery-label">Recovery flows triggered</span>
             {recovery.map((r) => (
               <span key={r.agent}>
-                {DOMAIN_LABEL[r.agent] ?? r.agent}: {r.count}
+                {DOMAIN_LABEL[r.agent] ?? r.agent}: {r.count_all_time}
               </span>
             ))}
           </div>
@@ -788,7 +790,11 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
   }
   const breakdown = profile.dispute_breakdown as Record<string, number>;
   const discounts = profile.discount_usage_history as unknown[];
-  const recovery = profile.recovery_frequency as { agent: string; count: number }[];
+  const recovery = (profile.recovery_activity as { by_agent: unknown }).by_agent as {
+    agent: string;
+    count_all_time: number;
+    count_recent: number;
+  }[];
 
   return (
     <>
@@ -867,11 +873,21 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
           </p>
         </ExpandableRow>
         <ExpandableRow
-          label="recovery_frequency"
-          value={recovery.length === 0 ? "none" : recovery.map((r) => `${r.agent}: ${r.count}`).join(", ")}
+          label="recovery_activity"
+          value={
+            recovery.length === 0
+              ? "none"
+              : recovery.map((r) => `${r.agent}: ${r.count_all_time} (${r.count_recent} recent)`).join(", ")
+          }
         >
           <p>
-            <b>What it means:</b> how often each agent's recovery flow has fired for this customer.
+            <b>What it means:</b> how often each agent's recovery flow has fired for this customer —
+            all-time, and within the last 90 days.
+          </p>
+          <p>
+            <b>Why two counts:</b> these used to be two separate profile fields computed from the same
+            events, one all-time and one 90-day. They disagreed, and whichever a signal happened to read
+            decided whether it fired. Holding both on one record removes the contradiction.
           </p>
           <p>
             <b>Why it matters:</b> summed across agents it catches gaming spread thin across domains,

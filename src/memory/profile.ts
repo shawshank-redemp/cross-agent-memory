@@ -6,8 +6,9 @@ import type {
   CustomerMemoryProfile,
   DiscountUsageRecord,
   DisputeBreakdown,
-  RecentEventRecord,
-  RecoveryFrequencyRecord,
+  InterventionOutcomeSummary,
+  RecoveryActivity,
+  RecoveryAgentActivity,
 } from "../types/index.js";
 
 // What the model originally asked for, and which signals overrode it.
@@ -162,121 +163,199 @@ function readDiscountUsageHistory(
   }));
 }
 
-interface WindowAgg {
-  count: number;
-  window_start: string;
-  window_end: string;
-}
-
-function aggWindow(db: Database.Database, sql: string, customerId: string, asOf?: string): WindowAgg | null {
-  const row = db.prepare(sql).get(...(asOf ? [customerId, asOf] : [customerId])) as
-    | { count: number; window_start: string | null; window_end: string | null }
-    | undefined;
-  if (!row || row.count === 0 || !row.window_start || !row.window_end) return null;
-  return { count: row.count, window_start: row.window_start, window_end: row.window_end };
-}
-
-// recovery_frequency only lists agents with at least one qualifying event —
-// a window with zero events has no meaningful start/end.
+// How far back the "recent" half of recovery activity reaches. This is a
+// STORAGE bound, not a policy threshold: it exists so the event list cannot
+// grow without limit on a heavy customer, and it is deliberately much wider
+// than any rule that reads it.
 //
-// `asOf`, when given, restricts every query to events at or before that
-// timestamp. This is what makes the profile causal: without it, a customer's
-// very first event would already see the count of ALL their eventual repeat
-// events (including ones that haven't happened yet), so gaming detection
-// would fire on event #1 instead of only once 3+ prior occurrences are real.
-function readRecoveryFrequency(db: Database.Database, customerId: string, asOf?: string): RecoveryFrequencyRecord[] {
-  const records: RecoveryFrequencyRecord[] = [];
-
-  const cart = aggWindow(
-    db,
-    `SELECT COUNT(*) AS count, MIN(created_at) AS window_start, MAX(created_at) AS window_end
-     FROM cart_abandonment_events WHERE customer_id = ? AND status != 'paid' ${asOf ? "AND created_at <= ?" : ""}`,
-    customerId,
-    asOf,
-  );
-  if (cart) records.push({ agent: "cart_abandonment", ...cart });
-
-  const subscription = aggWindow(
-    db,
-    `SELECT COUNT(*) AS count, MIN(created_at) AS window_start, MAX(created_at) AS window_end
-     FROM subscription_failure_events WHERE customer_id = ? AND status IN ('failed', 'halted') ${asOf ? "AND created_at <= ?" : ""}`,
-    customerId,
-    asOf,
-  );
-  if (subscription) records.push({ agent: "subscription_recovery", ...subscription });
-
-  const dispute = aggWindow(
-    db,
-    `SELECT COUNT(*) AS count, MIN(dispute_created_at) AS window_start, MAX(dispute_created_at) AS window_end
-     FROM dispute_events WHERE customer_id = ? ${asOf ? "AND dispute_created_at <= ?" : ""}`,
-    customerId,
-    asOf,
-  );
-  if (dispute) records.push({ agent: "dispute_responder", ...dispute });
-
-  return records;
-}
-
-// How far back recent_events reaches. This is a STORAGE bound, not a policy
-// threshold: it exists so the list cannot grow without limit on a heavy
-// customer, and it is deliberately much wider than any rule that reads it.
-//
-// INVARIANT: this must stay >= every policy lookback in policy.ts that reads
-// recent_events. If a policy lookback ever exceeds it, that policy would
-// silently see a truncated history and under-fire. policy.ts asserts this at
-// module load.
+// INVARIANT: this must stay >= every policy lookback that reads recent_events.
+// If a policy lookback ever exceeded it, that policy would silently see a
+// truncated history and under-fire. thresholds.ts asserts this at module load.
 export const PROFILE_RECENT_EVENTS_LOOKBACK_DAYS = 90;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Raw recovery-flow triggering events, ascending, asOf-scoped and bounded to
-// the lookback window above.
+// The three recovery-flow populations, as SQL. ONE definition, used for both
+// the counts and the raw list, which is the whole point of the merge: the two
+// used to be written out separately and could drift.
 //
-// Same population filters as readRecoveryFrequency (non-paid carts,
-// failed/halted subscription cycles, all disputes): a paid cart or a healthy
-// cycle is not a recovery trigger, so neither belongs in a churn or recency
-// signal. See RecentEventRecord in types/memory.ts.
-//
-// When asOf is omitted (the dashboard's "final state" read) the window is
-// anchored on the customer's most recent event instead, so the bound still
-// holds rather than degenerating into "return everything".
-function readRecentEvents(db: Database.Database, customerId: string, asOf?: string): RecentEventRecord[] {
-  const anchor =
-    asOf ??
-    (
-      db
-        .prepare(
-          `SELECT MAX(at) AS at FROM (
-             SELECT MAX(created_at) AS at FROM cart_abandonment_events WHERE customer_id = @customerId AND status != 'paid'
-             UNION ALL
-             SELECT MAX(created_at) FROM subscription_failure_events WHERE customer_id = @customerId AND status IN ('failed','halted')
-             UNION ALL
-             SELECT MAX(dispute_created_at) FROM dispute_events WHERE customer_id = @customerId
-           )`,
-        )
-        .get({ customerId }) as { at: string | null }
-    ).at ??
-    "";
-  if (!anchor) return [];
+// POPULATION: non-paid carts, failed/halted subscription cycles, all disputes.
+// A paid cart and a healthy cycle are not recovery triggers, so neither belongs
+// in a frequency count or a churn signal. NOTE this is deliberately NOT the
+// same as db/eligibility.ts: that decides which events get a DECISION and
+// excludes ruled disputes, because the responder has nothing left to file. A
+// ruled dispute still happened and is still evidence, so it stays here. The two
+// agree on carts and subscriptions and diverge on disputes by design.
+const RECOVERY_SOURCES = [
+  {
+    agent: "cart_abandonment" as const,
+    sql: `SELECT created_at AS ts FROM cart_abandonment_events
+          WHERE customer_id = @customerId AND status != 'paid'`,
+  },
+  {
+    agent: "subscription_recovery" as const,
+    sql: `SELECT created_at AS ts FROM subscription_failure_events
+          WHERE customer_id = @customerId AND status IN ('failed','halted')`,
+  },
+  {
+    agent: "dispute_responder" as const,
+    sql: `SELECT dispute_created_at AS ts FROM dispute_events
+          WHERE customer_id = @customerId`,
+  },
+];
 
+// Merged replacement for the old readRecoveryFrequency + readRecentEvents.
+//
+// Those two ran the SAME filters over the SAME tables and returned different
+// answers, because one was all-time and the other 90-day bounded. On a real
+// batch customer that meant recovery_frequency said 2 cart events while
+// recent_events contained 1, in the same payload — and whichever a signal read
+// decided whether it fired. Now both counts come off one pass, so they cannot
+// disagree.
+//
+// `asOf`, when given, restricts every read to events at or before that
+// timestamp. This is what makes the profile causal: without it a customer's
+// first event would already see the count of all their eventual repeat events.
+//
+// When asOf is omitted (the dashboard's "final state" read) the recent window
+// is anchored on the customer's most recent event instead, so the bound still
+// holds rather than degenerating into "return everything".
+function readRecoveryActivity(db: Database.Database, customerId: string, asOf?: string): RecoveryActivity {
+  const rows: { agent: AgentType; timestamp: string }[] = [];
+  for (const src of RECOVERY_SOURCES) {
+    const clause = asOf ? " AND ts <= @asOf" : "";
+    const found = db
+      .prepare(`SELECT ts FROM (${src.sql}) ${clause ? `WHERE ts <= @asOf` : ""} ORDER BY ts ASC`)
+      .all(asOf ? { customerId, asOf } : { customerId }) as { ts: string }[];
+    for (const r of found) rows.push({ agent: src.agent, timestamp: r.ts });
+  }
+  rows.sort((a, b) => (a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0));
+
+  if (rows.length === 0) return { by_agent: [], recent_events: [] };
+
+  const anchor = asOf ?? rows[rows.length - 1]!.timestamp;
   const floor = new Date(Date.parse(anchor) - PROFILE_RECENT_EVENTS_LOOKBACK_DAYS * DAY_MS).toISOString();
 
-  return db
+  const by_agent: RecoveryAgentActivity[] = [];
+  for (const src of RECOVERY_SOURCES) {
+    const mine = rows.filter((r) => r.agent === src.agent);
+    // Only agents with at least one qualifying event appear: a window with zero
+    // events has no meaningful start/end.
+    if (mine.length === 0) continue;
+    by_agent.push({
+      agent: src.agent,
+      count_all_time: mine.length,
+      count_recent: mine.filter((r) => r.timestamp >= floor).length,
+      window_start: mine[0]!.timestamp,
+      window_end: mine[mine.length - 1]!.timestamp,
+    });
+  }
+
+  return { by_agent, recent_events: rows.filter((r) => r.timestamp >= floor) };
+}
+
+// How long after acting we are allowed to know whether it worked.
+//
+// A customer does not pay the instant an offer is sent. If an outcome were
+// written at decision time, the very next decision on that customer could read
+// a result that had not happened yet — the same temporal leak already fixed
+// twice in this file (dispute resolved_at, and the discount/audit asOf scoping).
+// So an outcome row carries observed_at = decided_at + this, and the read below
+// filters on observed_at, never decided_at.
+export const INTERVENTION_OBSERVATION_LAG_DAYS = 3;
+
+// The feedback loop. Rolled up per (agent, action) rather than returned raw:
+// the decision needs a hit rate, not a transcript.
+//
+// asOf-scoped on observed_at for the reason above, and mode-scoped for the same
+// reason discount_usage is — a memory-informed read must not see the baseline
+// run's outcomes as if they were its own.
+function readInterventionOutcomes(
+  db: Database.Database,
+  customerId: string,
+  mode: "baseline" | "memory",
+  asOf?: string,
+): InterventionOutcomeSummary[] {
+  const rows = db
     .prepare(
-      `SELECT 'cart_abandonment' AS agent, created_at AS timestamp FROM cart_abandonment_events
-         WHERE customer_id = @customerId AND status != 'paid'
-           AND created_at <= @anchor AND created_at >= @floor
-       UNION ALL
-       SELECT 'subscription_recovery' AS agent, created_at AS timestamp FROM subscription_failure_events
-         WHERE customer_id = @customerId AND status IN ('failed','halted')
-           AND created_at <= @anchor AND created_at >= @floor
-       UNION ALL
-       SELECT 'dispute_responder' AS agent, dispute_created_at AS timestamp FROM dispute_events
-         WHERE customer_id = @customerId
-           AND dispute_created_at <= @anchor AND dispute_created_at >= @floor
-       ORDER BY timestamp ASC`,
+      `SELECT agent, action, converted, committed_spend_paise, amount_collected_paise
+       FROM intervention_outcomes
+       WHERE customer_id = @customerId AND mode = @mode
+       ${asOf ? "AND observed_at <= @asOf" : ""}`,
     )
-    .all({ customerId, anchor, floor }) as RecentEventRecord[];
+    .all(asOf ? { customerId, mode, asOf } : { customerId, mode }) as {
+    agent: AgentType;
+    action: string;
+    converted: number;
+    committed_spend_paise: number | null;
+    amount_collected_paise: number;
+  }[];
+
+  const byKey = new Map<string, InterventionOutcomeSummary>();
+  for (const r of rows) {
+    const key = `${r.agent}|${r.action}`;
+    const acc =
+      byKey.get(key) ??
+      { agent: r.agent, action: r.action, attempts: 0, conversions: 0, spend_paise: 0, collected_paise: 0 };
+    acc.attempts += 1;
+    acc.conversions += r.converted ? 1 : 0;
+    acc.spend_paise += r.committed_spend_paise ?? 0;
+    acc.collected_paise += r.amount_collected_paise;
+    byKey.set(key, acc);
+  }
+  return [...byKey.values()].sort((a, b) => (a.agent + a.action < b.agent + b.action ? -1 : 1));
+}
+
+// Records one intervention and the result it eventually had. Written by the
+// runner after enforcePolicy has settled the decision, so `action` and
+// `committed_spend_paise` are the FINAL values, not what the model first asked
+// for. Idempotent on (event_id, mode) like discount_usage, so --resume and
+// re-decides replace rather than duplicate.
+export interface RecordInterventionOutcomeInput {
+  customerId: string;
+  agent: AgentType;
+  mode: "baseline" | "memory";
+  eventId: string;
+  action: string;
+  committedSpendPaise: number | null;
+  converted: boolean;
+  amountCollectedPaise: number;
+  decidedAt: string;
+}
+
+export function recordInterventionOutcome(
+  db: Database.Database,
+  input: RecordInterventionOutcomeInput,
+): void {
+  const observedAt = new Date(
+    Date.parse(input.decidedAt) + INTERVENTION_OBSERVATION_LAG_DAYS * DAY_MS,
+  ).toISOString();
+  db.prepare(
+    `INSERT INTO intervention_outcomes
+       (customer_id, agent, mode, event_id, action, committed_spend_paise,
+        converted, amount_collected_paise, decided_at, observed_at)
+     VALUES (@customerId, @agent, @mode, @eventId, @action, @committedSpendPaise,
+             @converted, @amountCollectedPaise, @decidedAt, @observedAt)
+     ON CONFLICT(event_id, mode) DO UPDATE SET
+       agent = excluded.agent,
+       action = excluded.action,
+       committed_spend_paise = excluded.committed_spend_paise,
+       converted = excluded.converted,
+       amount_collected_paise = excluded.amount_collected_paise,
+       decided_at = excluded.decided_at,
+       observed_at = excluded.observed_at`,
+  ).run({
+    customerId: input.customerId,
+    agent: input.agent,
+    mode: input.mode,
+    eventId: input.eventId,
+    action: input.action,
+    committedSpendPaise: input.committedSpendPaise,
+    converted: input.converted ? 1 : 0,
+    amountCollectedPaise: input.amountCollectedPaise,
+    decidedAt: input.decidedAt,
+    observedAt: observedAt,
+  });
 }
 
 interface PaymentHistory {
@@ -562,8 +641,8 @@ export function computeMemoryProfile(
     adverse_disputed_amount: disputes.adverseAmount,
     unresolved_dispute_reasons: disputes.unresolvedReasons,
     discount_usage_history: readDiscountUsageHistory(db, customerId, mode, asOf),
-    recovery_frequency: readRecoveryFrequency(db, customerId, asOf),
-    recent_events: readRecentEvents(db, customerId, asOf),
+    recovery_activity: readRecoveryActivity(db, customerId, asOf),
+    intervention_outcomes: readInterventionOutcomes(db, customerId, mode, asOf),
     successful_payment_count: payments.successfulPaymentCount,
     total_paid_amount: payments.totalPaidAmount,
     rolling_health_score: computeRollingHealthScore(db, customerId, disputes.breakdown, asOf),

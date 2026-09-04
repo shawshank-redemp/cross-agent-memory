@@ -41,10 +41,19 @@ export const MEMORY_PROFILE_ALWAYS_KEYS = [
   "adverse_disputed_amount",
   "successful_payment_count",
   "total_paid_amount",
-  "rolling_health_score",
   "discount_usage_history",
+  // The feedback loop: what we did to this customer before, and whether it
+  // worked. Citable because it is always sent.
+  "intervention_outcomes",
   "recent_decisions",
 ] as const;
+
+// REMOVED from the payload, deliberately: rolling_health_score. It counted
+// events without regard to recency or density, so it ranked the churn cohort
+// healthier than the repeat-offender cohorts. Dropping it from this list is
+// what keeps the citable set equal to the sent set — leaving it citable while
+// no longer sending it would make it a phantom option that could only ever be
+// chosen in error.
 
 // Sent only when the dispute caution level is "none" — otherwise the generated
 // prose already states the finding these would support, and repeating it costs

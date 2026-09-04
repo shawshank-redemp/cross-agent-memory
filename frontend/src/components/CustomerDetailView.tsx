@@ -63,10 +63,23 @@ export function CustomerDetailView({ detail }: { detail: CustomerDetail }) {
             {detail.profileCore.dispute_count} ({formatPaise(detail.profileCore.total_disputed_amount)})
           </span>
         </div>
-        {detail.profileCore.recovery_frequency.map((r) => (
+        {detail.profileCore.recovery_activity.by_agent.map((r) => (
           <div key={r.agent}>
             <strong>{r.agent.replace(/_/g, " ")} triggers</strong>
-            <span>{r.count}</span>
+            <span>
+              {r.count_all_time}
+              {r.count_recent !== r.count_all_time ? ` (${r.count_recent} in last 90d)` : ""}
+            </span>
+          </div>
+        ))}
+        {detail.profileCore.intervention_outcomes.map((o) => (
+          <div key={`${o.agent}:${o.action}`}>
+            <strong>
+              {o.agent.replace(/_/g, " ")} · {o.action.replace(/_/g, " ")}
+            </strong>
+            <span>
+              {o.conversions}/{o.attempts} worked
+            </span>
           </div>
         ))}
       </div>

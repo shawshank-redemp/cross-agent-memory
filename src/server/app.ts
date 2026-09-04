@@ -234,7 +234,8 @@ export function createApp(db: Database.Database) {
     // state. Powers the "memory accumulation over time" view.
     const profileTimeline = events.map((e) => {
       const snapshot = computeMemoryProfile(db, id, "memory", e.timestamp);
-      const countFor = (agent: string) => snapshot.recovery_frequency.find((r) => r.agent === agent)?.count ?? 0;
+      const countFor = (agent: string) =>
+        snapshot.recovery_activity.by_agent.find((r) => r.agent === agent)?.count_all_time ?? 0;
       return {
         event_id: e.event_id,
         timestamp: e.timestamp,
@@ -258,7 +259,10 @@ export function createApp(db: Database.Database) {
       profileCore: {
         dispute_count: memoryProfile.dispute_count,
         total_disputed_amount: memoryProfile.total_disputed_amount,
-        recovery_frequency: memoryProfile.recovery_frequency,
+        recovery_activity: memoryProfile.recovery_activity,
+        intervention_outcomes: memoryProfile.intervention_outcomes,
+        // Still surfaced here: the dashboard is where this number belongs. It
+        // is no longer sent to the model — see memoryPayloadKeys.ts.
         rolling_health_score: memoryProfile.rolling_health_score,
       },
       profileTimeline,

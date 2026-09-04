@@ -136,7 +136,7 @@ function profileTracePayload(profile: CustomerMemoryProfile, asOf: string) {
     summary: [
       `dispute_count: ${profile.dispute_count}`,
       `disputes(unresolved/merchant_conceded/customer_adverse/closed): ${b.unresolved}/${b.merchant_conceded}/${b.customer_adverse}/${b.closed_undetermined}`,
-      `recovery_frequency: ${profile.recovery_frequency.length} agents`,
+      `recovery_activity: ${profile.recovery_activity.by_agent.length} agents`,
       `discount_history: ${entries} entr${entries === 1 ? "y" : "ies"}`,
     ].join(", "),
     as_of: asOf,
@@ -147,8 +147,8 @@ function profileTracePayload(profile: CustomerMemoryProfile, asOf: string) {
       adverse_disputed_amount: profile.adverse_disputed_amount,
       unresolved_dispute_reasons: profile.unresolved_dispute_reasons,
       discount_usage_history: profile.discount_usage_history,
-      recovery_frequency: profile.recovery_frequency,
-      recent_events: profile.recent_events,
+      recovery_activity: profile.recovery_activity,
+      intervention_outcomes: profile.intervention_outcomes,
       successful_payment_count: profile.successful_payment_count,
       total_paid_amount: profile.total_paid_amount,
       rolling_health_score: profile.rolling_health_score,
@@ -202,8 +202,17 @@ function signalsTracePayload(signals: MemorySignals) {
 //   Only the ones NOT in the prose are sent, plus every numeric value
 //   regardless — magnitude is information prose does not carry well.
 //
-//   recovery_frequency windows are vestigial: composite churn reads
-//   recent_events now, and nothing else consumed the windows.
+//   recovery_activity is not sent at all: every question the model would ask
+//   of it is already answered by a signal (gaming, cross-agent gaming,
+//   composite churn), and the raw event list is long.
+//
+//   rolling_health_score is no longer sent. It subtracts a fixed penalty per
+//   event with no view of recency or density, so it measures event VOLUME
+//   rather than risk — measured on the committed batch it rated the
+//   churn_signal cohort (median 91) healthier than repeat_offender_cart (88).
+//   The model already receives the counts it is built from, so a summary that
+//   argues the wrong way on the highest-risk group is worse than none. It stays
+//   on the profile for the dashboard.
 //   dispute_breakdown and unresolved_dispute_reasons are dropped only when a
 //   dispute caution level is already stated in prose, since in that case the
 //   prose says what they would say. The two AMOUNT fields
@@ -248,8 +257,12 @@ function buildUserContent(
     total_disputed_amount: profile.total_disputed_amount,
     successful_payment_count: profile.successful_payment_count,
     total_paid_amount: profile.total_paid_amount,
-    rolling_health_score: profile.rolling_health_score,
     discount_usage_history: profile.discount_usage_history,
+    // The feedback loop. discount_usage_history says what we GRANTED; this says
+    // whether it WORKED. Without it an agent on its fourth decision about a
+    // customer can only see that it kept trying, never that trying kept
+    // failing.
+    intervention_outcomes: profile.intervention_outcomes,
     recent_decisions: recentDecisions,
     // Always sent, even when a caution level is stated in prose — especially
     // then. The prose says a dispute went against this customer; only this says

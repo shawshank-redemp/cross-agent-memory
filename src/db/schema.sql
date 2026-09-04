@@ -114,6 +114,46 @@ CREATE INDEX IF NOT EXISTS idx_discount_usage_customer ON discount_usage(custome
 -- precisely to recover from crashes.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_discount_usage_event_mode ON discount_usage(event_id, mode);
 
+-- THE FEEDBACK LOOP. One row per intervention: what we did, and whether it
+-- worked. Every other table records what the CUSTOMER did; this is the only
+-- one that records what WE did and how it turned out, which is what lets a
+-- later decision learn "discounts do not work on this person".
+--
+-- NOT discount-specific. `action` holds the agent's own final action string,
+-- so a reminder, a retry, an escalation and a discount are all recorded the
+-- same way and a fourth agent records its own actions with no schema change.
+--
+-- TWO TIMESTAMPS, and the distinction is the point. decided_at is when we
+-- acted. observed_at is when the result became knowable — decided_at plus
+-- INTERVENTION_OBSERVATION_LAG_DAYS, because a customer does not pay the
+-- instant an offer is sent. Profile reads filter on observed_at, never
+-- decided_at: writing the result at decision time would let the very next
+-- decision on that customer read an outcome that had not happened yet, the
+-- same temporal leak already fixed for dispute resolved_at.
+--
+-- `mode` scopes this to one comparison arm, exactly as on discount_usage: a
+-- memory-informed read must not see the baseline run's outcomes as its own.
+CREATE TABLE IF NOT EXISTS intervention_outcomes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+  agent TEXT NOT NULL,
+  mode TEXT NOT NULL CHECK (mode IN ('baseline', 'memory')),
+  event_id TEXT NOT NULL,
+  action TEXT NOT NULL,
+  committed_spend_paise INTEGER,
+  converted INTEGER NOT NULL CHECK (converted IN (0, 1)),
+  amount_collected_paise INTEGER NOT NULL,
+  decided_at TEXT NOT NULL,
+  observed_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_intervention_outcomes_customer
+  ON intervention_outcomes(customer_id, mode);
+-- Same idempotency guarantee as discount_usage, paired with the
+-- ON CONFLICT DO UPDATE in recordInterventionOutcome, so --resume and
+-- re-decides replace rather than duplicate.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_intervention_outcomes_event_mode
+  ON intervention_outcomes(event_id, mode);
+
 -- Graded requirement per CLAUDE.md. `mode` distinguishes baseline
 -- (no-memory) runs from memory-informed runs for the comparison in step 5.
 -- Every memory read and every agent decision: what was read, what was
