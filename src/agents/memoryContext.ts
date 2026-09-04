@@ -148,7 +148,6 @@ function profileTracePayload(profile: CustomerMemoryProfile, asOf: string) {
       intervention_outcomes: profile.intervention_outcomes,
       successful_payment_count: profile.successful_payment_count,
       total_paid_amount: profile.total_paid_amount,
-      rolling_health_score: profile.rolling_health_score,
     },
   };
 }

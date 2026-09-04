@@ -239,7 +239,6 @@ export function createApp(db: Database.Database) {
       return {
         event_id: e.event_id,
         timestamp: e.timestamp,
-        rolling_health_score: snapshot.rolling_health_score,
         dispute_count: snapshot.dispute_count,
         cart_abandonment_count: countFor("cart_abandonment"),
         subscription_recovery_count: countFor("subscription_recovery"),
@@ -261,9 +260,6 @@ export function createApp(db: Database.Database) {
         total_disputed_amount: memoryProfile.total_disputed_amount,
         recovery_activity: memoryProfile.recovery_activity,
         intervention_outcomes: memoryProfile.intervention_outcomes,
-        // Still surfaced here: the dashboard is where this number belongs. It
-        // is no longer sent to the model — see memoryPayloadKeys.ts.
-        rolling_health_score: memoryProfile.rolling_health_score,
       },
       profileTimeline,
       discountHistory: {

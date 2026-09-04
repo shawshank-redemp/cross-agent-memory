@@ -12,7 +12,6 @@ import {
 export interface ProfileTimelinePoint {
   event_id: string;
   timestamp: string;
-  rolling_health_score: number;
   dispute_count: number;
   cart_abandonment_count: number;
   subscription_recovery_count: number;
@@ -27,7 +26,6 @@ export function ProfileTimelineChart({ points }: { points: ProfileTimelinePoint[
   const data = points.map((p, i) => ({
     label: `#${i + 1}`,
     date: new Date(p.timestamp).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),
-    "Health score": p.rolling_health_score,
     "Cart triggers": p.cart_abandonment_count,
     "Subscription triggers": p.subscription_recovery_count,
     "Dispute triggers": p.dispute_responder_count,
@@ -48,7 +46,6 @@ export function ProfileTimelineChart({ points }: { points: ProfileTimelinePoint[
           <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 12 }} allowDecimals={false} />
           <Tooltip />
           <Legend />
-          <Line yAxisId="left" type="monotone" dataKey="Health score" stroke="var(--health-color)" strokeWidth={2} dot />
           <Line yAxisId="right" type="stepAfter" dataKey="Cart triggers" stroke="var(--memory-color)" strokeWidth={1.5} dot={false} />
           <Line yAxisId="right" type="stepAfter" dataKey="Subscription triggers" stroke="#a855f7" strokeWidth={1.5} dot={false} />
           <Line yAxisId="right" type="stepAfter" dataKey="Dispute triggers" stroke="#f97316" strokeWidth={1.5} dot={false} />

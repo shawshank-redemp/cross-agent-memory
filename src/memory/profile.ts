@@ -517,59 +517,24 @@ function readDisputeStats(db: Database.Database, customerId: string, asOf?: stri
 }
 
 
-// Heuristic, not a model: starts at 100 and subtracts per unresolved-risk
-// event, weighted by how costly that risk is to the business (a dispute
-// costs more than one abandoned cart). Tune these weights against the
-// baseline-vs-memory comparison once that's running, not in the abstract.
+// REMOVED: computeRollingHealthScore.
 //
-// The dispute term is split by outcome rather than counting every filed
-// dispute equally. A dispute the MERCHANT conceded (Razorpay 'lost') says the
-// merchant failed to deliver, so it carries no penalty at all. A
-// customer-adverse dispute (Razorpay 'won' — the merchant contested it and the
-// complaint did not hold up) carries the full weight; a dispute still
-// unresolved as of this read carries half, reflecting genuine uncertainty
-// rather than established fault. `closed` disputes ended with no ruling
-// either way and carry nothing.
-const HEALTH_WEIGHTS = {
-  customerAdverseDisputePenalty: 12,
-  unresolvedDisputePenalty: 6,
-  failedSubscriptionCyclePenalty: 6,
-  abandonedCartPenalty: 3,
-};
-
-function computeRollingHealthScore(
-  db: Database.Database,
-  customerId: string,
-  breakdown: DisputeBreakdown,
-  asOf?: string,
-): number {
-  const failedCycles = (
-    db
-      .prepare(
-        `SELECT COUNT(*) AS count FROM subscription_failure_events
-         WHERE customer_id = ? AND status IN ('failed', 'halted') ${asOf ? "AND created_at <= ?" : ""}`,
-      )
-      .get(...(asOf ? [customerId, asOf] : [customerId])) as { count: number }
-  ).count;
-
-  const abandonedCarts = (
-    db
-      .prepare(
-        `SELECT COUNT(*) AS count FROM cart_abandonment_events
-         WHERE customer_id = ? AND status != 'paid' ${asOf ? "AND created_at <= ?" : ""}`,
-      )
-      .get(...(asOf ? [customerId, asOf] : [customerId])) as { count: number }
-  ).count;
-
-  const score =
-    100 -
-    breakdown.customer_adverse * HEALTH_WEIGHTS.customerAdverseDisputePenalty -
-    breakdown.unresolved * HEALTH_WEIGHTS.unresolvedDisputePenalty -
-    failedCycles * HEALTH_WEIGHTS.failedSubscriptionCyclePenalty -
-    abandonedCarts * HEALTH_WEIGHTS.abandonedCartPenalty;
-
-  return Math.max(0, Math.min(100, score));
-}
+// It subtracted a fixed penalty per event and looked at neither recency nor
+// density, so it measured event VOLUME rather than risk. Measured across all 700
+// customers it scored the churn_signal cohort (median 91) as healthier than
+// repeat_offender_cart (88) and cross_agent_gaming (76) — it ranked the
+// highest-risk group best, under a label reading "higher is healthier".
+//
+// It was pulled from the model payload first, on the grounds that a summary
+// which inverts the ranking is worse than no summary when the model already
+// receives the counts it is built from. That argument does not stop at the
+// model: a person reading a dashboard is no more immune to a number that says
+// the opposite of the truth. Nothing read it — no signal, no policy — and it
+// cost two of the nine SQL queries in every profile read.
+//
+// A version worth having would be a RATIO (failures over total activity) rather
+// than a subtraction from 100, and would age out. That is a different field, and
+// it should be built when something actually needs it.
 
 // Scoped to (mode OR NULL) for the same reason as discount_usage — a
 // memory-informed read must not see the baseline run's decisions as if they
@@ -645,7 +610,6 @@ export function computeMemoryProfile(
     intervention_outcomes: readInterventionOutcomes(db, customerId, mode, asOf),
     successful_payment_count: payments.successfulPaymentCount,
     total_paid_amount: payments.totalPaidAmount,
-    rolling_health_score: computeRollingHealthScore(db, customerId, disputes.breakdown, asOf),
     audit_log: readAuditLog(db, customerId, mode, asOf),
   };
 }
@@ -694,7 +658,6 @@ export function getMemoryProfile(
     metadata: {
       dispute_count: profile.dispute_count,
       dispute_breakdown: profile.dispute_breakdown,
-      rolling_health_score: profile.rolling_health_score,
     },
   });
 

@@ -54,10 +54,6 @@ export function CustomerDetailView({ detail }: { detail: CustomerDetail }) {
 
       <div className="profile-stats">
         <div>
-          <strong>Health score</strong>
-          <span>{detail.profileCore.rolling_health_score}/100</span>
-        </div>
-        <div>
           <strong>Disputes</strong>
           <span>
             {detail.profileCore.dispute_count} ({formatPaise(detail.profileCore.total_disputed_amount)})

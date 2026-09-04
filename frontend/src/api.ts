@@ -159,7 +159,6 @@ export interface CustomerDetail {
   profileTimeline: {
     event_id: string;
     timestamp: string;
-    rolling_health_score: number;
     dispute_count: number;
     cart_abandonment_count: number;
     subscription_recovery_count: number;
@@ -170,7 +169,6 @@ export interface CustomerDetail {
     total_disputed_amount: number;
     recovery_activity: RecoveryActivity;
     intervention_outcomes: InterventionOutcomeSummary[];
-    rolling_health_score: number;
   };
   discountHistory: { baseline: unknown[]; memory: unknown[] };
   auditLog: { baseline: AuditLogEntry[]; memory: AuditLogEntry[] };

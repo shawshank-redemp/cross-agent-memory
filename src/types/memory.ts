@@ -186,15 +186,5 @@ export interface CustomerMemoryProfile {
   // read it without translation.
   successful_payment_count: number;
   total_paid_amount: number; // paise
-  // 0-100, higher is healthier. DASHBOARD ONLY — deliberately not sent to the
-  // model any more. It subtracts a fixed penalty per event and looks at neither
-  // recency nor density, so it measures event VOLUME rather than risk: measured
-  // on the committed batch it scored the churn_signal cohort (median 91)
-  // healthier than repeat_offender_cart (88) and cross_agent_gaming (76),
-  // i.e. it argued the wrong way on the highest-risk group. A wrong summary is
-  // worse than no summary when the model already receives the counts it is
-  // built from. A version the model could trust would be a RATIO (failures over
-  // total activity) rather than a subtraction from 100; that is separate work.
-  rolling_health_score: number;
   audit_log: AuditLogEntry[];
 }

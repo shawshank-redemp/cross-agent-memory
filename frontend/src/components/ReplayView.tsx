@@ -859,24 +859,6 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             .
           </p>
         </ExpandableRow>
-        <ExpandableRow
-          label="rolling_health_score"
-          value={`${String(profile.rolling_health_score)} — not sent to the model`}
-        >
-          <p>
-            <b>What it means:</b> 100 minus weighted penalties, where a customer-adverse dispute costs 12
-            and an unresolved one costs 6. Merchant-conceded and closed disputes are free.
-          </p>
-          <p>
-            <b>Why it is no longer sent:</b> it subtracts a fixed penalty per event and looks at neither
-            recency nor density, so it measures event <i>volume</i> rather than risk. Measured across all
-            700 customers it scored the churn cohort healthier than the repeat-offender cohorts — it
-            argued the wrong way on the highest-risk group, under a label reading &ldquo;higher is
-            healthier&rdquo;. The model already receives the counts it is built from, so a summary that
-            inverts the ranking is worse than none. It stays on the profile for this dashboard, where a
-            person reads it with context.
-          </p>
-        </ExpandableRow>
         <ExpandableRow label="adverse_disputed_amount" value={money(profile.adverse_disputed_amount as number)}>
           <p>
             <b>What it means:</b> the rupee value of the disputes resolved against this customer.
