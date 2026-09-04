@@ -81,3 +81,33 @@ export type MemoryProfileEmittableKey = (typeof MEMORY_PROFILE_EMITTABLE_KEYS)[n
 // enum to the payload rather than leaving them as two parallel lists.
 export type MemoryProfilePayload = Record<MemoryProfileAlwaysKey, unknown> &
   Partial<Record<MemoryProfileEmittableKey, unknown>>;
+
+
+// THE GLOSSARY, KEYED BY THE SAME CONSTANT THE PAYLOAD IS BUILT FROM.
+//
+// The prompt used to carry a hand-written paragraph describing these fields, and
+// it drifted the moment the payload changed: it described `rolling_health_score`
+// after that field stopped being sent, and never mentioned `intervention_outcomes`
+// after that field started being sent. So the model was told about a field it
+// would not receive, and received our most valuable field with no explanation.
+//
+// Typing this as Record<MemoryProfileEmittableKey, string> means adding a key to
+// the payload without describing it is a COMPILE ERROR, and describing a key that
+// is not emitted is too. The drift cannot recur.
+export const MEMORY_PROFILE_GLOSSARY: Record<MemoryProfileEmittableKey, string> = {
+  dispute_count: "how many disputes this customer has filed with us, any status.",
+  total_disputed_amount: "the total value of those disputes.",
+  adverse_disputed_amount:
+    "the value of disputes RESOLVED AGAINST this customer specifically. 0 means nothing has been decided against them.",
+  dispute_breakdown:
+    "those disputes split by what is KNOWN right now — unresolved (filed, no ruling yet), merchant_conceded (the merchant lost or accepted the chargeback and the customer was refunded), customer_adverse (the merchant contested successfully — the complaint did not hold up), closed_undetermined (ended with no ruling either way).",
+  unresolved_dispute_reasons:
+    "why the still-open disputes were filed. At decision time most disputes ARE unresolved, so the reason is usually the only evidence about who is likely at fault.",
+  successful_payment_count: "how many times this customer has successfully paid us, across every domain.",
+  total_paid_amount: "how much they have paid us in total.",
+  discount_usage_history: "every discount ANY agent has already granted this customer.",
+  intervention_outcomes:
+    "what we have already TRIED on this customer and whether it worked — attempts and how many were taken up, per agent and action. Every other field says what the customer did; this one says what we did and how it turned out.",
+  recent_decisions:
+    "the last few decisions any agent made for this customer — what was decided and what it cost, without the prose. Treat them as history, not as precedent you are expected to follow.",
+};

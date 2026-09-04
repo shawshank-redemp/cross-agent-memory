@@ -14,7 +14,7 @@ const MEMORY_PROFILE_FACTORS = MEMORY_PROFILE_EMITTABLE_KEYS;
 
 // Second group: the signal ids from the registry. Every signal can appear in
 // the payload — an ACTIVE one is stated in the generated prose, an INACTIVE one
-// is sent in the policy_signals JSON by signalsNotInProse — so all of them are
+// appears in the signals block, which now carries every signal — so all of them are
 // citable. Spelled out literally because z.enum needs a literal tuple, then
 // checked against the registry below so the two cannot drift.
 const SIGNAL_FACTORS = [

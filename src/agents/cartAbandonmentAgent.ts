@@ -74,8 +74,8 @@ ${OBJECTIVE_BLOCK}
 
 Actions — pick exactly one:
 - "send_discount": offer a discount to recover the cart. committed_spend_paise
-  is the discount in paise, normally capped at 20% of the order amount (see
-  policy_signals below for when that ceiling moves).
+  is the discount in paise, normally capped at 20% of the order amount (the
+  signals block states when that ceiling moves).
 - "send_reminder": a plain nudge, no discount. committed_spend_paise is null.
 - "no_action": nothing to do (e.g. the order already shows status "paid").
   committed_spend_paise is null.

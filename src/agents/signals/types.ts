@@ -97,11 +97,36 @@ export interface SignalDefinition<TValue> {
   scope: SignalScope;
   kind: SignalKind;
   compute(ctx: SignalContext): TValue;
-  // Prompt text for this signal given its computed value, or null when the
-  // value is unremarkable and does not belong in the prompt at all. Returning
-  // null for inactive signals keeps the policy block to what actually applies
-  // to THIS customer rather than a standing lecture about every rule.
-  describe(value: TValue): string | null;
+  // THE MEASUREMENT, always returned, never null.
+  //
+  // Replaces the old describe(), which returned a full sentence only when the
+  // value was "interesting" and null otherwise. That shape caused two problems.
+  //
+  // It THREW AWAY MAGNITUDE. Seven of nine signals are booleans, so the model
+  // was told `true` and nothing else. Measured on the batch,
+  // repeatRecoveryWithThisAgent was `true` on 516 decisions covering anywhere
+  // from 3 to 7 actual events, and provenPayer was `true` across lifetime spends
+  // from ₹2,599 to ₹14,298. A customer who came back three times and one who
+  // came back seven got byte-identical input.
+  //
+  // And it SPLIT ONE CONCEPT ACROSS TWO PLACES. A signal whose describe()
+  // returned text went into the system prompt as prose; one that returned null
+  // went into the user message as a bare JSON boolean. Which half a signal
+  // landed in depended on its value, so the model had to reconcile two formats
+  // in two locations for one idea.
+  //
+  // measure() states the fact WITH its magnitude and threshold, for every signal
+  // on every call — "6 cart events in 90 days (limit 3)", "1 payment, ₹450
+  // lifetime (needs 2 and ₹2,500)". The "boring" answers become informative
+  // rather than a row of `false`.
+  //
+  // It takes ctx, not just the value, because the magnitude usually lives on the
+  // profile rather than in the computed value itself.
+  //
+  // What policy DOES about it is not written here — it is generated from
+  // effects() (see renderSignalEffects), so the stated consequence and the
+  // enforced one cannot drift apart.
+  measure(ctx: SignalContext, value: TValue): string;
   effects(value: TValue): SignalEffects;
 }
 

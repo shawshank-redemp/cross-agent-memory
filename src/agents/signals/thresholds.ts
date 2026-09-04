@@ -106,6 +106,28 @@ for (const [name, days] of [
 }
 
 // ---------------------------------------------------------------------------
+// ESCALATION
+// ---------------------------------------------------------------------------
+//
+// A human handoff is only worth making when the amount at stake justifies the
+// person's time. Nothing used to ask that question, and measured on the batch
+// the system was escalating a ₹199 abandoned cart: a quarter of all forced
+// escalations were on events worth under ₹1,000, against a modelled review cost
+// of ₹300. For those the review costs a meaningful fraction of the thing being
+// recovered, and sometimes more than it.
+//
+// Set at roughly 6.7x the modelled handling cost, so a recovery has to be worth
+// clearly more than the review it triggers. Measured effect: forced escalation
+// falls from 7.6% to 4.0% of decisions, and it cuts cart abandonment hardest
+// (median cart at stake ₹2,600) while leaving dispute_responder proportionally
+// higher — which is correct, since conceding a dispute forfeits the full amount.
+//
+// This is a FLOOR ON THE EFFECT, not on the signal. recentMultiDomainTrouble
+// still computes and still reports as a fact about the customer; what the amount
+// gates is whether policy turns that fact into a person's time.
+export const ESCALATION_MIN_EVENT_AMOUNT_PAISE = 200_000; // ₹2,000
+
+// ---------------------------------------------------------------------------
 // PROVEN PAYER — the one accelerator
 // ---------------------------------------------------------------------------
 //

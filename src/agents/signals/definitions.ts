@@ -33,32 +33,25 @@ function computeDisputeCautionLevel(ctx: SignalContext): DisputeCautionLevel {
   return "none";
 }
 
-// DECLARATIVE, NOT IMPERATIVE. Every string below states a FACT and what
-// policy permits given that fact. None of them issues an order.
-//
-// enforcePolicy already applies all of these deterministically, so imperative
-// text ("you MUST NOT...") buys no additional safety — it only converts the
-// model from a reasoner into a rule-follower, and it destroys the measurement:
-// if the prompt commands the outcome, then policy_override.original_action
-// records obedience rather than judgment, and agreement between the model and
-// the deterministic rules becomes a tautology instead of a result.
-const DISPUTE_CAUTION_PROMPT: Record<DisputeCautionLevel, string | null> = {
-  none: null,
+// Rupees, for the measurements below. Amounts are stored in paise everywhere
+// else; a model reading "₹450" understands it faster than "45000 paise".
+function rupees(paise: number): string {
+  return `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+}
+
+// What each caution level MEANS, without stating what policy does about it —
+// that half is generated from effects() so the stated consequence and the
+// enforced one cannot drift.
+const DISPUTE_LEVEL_MEANING: Record<DisputeCautionLevel, string> = {
+  none: "no dispute counts against this customer",
   unresolved_merchant_fault:
-    'dispute_caution_level = "unresolved_merchant_fault": this customer has an unresolved dispute whose reason points at the MERCHANT (goods not received, service not as described). Nothing about it is evidence against the customer. Policy treats them as it would any customer, with the standard ' +
-    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_merchant_fault}% ceiling on spend.`,
+    "an unresolved dispute whose reason points at the MERCHANT (goods not received, service not as described) — not evidence against the customer",
   unresolved_neutral:
-    'dispute_caution_level = "unresolved_neutral": an unresolved dispute whose reason points at neither side (duplicate charge, subscription not cancelled). This is genuine uncertainty rather than established fault, and policy permits spend up to ' +
-    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_neutral}% of the event amount while it remains unresolved.`,
+    "an unresolved dispute whose reason points at neither side (duplicate charge, subscription not cancelled) — genuine uncertainty rather than established fault",
   unresolved_customer_fault:
-    'dispute_caution_level = "unresolved_customer_fault": an unresolved dispute whose reason points at the CUSTOMER (they do not recognise their own transaction). No ruling has been made, but this is the one unresolved shape that carries real risk, and policy permits spend up to ' +
-    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_customer_fault}% of the event amount.`,
-  // The only caution level that BLOCKS rather than caps. A bank has actually
-  // ruled against this customer — the strongest negative evidence a payments
-  // business has, and the one place where a ceiling could silently do nothing
-  // because the model might not have wanted to exceed it anyway.
+    "an unresolved dispute whose reason points at the CUSTOMER (they do not recognise their own transaction) — no ruling yet, but the one unresolved shape carrying real risk",
   adverse:
-    'dispute_caution_level = "adverse": a dispute was resolved against this customer — the merchant contested it and the complaint did not hold up. This is a ruling that has actually been made, not an allegation. Policy does not permit committing margin to a customer in this state.',
+    "a dispute was RESOLVED AGAINST this customer — the merchant contested it and the complaint did not hold up. A ruling that has actually been made, not an allegation",
 };
 
 const disputeCautionLevel: SignalDefinition<DisputeCautionLevel> = {
@@ -66,8 +59,16 @@ const disputeCautionLevel: SignalDefinition<DisputeCautionLevel> = {
   scope: "customer",
   kind: "brake",
   compute: computeDisputeCautionLevel,
-  describe(value) {
-    return DISPUTE_CAUTION_PROMPT[value];
+  measure(ctx, value) {
+    const n = ctx.profile.dispute_breakdown;
+    const filed = ctx.profile.dispute_count;
+    const detail =
+      filed === 0
+        ? "no disputes on record"
+        : `${filed} dispute(s) filed, ${rupees(ctx.profile.total_disputed_amount)} total` +
+          ` (${n.unresolved} unresolved, ${n.customer_adverse} decided against them` +
+          `${n.customer_adverse > 0 ? ` worth ${rupees(ctx.profile.adverse_disputed_amount)}` : ""})`;
+    return `${value} — ${DISPUTE_LEVEL_MEANING[value]}. ${detail}.`;
   },
   effects(value) {
     // `adverse` blocks outright and sets no ceiling — see the cap table in
@@ -158,10 +159,12 @@ const discountsGrantedByThisAgent: SignalDefinition<number> = {
   scope: "agent",
   kind: "context",
   compute: (ctx) => discountsInWindow(ctx, ctx.agent).length,
-  describe: (value) =>
-    value > 0
-      ? `discounts_granted_by_this_agent = ${value}: margin this agent has already committed to this customer in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days.`
-      : null,
+  measure: (ctx, value) => {
+    const spent = discountsInWindow(ctx, ctx.agent).reduce((sum, d) => sum + d.amount, 0);
+    return value === 0
+      ? `none — this agent has committed no margin to this customer in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days`
+      : `${value} discount(s) worth ${rupees(spent)} in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days`;
+  },
   effects: () => ({}),
 };
 
@@ -176,10 +179,10 @@ const discountLimitReached: SignalDefinition<boolean> = {
   scope: "agent",
   kind: "brake",
   compute: (ctx) => discountsInWindow(ctx, ctx.agent).length >= MAX_DISCOUNTS_PER_AGENT,
-  describe: (value) =>
-    value
-      ? `discount_limit_reached: this agent has already committed margin to this customer ${MAX_DISCOUNTS_PER_AGENT}+ times in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days. Policy does not permit committing further margin here — the negotiation has run its course.`
-      : null,
+  measure: (ctx) => {
+    const n = discountsInWindow(ctx, ctx.agent).length;
+    return `${n} of ${MAX_DISCOUNTS_PER_AGENT} allowed discounts used by this agent in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days`;
+  },
   effects: (value) => (value ? { blocksDiscount: true } : {}),
 };
 
@@ -197,10 +200,10 @@ const repeatRecoveryWithThisAgent: SignalDefinition<boolean> = {
   scope: "agent",
   kind: "brake",
   compute: (ctx) => recoveryEventsInWindow(ctx, ctx.agent) >= REPEAT_RECOVERY_THRESHOLD_PER_AGENT,
-  describe: (value) =>
-    value
-      ? `repeat_recovery_with_this_agent: this customer has entered this agent's recovery flow ${REPEAT_RECOVERY_THRESHOLD_PER_AGENT}+ times in the last ${REPEAT_RECOVERY_LOOKBACK_DAYS} days. Repeated difficulty completing a purchase warrants a smaller commitment than a first occurrence, and policy permits spend up to ${REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT}% of the event amount.`
-      : null,
+  measure: (ctx) => {
+    const n = recoveryEventsInWindow(ctx, ctx.agent);
+    return `${n} event(s) in this agent's recovery flow in the last ${REPEAT_RECOVERY_LOOKBACK_DAYS} days (threshold ${REPEAT_RECOVERY_THRESHOLD_PER_AGENT})`;
+  },
   effects: (value) => (value ? { discountCapPercent: REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT } : {}),
 };
 
@@ -218,10 +221,17 @@ const repeatRecoveryAcrossAgents: SignalDefinition<boolean> = {
   scope: "customer",
   kind: "brake",
   compute: (ctx) => recoveryEventsInWindow(ctx) >= REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS,
-  describe: (value) =>
-    value
-      ? `repeat_recovery_across_agents: this customer has entered recovery flows ${REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS}+ times in total across multiple agents in the last ${REPEAT_RECOVERY_LOOKBACK_DAYS} days, without any single agent's flow reaching its own threshold. Spread across agents, the pattern is invisible to each one alone. Policy permits spend up to ${REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT}% of the event amount.`
-      : null,
+  measure: (ctx) => {
+    const total = recoveryEventsInWindow(ctx);
+    const perAgent = ctx.profile.recovery_activity.by_agent
+      .map((a) => `${a.agent.replace(/_/g, " ")} ${a.count_recent}`)
+      .join(", ");
+    return (
+      `${total} event(s) across all agents in the last ${REPEAT_RECOVERY_LOOKBACK_DAYS} days ` +
+      `(threshold ${REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS})` +
+      (perAgent ? ` — ${perAgent}. No single agent can see this total.` : "")
+    );
+  },
   effects: (value) => (value ? { discountCapPercent: REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT } : {}),
 };
 
@@ -244,10 +254,16 @@ const crossAgentSpendLimitReached: SignalDefinition<boolean> = {
     const spent = discountsInWindow(ctx).reduce((sum, d) => sum + d.amount, 0);
     return spent > 0 && spent >= crossAgentSpendAllowancePaise(ctx);
   },
-  describe: (value) =>
-    value
-      ? `cross_agent_spend_limit_reached: the margin already committed to this customer across every agent in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days has reached what their history with us supports. No single agent can see this, because each sees only its own spend. Policy does not permit committing further margin.`
-      : null,
+  measure: (ctx) => {
+    const spent = discountsInWindow(ctx).reduce((sum, d) => sum + d.amount, 0);
+    const allowance = crossAgentSpendAllowancePaise(ctx);
+    return (
+      `${rupees(spent)} of a ${rupees(allowance)} allowance used across ALL agents in the last ` +
+      `${DISCOUNT_HISTORY_LOOKBACK_DAYS} days. The allowance is the greater of ${rupees(CROSS_AGENT_SPEND_FLOOR_PAISE)} ` +
+      `or ${Math.round(CROSS_AGENT_SPEND_SHARE_OF_LIFETIME_PAID * 100)}% of the ${rupees(ctx.profile.total_paid_amount)} ` +
+      `this customer has paid us. No single agent can see this total.`
+    );
+  },
   effects: (value) => (value ? { blocksDiscount: true } : {}),
 };
 
@@ -272,10 +288,16 @@ const pastDiscountsIneffective: SignalDefinition<boolean> = {
     const conversions = paid.reduce((sum, o) => sum + o.conversions, 0);
     return attempts >= INEFFECTIVE_DISCOUNT_MIN_ATTEMPTS && conversions === 0;
   },
-  describe: (value) =>
-    value
-      ? `past_discounts_ineffective: this customer has been given ${INEFFECTIVE_DISCOUNT_MIN_ATTEMPTS}+ discounts across our agents and none of them was taken up. Discounting has been tried on this customer and has not worked, so policy does not permit committing further margin.`
-      : null,
+  measure: (ctx) => {
+    const paid = ctx.profile.intervention_outcomes.filter((o) => o.spend_paise > 0);
+    const attempts = paid.reduce((sum, o) => sum + o.attempts, 0);
+    const conversions = paid.reduce((sum, o) => sum + o.conversions, 0);
+    if (attempts === 0) return "no discount has been tried on this customer yet";
+    return (
+      `${conversions} of ${attempts} past discount(s) across all agents were taken up ` +
+      `(threshold: ${INEFFECTIVE_DISCOUNT_MIN_ATTEMPTS}+ tried and none taken up)`
+    );
+  },
   effects: (value) => (value ? { blocksDiscount: true } : {}),
 };
 
@@ -311,10 +333,19 @@ const recentMultiDomainTrouble: SignalDefinition<boolean> = {
     }
     return domains.size >= 2;
   },
-  describe: (value) =>
-    value
-      ? `recent_multi_domain_trouble: two or more of this customer's recovery flows (cart, subscription, dispute) have fired within the last ${CHURN_LOOKBACK_DAYS} days. That concentration is a churn risk in its own right, and it is not something another automated nudge resolves. Cases like this are handled by a person rather than automation.`
-      : null,
+  measure(ctx) {
+    const asOfMs = Date.parse(ctx.event.timestamp);
+    const floorMs = asOfMs - CHURN_LOOKBACK_DAYS * DAY_MS;
+    const domains = new Set<AgentType>();
+    for (const e of ctx.profile.recovery_activity.recent_events) {
+      const ts = Date.parse(e.timestamp);
+      if (ts <= asOfMs && ts >= floorMs) domains.add(e.agent);
+    }
+    const names = [...domains].map((d) => d.replace(/_/g, " ")).join(" + ");
+    return domains.size >= 2
+      ? `${domains.size} different recovery flows fired within ${CHURN_LOOKBACK_DAYS} days: ${names}. Another automated nudge does not resolve this shape.`
+      : `${domains.size} recovery flow(s) in the last ${CHURN_LOOKBACK_DAYS} days (2+ distinct flows would indicate churn)`;
+  },
   effects: (value) => (value ? { forcesEscalation: true } : {}),
 };
 
@@ -337,10 +368,10 @@ const provenPayer: SignalDefinition<boolean> = {
   compute: (ctx) =>
     ctx.profile.successful_payment_count >= MIN_SUCCESSFUL_PAYMENTS &&
     ctx.profile.total_paid_amount >= MIN_LIFETIME_PAID_PAISE,
-  describe: (value) =>
-    value
-      ? `proven_payer: this customer has ${MIN_SUCCESSFUL_PAYMENTS}+ successful payments with us across all domains and meaningful lifetime spend. Policy extends more room to an established customer than to a stranger, permitting spend up to ${PROVEN_PAYER_DISCOUNT_CAP_PERCENT}% of the event amount where no other signal permits less.`
-      : null,
+  measure: (ctx) =>
+    `${ctx.profile.successful_payment_count} successful payment(s) across all domains, ` +
+    `${rupees(ctx.profile.total_paid_amount)} lifetime ` +
+    `(established means ${MIN_SUCCESSFUL_PAYMENTS}+ payments and ${rupees(MIN_LIFETIME_PAID_PAISE)}+)`,
   effects: (value) => (value ? { discountCapPercent: PROVEN_PAYER_DISCOUNT_CAP_PERCENT } : {}),
 };
 

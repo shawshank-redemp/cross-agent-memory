@@ -131,8 +131,15 @@ test("blocking still escalates today, because enforcePolicy fuses the two (guard
   );
 });
 
+// EVENT_AMOUNT is 100_000 paise (₹1,000), below ESCALATION_MIN_EVENT_AMOUNT_PAISE,
+// so this case has to name an amount that clears the floor — see the floor test
+// directly below for why the floor exists.
 test("escalating does NOT block: a churn handoff still leaves the human a budget", () => {
-  const out = run(decision({ committed_spend_paise: 15_000 }), signals({ recentMultiDomainTrouble: true }));
+  const out = run(
+    decision({ committed_spend_paise: 15_000 }),
+    signals({ recentMultiDomainTrouble: true }),
+    facts("cart_abandonment", 300_000),
+  );
   assert.equal(out.escalate_to_human, true);
   assert.equal(out.escalation_reason, "policy_constraint");
   assert.equal(out.committed_spend_paise, 15_000, "spend survives — the person decides, not the block");
@@ -140,6 +147,29 @@ test("escalating does NOT block: a churn handoff still leaves the human a budget
   assert.ok(out.policy_override);
   assert.ok(out.policy_override.triggered_by.includes("recentMultiDomainTrouble"));
   assert.equal(out.policy_override.escalation_reason_forced, true);
+});
+
+// A handoff has to be worth the person's time. Measured on the batch before this
+// floor, the system escalated a ₹199 abandoned cart, and a quarter of all forced
+// escalations sat under ₹1,000 against a ₹300 modelled review cost.
+//
+// The floor gates the EFFECT, not the signal: recentMultiDomainTrouble still
+// computes and still reports the fact, and policy decides separately whether an
+// event this size justifies a person.
+test("escalation floor: the same signal does not page a person on a small event", () => {
+  const small = run(
+    decision({ committed_spend_paise: 15_000 }),
+    signals({ recentMultiDomainTrouble: true }),
+    facts("cart_abandonment", 50_000),
+  );
+  assert.equal(small.escalate_to_human, false, "₹500 is not worth a human review");
+
+  const large = run(
+    decision({ committed_spend_paise: 15_000 }),
+    signals({ recentMultiDomainTrouble: true }),
+    facts("cart_abandonment", 300_000),
+  );
+  assert.equal(large.escalate_to_human, true, "₹3,000 is");
 });
 
 // ------------------------------------------------------------------------ caps

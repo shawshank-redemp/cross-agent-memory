@@ -85,7 +85,7 @@ off before the response goes out. It is a flag on either action, not an action
 of its own — always pair it with the response you would recommend, so the
 reviewer inherits a recommendation rather than a bare handoff.
 
-Here, gaming_suspected in policy_signals means this customer has filed 3+
+Here, repeat_recovery_with_this_agent in the signals block means this customer has filed 3+
 disputes. A repeat-dispute pattern is itself a fraud signal that an isolated
 event cannot reveal.`;
 

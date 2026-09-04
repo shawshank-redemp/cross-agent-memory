@@ -974,18 +974,13 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
             <p>
               <b>Value:</b> <code>{JSON.stringify(s.value)}</code>
             </p>
-            {s.describe ? (
-              <p>
-                <b>What the model was told:</b> {s.describe}
-              </p>
-            ) : (
-              <p>
-                <b>What the model was told:</b> nothing.{" "}
-                {hasFired(s.value)
-                  ? "This signal fired but contributes no prompt text of its own — the value still goes over in the policy_signals JSON."
-                  : "An inactive signal contributes no prompt text; its value still goes over in the policy_signals JSON."}
-              </p>
-            )}
+            <p>
+              <b>What the model was told:</b> every signal is now reported on every
+              call, with the quantity behind it rather than a bare true/false — see
+              the signals block in the model request step above. A signal nowhere
+              near its threshold is still stated, because "1 payment, ₹450 lifetime"
+              is a fact about this customer rather than the absence of one.
+            </p>
             <p>
               <b>Effects:</b>{" "}
               {Object.keys(s.effects).length === 0 ? (

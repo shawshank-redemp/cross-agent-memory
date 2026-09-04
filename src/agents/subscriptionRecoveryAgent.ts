@@ -78,7 +78,7 @@ Actions — pick exactly one:
   method. committed_spend_paise is null.
 - "send_discount": offer a discount to retain the subscription.
   committed_spend_paise is the discount in paise, normally capped at 20% of
-  plan_amount (see policy_signals below for when that ceiling moves).
+  plan_amount (the signals block states when that ceiling moves).
 - "no_action": nothing to do (e.g. status is "active"). committed_spend_paise
   is null.
 

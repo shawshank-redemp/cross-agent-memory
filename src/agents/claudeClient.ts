@@ -85,7 +85,26 @@ async function decideOnceWithRaw<Schema extends z.ZodType>(
     // still being far below the general 16000 default for a short
     // structured decision.
     max_tokens: 2048,
-    system,
+    // CACHED. The system prompt is now stable across every call for a given
+    // agent — role, objective, action list, and the generated memory glossary —
+    // because all per-customer content moved into the user message. Before that
+    // move 62% of it varied per request (2,056 of 3,329 chars were this
+    // customer's signal findings), and caching is a PREFIX match over
+    // tools -> system -> messages, so no two requests shared a prefix past the
+    // first third and a breakpoint here would have been worthless.
+    //
+    // The 5-minute default TTL is correct for this workload and not a
+    // limitation: it is an INACTIVITY timer that a cache read refreshes for
+    // free, and a batch run issues roughly one call a second across 3,440 calls,
+    // so the entry never goes cold. The 1-hour TTL would only double the write
+    // price for nothing.
+    //
+    // Whether it actually fires is a question for the data, not for this
+    // comment: the stable prefix lands near the model-dependent minimum
+    // cacheable size, so check getUsageTotals().cacheReadTokens after a run
+    // rather than assuming. Those counters have existed all along and have been
+    // reading zero, because nothing ever set cache_control until now.
+    system: [{ type: "text" as const, text: system, cache_control: { type: "ephemeral" as const } }],
     messages: [{ role: "user", content: userContent }],
     output_config: { format: zodOutputFormat(schema) },
   });

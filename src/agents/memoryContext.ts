@@ -2,6 +2,7 @@ import type Database from "better-sqlite3";
 import type { z } from "zod";
 import { getMemoryProfile, type PolicyOverrideRecord } from "../memory/profile.js";
 import type { MemoryProfilePayload } from "./memoryPayloadKeys.js";
+import { MEMORY_PROFILE_EMITTABLE_KEYS, MEMORY_PROFILE_GLOSSARY } from "./memoryPayloadKeys.js";
 import { enforceUniversalPolicy, normalizeEscalationReason, spendCeilingPaise } from "./enforcement.js";
 import { AGENT_ACTION_POLICY } from "./schema.js";
 import { withClosingInstruction } from "./objective.js";
@@ -11,10 +12,10 @@ import { decide } from "./claudeClient.js";
 import { SIGNAL_DEFINITIONS } from "./signals/definitions.js";
 import type { AnySignalDefinition } from "./signals/types.js";
 import {
-  buildSignalPolicyText,
+  buildSignalsBlock,
   computeMemorySignals,
   resolveSignalEffects,
-  signalsNotInProse,
+  signalIsActive,
   summarizeActiveSignals,
   type MemorySignals,
   type SignalId,
@@ -50,42 +51,33 @@ export type WithMemoryAudit<T> = T & MemoryAuditTrail;
 
 // Static half of the policy block: what the memory profile CONTAINS. This is
 // the same for every decision, so it stays hand-written.
-const MEMORY_PROFILE_PREAMBLE = `
+// THE STABLE HALF OF THE SYSTEM PROMPT.
+//
+// Nothing here varies by customer, which is the whole point. Previously 62% of
+// the system prompt (2,056 of 3,329 characters) was this customer's signal
+// findings, so no two requests shared a prefix past the first third and prompt
+// caching — a prefix match over tools -> system -> messages — could never fire.
+// Per-case content now lives in the user message where it belongs.
+//
+// The field list is GENERATED from MEMORY_PROFILE_GLOSSARY, which is typed
+// against the same key constant the payload is built from, so the prompt cannot
+// describe a field we do not send or omit one we do. It did both before.
+export function buildMemoryGlossaryBlock(): string {
+  const lines = MEMORY_PROFILE_EMITTABLE_KEYS.map((k) => `- ${k}: ${MEMORY_PROFILE_GLOSSARY[k]}`);
+  return `
 You also have this customer's shared memory profile, aggregated across ALL
 of Razorpay's recovery agents (Cart Abandonment, Subscription Recovery,
-Dispute Responder) — not just your own agent's past interactions with them:
+Dispute Responder) — not just your own agent's past interactions with them.
 
-- dispute_count / total_disputed_amount: disputes this customer has filed,
-  and for how much.
-- dispute_breakdown (present only when no dispute finding is stated below):
-  those disputes split by what is KNOWN right now —
-  unresolved (filed, no ruling yet), merchant_conceded (the merchant lost or
-  accepted the chargeback and the customer was refunded), customer_adverse
-  (the merchant contested it successfully — the complaint did not hold up),
-  closed_undetermined (ended with no ruling either way).
-- unresolved_dispute_reasons (same condition): why the still-open disputes
-  were filed. At
-  decision time most disputes ARE unresolved, so the reason is usually the
-  only evidence about who is likely at fault.
-- successful_payment_count / total_paid_amount: how much this customer has
-  successfully transacted with us, across every domain.
-- rolling_health_score (0-100, lower = riskier): a composite risk score.
-- discount_usage_history: every discount ANY agent has already granted this
-  customer in this run.
-- recent_decisions: the last few decisions any agent made for this customer —
-  what was decided and what it cost, without the prose. Treat them as history,
-  not as precedent you are expected to follow.`;
+MEMORY FIELDS:
+${lines.join("\n")}
 
-// The signal half is GENERATED from the registry's describe() outputs, so the
-// prompt cannot drift away from what enforcePolicy actually does — both are
-// read off the same registry entry. Only signals that actually apply to THIS
-// customer are included; the full values still go over as policy_signals JSON.
-export function buildMemoryPolicyBlock(signals: MemorySignals): string {
-  return `${MEMORY_PROFILE_PREAMBLE}
-
-WHAT THIS CUSTOMER'S HISTORY SHOWS, and what policy permits given it:
-
-${buildSignalPolicyText(signals)}
+POLICY SIGNALS: alongside the raw facts you receive a signals block. Each line
+states what was MEASURED about this customer — counts, amounts, and the
+threshold each is judged against — and, where policy acts on it, what that
+means for what you may do. A signal that is nowhere near its threshold is
+reported too: "1 payment, ₹450 lifetime" is a fact about this customer, not an
+absence of one.
 
 These are findings, not instructions. Weigh them as evidence about this case
 and reach your own judgment. Name in memory_factors_used only the facts your
@@ -162,21 +154,18 @@ function profileTracePayload(profile: CustomerMemoryProfile, asOf: string) {
 // what fired could not distinguish a signal that stayed silent from one that
 // does not exist. `kind` and `scope` come off the registry so a newly
 // registered signal appears here with no edit.
-function signalsTracePayload(signals: MemorySignals) {
+function signalsTracePayload(signals: MemorySignals, eventAmountPaise: number) {
   const registry = Object.values(SIGNAL_DEFINITIONS) as AnySignalDefinition[];
   const evaluated = registry.map((def) => {
     const value = (signals as Record<string, unknown>)[def.id];
-    const describe = def.describe(value);
     return {
       id: def.id,
       kind: def.kind,
       scope: def.scope,
       value: value as unknown,
-      // A signal counts as ACTIVE exactly when its describe() returns text —
-      // the same definition the generated prompt uses, so the trace and the
-      // prompt can never disagree about what fired.
-      active: describe != null,
-      describe,
+      // ACTIVE means it changes what the agent may do, read off effects() — the
+      // same test resolveSignalEffects uses, so trace and enforcement agree.
+      active: signalIsActive(def, value),
       effects: def.effects(value),
     };
   });
@@ -184,7 +173,9 @@ function signalsTracePayload(signals: MemorySignals) {
     summary: summarizeActiveSignals(signals),
     signals: signals as unknown as Record<string, unknown>,
     evaluated,
-    resolved: resolveSignalEffects(signals),
+    // Same amount the decision resolves against, so the replay cannot show a
+    // different escalation verdict than the one that was acted on.
+    resolved: resolveSignalEffects(signals, eventAmountPaise),
   };
 }
 
@@ -235,6 +226,7 @@ function buildUserContent(
   event: unknown,
   profile: CustomerMemoryProfile,
   signals: MemorySignals,
+  signalsBlock: string,
 ): BuiltRequest {
   const recentDecisions = profile.audit_log
     .filter((e) => e.entry_type === "decision")
@@ -275,30 +267,26 @@ function buildUserContent(
     memoryProfile.unresolved_dispute_reasons = profile.unresolved_dispute_reasons;
   }
 
-  const policySignals = {
-    ...signalsNotInProse(signals),
-    // Always sent regardless of the prose: a count is a magnitude, and
-    // "already discounted twice" reads differently from "already
-    // discounted once".
-    discountsGrantedByThisAgent: signals.discountsGrantedByThisAgent,
-  };
+  // The dispute_breakdown / unresolved_dispute_reasons condition above is
+  // unchanged: they are what the caution level is DERIVED from, so once the
+  // signals block states the level they would only restate it.
+  const payload = JSON.stringify({ customer, event, memory_profile: memoryProfile }, null, 2);
 
-  const payload = JSON.stringify(
-    {
-      customer,
-      event,
-      memory_profile: memoryProfile,
-      policy_signals: policySignals,
-    },
-    null,
-    2,
+  // EVERYTHING ABOUT THIS CASE NOW LIVES HERE, in the user message — the facts
+  // and the signals block together. The signals block used to be split: prose in
+  // the SYSTEM prompt for signals worth mentioning, a separate policy_signals
+  // JSON object here for the rest. One concept, two formats, two locations, and
+  // which half a signal landed in depended on its value.
+  //
+  // Data first, instruction last, as before.
+  const content = withClosingInstruction(
+    `${payload}\n\nSIGNALS (measured as of this event):\n${signalsBlock}`,
   );
 
   return {
-    // Shared with the baseline arm — see CLOSING_INSTRUCTION.
-    content: withClosingInstruction(payload),
+    content,
     memoryProfileKeys: Object.keys(memoryProfile),
-    policySignalsKeys: Object.keys(policySignals),
+    policySignalsKeys: Object.keys(signals as Record<string, unknown>),
   };
 }
 
@@ -393,7 +381,7 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     emitTrace(
       { ...traceBase, stepOrder },
       "evaluate_policy_signals",
-      signalsTracePayload(signals),
+      signalsTracePayload(signals, params.eventFacts.amount),
       Date.now() - stepStart,
     );
   } catch (err) {
@@ -403,8 +391,13 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
   }
 
   stepStart = Date.now();
-  const request = buildUserContent(params.customer, params.event, profile, signals);
-  const policyBlock = buildMemoryPolicyBlock(signals);
+  const signalsBlock = buildSignalsBlock(signals, {
+    profile,
+    agent: params.agent,
+    event: { ...params.eventFacts, agent: params.agent, timestamp: params.eventTimestamp },
+  });
+  const request = buildUserContent(params.customer, params.event, profile, signals, signalsBlock);
+  const glossaryBlock = buildMemoryGlossaryBlock();
   stepOrder += 1;
   // WHAT WAS ACTUALLY SENT, recorded before the call rather than reconstructed
   // after it. The payload is trimmed per-decision — conditional profile keys are
@@ -423,8 +416,8 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
       // The generated signal prose, verbatim. This is the half of the prompt
       // that varies by customer; the objective block is identical in both arms
       // by construction (see objective.ts) and is not repeated here.
-      signal_prose: buildSignalPolicyText(signals),
-      policy_block_chars: policyBlock.length,
+      signal_prose: signalsBlock,
+      policy_block_chars: glossaryBlock.length,
       user_content_chars: request.content.length,
     },
     Date.now() - stepStart,
@@ -432,7 +425,7 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
 
   stepStart = Date.now();
   const decision = await decide(
-    `${params.systemPrompt}\n${policyBlock}`,
+    `${params.systemPrompt}\n${glossaryBlock}`,
     request.content,
     params.schema,
   );
@@ -477,7 +470,7 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   stepOrder: number,
 ): WithMemoryAudit<D> {
   const stepStart = Date.now();
-  const resolved = resolveSignalEffects(signals);
+  const resolved = resolveSignalEffects(signals, event.amount);
   const fallbackNonSpendAction = AGENT_ACTION_POLICY[event.agent].nonSpendFallbackAction as D["action"];
 
   // The memory arm's resolved cap flows INTO the shared clamping logic rather
