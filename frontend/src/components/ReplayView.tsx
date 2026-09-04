@@ -528,7 +528,11 @@ function Rail({
               num={breakdown ? breakdown.customer_adverse : null}
               label="Adverse disputes"
             />
-            <Tile tone="amber" num={profile.rolling_health_score as number} label="Health score" />
+            <Tile
+              tone="amber"
+              num={profile.recovery_activity ? (profile.recovery_activity as { recent_events: unknown[] }).recent_events.length : null}
+              label="Recovery events (90d)"
+            />
             <Tile tone="blue" num={discountHistory ? discountHistory.length : null} label="Discounts used" />
             <Tile
               tone="violet"
@@ -844,14 +848,22 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             .
           </p>
         </ExpandableRow>
-        <ExpandableRow label="rolling_health_score" value={String(profile.rolling_health_score)}>
+        <ExpandableRow
+          label="rolling_health_score"
+          value={`${String(profile.rolling_health_score)} — not sent to the model`}
+        >
           <p>
             <b>What it means:</b> 100 minus weighted penalties, where a customer-adverse dispute costs 12
             and an unresolved one costs 6. Merchant-conceded and closed disputes are free.
           </p>
           <p>
-            <b>Why it matters:</b> a single composite risk number the model reads directly, rather than
-            re-deriving risk from raw counts.
+            <b>Why it is no longer sent:</b> it subtracts a fixed penalty per event and looks at neither
+            recency nor density, so it measures event <i>volume</i> rather than risk. Measured across all
+            700 customers it scored the churn cohort healthier than the repeat-offender cohorts — it
+            argued the wrong way on the highest-risk group, under a label reading &ldquo;higher is
+            healthier&rdquo;. The model already receives the counts it is built from, so a summary that
+            inverts the ranking is worse than none. It stays on the profile for this dashboard, where a
+            person reads it with context.
           </p>
         </ExpandableRow>
         <ExpandableRow label="adverse_disputed_amount" value={money(profile.adverse_disputed_amount as number)}>
@@ -1067,20 +1079,27 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
                 <p>
                   Conditional keys (<code>dispute_breakdown</code>,{" "}
                   <code>unresolved_dispute_reasons</code>) are dropped when a dispute finding is already
-                  stated in the prose, since they are what that finding is derived from.
+                  stated in the signals block, since they are what that finding is derived from.
                 </p>
               </ExpandableRow>
               <ExpandableRow
-                label="policy_signals keys sent"
-                value={`${(request.detail.policy_signals_keys as string[]).length} keys`}
+                label="signals sent"
+                value={`${(request.detail.policy_signals_keys as string[]).length} signals, all of them`}
               >
                 <p>
                   <code>{(request.detail.policy_signals_keys as string[]).join(", ")}</code>
                 </p>
                 <p>
-                  Only signals the prose does not already state, plus{" "}
-                  <code>discountsGrantedByThisAgent</code> regardless — a count is a magnitude, and prose
-                  carries magnitudes badly.
+                  <b>Every signal, every call, in one block.</b> Signals used to be split: the ones worth
+                  mentioning became prose in the system prompt, the rest became bare JSON booleans in the
+                  user message — so which half a signal landed in depended on its value, and the model
+                  reconciled two formats in two places for one idea.
+                </p>
+                <p>
+                  Each line now carries the <b>measurement</b> rather than a verdict &mdash; &ldquo;5
+                  events across all agents (threshold 5)&rdquo; instead of <code>true</code>. The booleans
+                  were throwing away magnitude: one signal read <code>true</code> across anywhere from 3
+                  to 7 actual events, and the model could not tell those apart.
                 </p>
               </ExpandableRow>
               </Accordion>
@@ -1234,8 +1253,8 @@ function GuardrailStep({
               </>
             )}
           </p>
-          {memoryGuard.blocking_signals.length > 0 && (
-            <p className="rp-warn">blocked by: {memoryGuard.blocking_signals.join(", ")}</p>
+          {memoryGuard.notes.length > 0 && (
+            <p className="rp-warn">{memoryGuard.notes.join("; ")}</p>
           )}
         </div>
         <div className="rp-slot-arrow">→</div>
@@ -1287,7 +1306,11 @@ function GuardrailStep({
           <p className="rp-prose">
             <b>{formatPaise(baselineGuard.cap_paise - memoryGuard.cap_paise)} less</b> permitted, via{" "}
             <code>{memoryGuard.capping_signal ?? "no signal"}</code>.{" "}
-            {!memoryGuard.applied && "Nothing was clamped — the model proposed no spend."}
+            {memoryGuard.applied
+              ? memoryGuard.final.action !== memoryGuard.proposed.action
+                ? `The ceiling was never the binding constraint here — the model proposed ${memoryGuard.proposed.action}, and policy replaced it with ${memoryGuard.final.action}.`
+                : "Policy changed the decision — see the notes above."
+              : "Nothing was clamped — the model proposed no spend."}
           </p>
         )}
       </div>
