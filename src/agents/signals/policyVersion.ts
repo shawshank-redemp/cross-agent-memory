@@ -16,6 +16,10 @@ import type { AnySignalDefinition } from "./types.js";
 // THE GAP.
 //
 // Format is date-plus-counter so two bumps on the same day stay ordered.
+// .4 bumped for the guardrail stage: absolute bounds, run breakers, and the
+// block/escalate split. The new constants move the hash on their own; the manual
+// half covers the split, which changes decisions without changing a value.
+//
 // .3 bumped for the objective rewrite. Pure prompt text, so the thresholds hash
 // does not move at all — this is the clearest case there is for why the manual
 // half exists. Every decision in the batch changes and no constant does.
@@ -36,7 +40,7 @@ import type { AnySignalDefinition } from "./types.js";
 // half exists for what a hash cannot see, and this bump covers exactly that:
 // effects() functions changed shape (a cap became a block; three brakes stopped
 // escalating), which touches no threshold value and no signal id/scope/kind.
-export const POLICY_VERSION = "2026-09-04.3";
+export const POLICY_VERSION = "2026-09-04.4";
 
 // Canonical JSON: object keys sorted at every depth, no whitespace. The hash
 // must not move when unrelated code changes, or it is worthless as a version —

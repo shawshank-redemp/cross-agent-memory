@@ -20,7 +20,13 @@
 import type Database from "better-sqlite3";
 import type { PolicyOverrideRecord } from "../memory/profile.js";
 import { AGENT_ACTION_POLICY } from "./schema.js";
-import { DEFAULT_DISCOUNT_CAP_PERCENT } from "./signals/thresholds.js";
+import {
+  DEFAULT_DISCOUNT_CAP_PERCENT,
+  MAX_DISCOUNT_CAP_PERCENT,
+  MAX_FORCED_ESCALATIONS_PER_RUN,
+  MAX_SINGLE_DISCOUNT_PAISE,
+  RUN_DISCOUNT_BUDGET_PAISE,
+} from "./signals/thresholds.js";
 import { clearTrace, emitTrace, guardrailPayload, toTracedDecision } from "./trace.js";
 import type { AgentType } from "../types/index.js";
 
@@ -46,7 +52,57 @@ export interface UniversalPolicyResult<D> {
 // worthless discount_usage row.
 export function spendCeilingPaise(eventAmount: number, capPercent: number): number {
   if (!Number.isFinite(eventAmount) || eventAmount <= 0) return 0;
-  return Math.floor((eventAmount * capPercent) / 100);
+  // Bounded twice: the percentage may not exceed MAX_DISCOUNT_CAP_PERCENT
+  // whatever a signal declared, and the resulting figure may not exceed
+  // MAX_SINGLE_DISCOUNT_PAISE whatever the order was worth. A percentage of an
+  // unbounded number is not a bound.
+  const bounded = Math.min(capPercent, MAX_DISCOUNT_CAP_PERCENT);
+  return Math.min(Math.floor((eventAmount * bounded) / 100), MAX_SINGLE_DISCOUNT_PAISE);
+}
+
+// RUN-SCOPED BREAKER STATE, per arm.
+//
+// Module state rather than a parameter threaded through four layers, and it is
+// contained: one process per run, reset at run start, seeded from the database
+// so --resume does not start the count from zero and silently double the budget.
+//
+// Workers run concurrently, so a read-then-write race can overshoot by at most
+// one decision's spend. That is acceptable for a breaker — it is a safety net,
+// not a ledger, and the alternative is serialising every decision behind a lock
+// for a limit that should never be reached in the first place.
+interface RunTotals {
+  spendPaise: number;
+  forcedEscalations: number;
+  spendRefusals: number;
+  escalationRefusals: number;
+}
+const runTotals: RunTotals = { spendPaise: 0, forcedEscalations: 0, spendRefusals: 0, escalationRefusals: 0 };
+
+// Called by the runner at start. `seedSpendPaise` carries spend already recorded
+// for this arm, so a resumed run continues the same budget rather than opening a
+// fresh one.
+export function resetRunTotals(seedSpendPaise = 0, seedForcedEscalations = 0): void {
+  runTotals.spendPaise = seedSpendPaise;
+  runTotals.forcedEscalations = seedForcedEscalations;
+  runTotals.spendRefusals = 0;
+  runTotals.escalationRefusals = 0;
+}
+
+export function getRunTotals(): Readonly<RunTotals> {
+  return runTotals;
+}
+
+// Whether the run may still force an escalation. Consulted by the memory arm's
+// enforcePolicy; the count is only incremented for escalations POLICY forced,
+// never for ones the model chose itself — a breaker on our own rules should not
+// silence the model's own judgment.
+export function claimForcedEscalation(): boolean {
+  if (runTotals.forcedEscalations >= MAX_FORCED_ESCALATIONS_PER_RUN) {
+    runTotals.escalationRefusals += 1;
+    return false;
+  }
+  runTotals.forcedEscalations += 1;
+  return true;
 }
 
 export interface UniversalPolicyOptions {
@@ -105,7 +161,24 @@ export function enforceUniversalPolicy<D extends EnforceableDecision>(
     spend = ceiling;
   }
 
-  // 4. ZERO SPEND is not a discount. Writing it would create a worthless
+  // 4. THE RUN BREAKER. Checked after the ceiling so the figure tested is the
+  //    one that would actually be committed. Refuses further spend rather than
+  //    halting: halting would let one arm process fewer events than the other
+  //    and void the paired comparison, which is the confound the universal layer
+  //    exists to prevent. See RUN_DISCOUNT_BUDGET_PAISE.
+  if (spend != null && spend > 0 && runTotals.spendPaise + spend > RUN_DISCOUNT_BUDGET_PAISE) {
+    console.error(
+      `  !! RUN DISCOUNT BUDGET EXHAUSTED (${runTotals.spendPaise} paise committed). ` +
+        `Refusing ${spend} paise on this ${options.agent} decision. The run continues; every event is still decided.`,
+    );
+    notes.push(`run discount budget exhausted; spend of ${spend} paise refused`);
+    triggeredBy.push("run_budget_exhausted");
+    runTotals.spendRefusals += 1;
+    spend = null;
+    if (policy.spendableActions.includes(action)) action = policy.nonSpendFallbackAction;
+  }
+
+  // 5. ZERO SPEND is not a discount. Writing it would create a worthless
   //    discount_usage row that still increments the stopping-rule counter,
   //    pushing a customer toward a gaming flag on the strength of a discount
   //    that does not exist. Fall back to the agent's non-spend action, since a
@@ -116,6 +189,10 @@ export function enforceUniversalPolicy<D extends EnforceableDecision>(
     spend = null;
     if (policy.spendableActions.includes(action)) action = policy.nonSpendFallbackAction;
   }
+
+  // Committed spend counts against the run breaker. Done here, at the single
+  // point where a spend is finally approved, so no caller can bypass it.
+  if (spend != null && spend > 0) runTotals.spendPaise += spend;
 
   return {
     decision: { ...decision, action, committed_spend_paise: spend },

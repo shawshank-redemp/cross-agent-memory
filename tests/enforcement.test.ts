@@ -4,6 +4,11 @@
 // node:test + tsx deliberately: a heavier framework would be more machinery
 // than this needs, and `npm test` running by default matters more than features.
 import assert from "node:assert/strict";
+import {
+  MAX_DISCOUNT_CAP_PERCENT,
+  MAX_SINGLE_DISCOUNT_PAISE,
+  RUN_DISCOUNT_BUDGET_PAISE,
+} from "../src/agents/signals/thresholds.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -11,7 +16,7 @@ import Database from "better-sqlite3";
 
 import { decideWithMemory, enforcePolicy } from "../src/agents/memoryContext.js";
 import { CartAbandonmentDecisionSchema } from "../src/agents/schema.js";
-import { applyBaselinePolicy, enforceUniversalPolicy, spendCeilingPaise } from "../src/agents/enforcement.js";
+import { applyBaselinePolicy, enforceUniversalPolicy, getRunTotals, resetRunTotals, spendCeilingPaise } from "../src/agents/enforcement.js";
 import { appendAuditLog, computeMemoryProfile, recordDiscountUsage } from "../src/memory/profile.js";
 import type { MemorySignals, TriggeringEventFacts } from "../src/agents/policy.js";
 import type { AgentType } from "../src/types/index.js";
@@ -111,24 +116,18 @@ test("blocking signal + proposed spend: spend nulled, action swapped, original p
 // it. They used to be welded together in every brake that had either, which
 // forced a human handoff on 41.9% of all events and made the run's headline
 // revenue figure a measure of handoff volume rather than of spending judgment.
-// PINS CURRENT BEHAVIOUR, WHICH IS NOT YET THE INTENDED BEHAVIOUR.
+// Blocking spend and paging a person are different questions, and enforcePolicy
+// used to fuse them (`mustBlockDiscount || mustEscalate`). Measured on the batch
+// that forced a handoff on 41.9% of ALL events, and it made the previous run's
+// revenue lift a function of handoff volume rather than of spending judgment.
 //
-// No signal in the registry declares forcesEscalation except
-// recentMultiDomainTrouble, yet a pure block still escalates — enforcePolicy
-// fuses the two (`mustBlockDiscount || mustEscalate`). That fusion is guardrail
-// code, so changing it belongs to the guardrail stage rather than here.
-//
-// The test exists so the fusion is visible and deliberate rather than an
-// assumption someone rediscovers. When the guardrail stage separates them, this
-// assertion flips to `false` and the test name loses its qualifier.
-test("blocking still escalates today, because enforcePolicy fuses the two (guardrail stage)", () => {
+// discountLimitReached declares blocksDiscount and NOT forcesEscalation, so it
+// must now block without escalating.
+test("blocking does not escalate: refusing to spend is not a reason to page a person", () => {
   const out = run(decision({ committed_spend_paise: 20_000 }), signals({ discountLimitReached: true }));
   assert.equal(out.committed_spend_paise, null, "spend is blocked");
-  assert.equal(
-    out.escalate_to_human,
-    true,
-    "and a person is paged for it — even though discountLimitReached declares no forcesEscalation",
-  );
+  assert.equal(out.escalate_to_human, false, "and nobody is paged for it");
+  assert.equal(out.escalation_reason, null);
 });
 
 // EVENT_AMOUNT is 100_000 paise (₹1,000), below ESCALATION_MIN_EVENT_AMOUNT_PAISE,
@@ -481,4 +480,44 @@ test("fail closed: an unevaluable guardrail yields no spend and a human handoff"
   assert.equal(out.guardrail_failed, true);
   assert.equal(out.signals, null);
   assert.ok(out.policy_override?.triggered_by.includes("guardrail_evaluation_failed"));
+});
+
+// ---------------------------------------------------------- run breakers
+
+// Every other rule in the guardrail is per-decision, so nothing bounded a RUN.
+// The batch holds ₹31,33,800 of addressable cart value and a run could have
+// approved ₹7,83,450 with the first sign of trouble being the report afterwards.
+//
+// The breaker REFUSES SPEND RATHER THAN HALTING, and that is the property this
+// test pins. Halting would let one arm process fewer events than the other and
+// void the paired comparison — the same confound the universal layer exists to
+// prevent. Every event must still be decided.
+test("run breaker: refuses spend once the budget is exhausted, and keeps deciding", () => {
+  resetRunTotals(RUN_DISCOUNT_BUDGET_PAISE); // start already at the limit
+  const out = run(decision({ committed_spend_paise: 20_000 }), signals());
+  assert.equal(out.committed_spend_paise, null, "spend refused");
+  assert.equal(out.action, "send_reminder", "but the event is still decided and acted on");
+  assert.ok(out.policy_override);
+  assert.ok(out.policy_override.triggered_by.includes("run_budget_exhausted"));
+  assert.equal(getRunTotals().spendRefusals, 1);
+  resetRunTotals();
+});
+
+test("run breaker: approved spend accumulates toward the budget", () => {
+  resetRunTotals();
+  run(decision({ committed_spend_paise: 15_000 }), signals());
+  assert.equal(getRunTotals().spendPaise, 15_000);
+  run(decision({ committed_spend_paise: 5_000 }), signals());
+  assert.equal(getRunTotals().spendPaise, 20_000, "the breaker counts across decisions, not per decision");
+  resetRunTotals();
+});
+
+// A percentage of an arbitrary order is not a bound. At the batch's largest cart
+// the widest ceiling yields ₹1,250, so this limit does not bind on real data —
+// which is the correct state for a safety limit, not a defect in it.
+test("absolute caps bound what a percentage cannot", () => {
+  // 25% of ₹1,00,000 would be ₹25,000; MAX_SINGLE_DISCOUNT_PAISE is ₹2,500.
+  assert.equal(spendCeilingPaise(10_000_000, 25), MAX_SINGLE_DISCOUNT_PAISE);
+  // A signal declaring 60% cannot widen past MAX_DISCOUNT_CAP_PERCENT.
+  assert.equal(spendCeilingPaise(1_000, 60), spendCeilingPaise(1_000, MAX_DISCOUNT_CAP_PERCENT));
 });

@@ -11,6 +11,8 @@ import {
   SUBSCRIPTION_ELIGIBLE_SQL,
 } from "../db/eligibility.js";
 import type { Scenario, ScenarioLabel } from "../data/generator.js";
+import { getRunTotals, resetRunTotals } from "./enforcement.js";
+import { MAX_FORCED_ESCALATIONS_PER_RUN, RUN_DISCOUNT_BUDGET_PAISE } from "./signals/thresholds.js";
 import {
   appendAuditLog,
   recordDiscountUsage,
@@ -370,6 +372,26 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   // Read once per run, for the outcome model only — never handed to an agent.
   const scenarioByCustomer = loadScenarioByCustomer();
 
+  // SEED THE RUN BREAKERS from what this arm has already committed, so --resume
+  // continues the same budget instead of quietly opening a second one. Without
+  // the seed a run resumed three times could approve three full budgets.
+  const priorSpend = (
+    db
+      .prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM discount_usage WHERE mode = ?")
+      .get(params.mode) as { total: number }
+  ).total;
+  const priorForced = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM audit_log
+         WHERE mode = ? AND entry_type = 'decision' AND escalate_to_human = 1
+           AND policy_override IS NOT NULL
+           AND json_extract(policy_override, '$.escalation_reason_forced') = 1`,
+      )
+      .get(params.mode) as { n: number }
+  ).n;
+  resetRunTotals(priorSpend, priorForced);
+
   mkdirSync(RESULTS_DIR, { recursive: true });
   const outputFile = parseOutputFile(params.outputFile);
   const outputPath = join(RESULTS_DIR, outputFile);
@@ -661,11 +683,40 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         unsupportedFactorCitations: unsupportedCitations,
         baselineMemoryLeaks,
         guardrailFailures,
+        // The run breakers. Reported unconditionally, not only when they trip:
+        // "the breaker was never approached" and "there is no breaker" have to
+        // look different in a summary, the same reason the guardrail trace row
+        // is always emitted.
+        discountBudget: {
+          committedPaise: getRunTotals().spendPaise,
+          budgetPaise: RUN_DISCOUNT_BUDGET_PAISE,
+          spendRefusals: getRunTotals().spendRefusals,
+        },
+        escalationBudget: {
+          forced: getRunTotals().forcedEscalations,
+          budget: MAX_FORCED_ESCALATIONS_PER_RUN,
+          refusals: getRunTotals().escalationRefusals,
+        },
       },
       null,
       2,
     ),
   );
+  const totals = getRunTotals();
+  const pctOfBudget = ((totals.spendPaise / RUN_DISCOUNT_BUDGET_PAISE) * 100).toFixed(1);
+  console.log(
+    `\nRun breakers: discount ₹${Math.round(totals.spendPaise / 100).toLocaleString("en-IN")} of ` +
+      `₹${Math.round(RUN_DISCOUNT_BUDGET_PAISE / 100).toLocaleString("en-IN")} (${pctOfBudget}%), ` +
+      `forced escalations ${totals.forcedEscalations} of ${MAX_FORCED_ESCALATIONS_PER_RUN}`,
+  );
+  if (totals.spendRefusals > 0 || totals.escalationRefusals > 0) {
+    console.error(
+      `\n!! A RUN BREAKER TRIPPED: ${totals.spendRefusals} spend refusal(s), ` +
+        `${totals.escalationRefusals} escalation refusal(s). These are safety limits that ordinary ` +
+        `operation should never reach — treat this run's numbers as evidence of a misfire, not as a result.`,
+    );
+  }
+
   if (baselineMemoryLeaks > 0) {
     console.warn(
       `\n!! ${baselineMemoryLeaks} baseline decision(s) cited memory factors. The control arm is ` +

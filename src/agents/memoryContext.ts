@@ -3,7 +3,12 @@ import type { z } from "zod";
 import { getMemoryProfile, type PolicyOverrideRecord } from "../memory/profile.js";
 import type { MemoryProfilePayload } from "./memoryPayloadKeys.js";
 import { MEMORY_PROFILE_EMITTABLE_KEYS, MEMORY_PROFILE_GLOSSARY } from "./memoryPayloadKeys.js";
-import { enforceUniversalPolicy, normalizeEscalationReason, spendCeilingPaise } from "./enforcement.js";
+import {
+  claimForcedEscalation,
+  enforceUniversalPolicy,
+  normalizeEscalationReason,
+  spendCeilingPaise,
+} from "./enforcement.js";
 import { AGENT_ACTION_POLICY } from "./schema.js";
 import { withClosingInstruction } from "./objective.js";
 import { SIGNAL_REGISTRY } from "./signals/registry.js";
@@ -483,7 +488,14 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   const afterUniversal = universal.decision;
 
   const mustBlockDiscount = resolved.blocksDiscount && afterUniversal.committed_spend_paise != null;
-  const mustEscalate = resolved.forcesEscalation && !afterUniversal.escalate_to_human;
+  // claimForcedEscalation() consumes one unit of the run's escalation budget, so
+  // it must only be called when an escalation would actually be forced —
+  // short-circuit order matters here. The breaker counts POLICY-forced
+  // escalations only: a decision the model escalated of its own accord is its
+  // judgment, not our rule firing, and a budget on our rules should not silence
+  // it. See MAX_FORCED_ESCALATIONS_PER_RUN.
+  const mustEscalate =
+    resolved.forcesEscalation && !afterUniversal.escalate_to_human && claimForcedEscalation();
 
   const notes = [...universal.notes];
   const triggeredBy = new Set<string>(universal.triggeredBy);
@@ -549,22 +561,25 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   }
 
   const notesJoined = notes.join("; ");
-  // DEFERRED TO THE GUARDRAIL STAGE, deliberately, and worth knowing about
-  // while reading the signal registry.
+  // BLOCKING NO LONGER IMPLIES ESCALATING. This line is where the two were
+  // welded together, and unwelding it was deferred to this stage on purpose —
+  // it is guardrail code, not signal code.
   //
-  // Blocking spend and calling a person are different questions, and this line
-  // fuses them: any block escalates, whatever the signals declared. So a signal
-  // can now decline to set forcesEscalation — and most of them do, after the
-  // Signals-stage rework — and still page a human whenever it removes a
-  // proposed discount.
+  // "Should we spend money here?" and "should a person look at this?" are
+  // different questions. Fusing them meant every block also paged a human, and
+  // measured on the batch that forced a handoff on 41.9% of ALL events — a rate
+  // no merchant could staff. It also wrecked the measurement: the previous run
+  // escalated 724 times against the baseline's 51, and because the outcome model
+  // prices an escalation at a flat fee while crediting it with a discount's
+  // conversion, essentially the entire reported revenue lift was a function of
+  // handoff VOLUME rather than of any spending judgment memory contributed.
   //
-  // The signal-level change already did the heavy lifting. Forced escalation
-  // measured 41.9% of all events before it; the signals alone bring the ceiling
-  // to at most ~9.5% (7.6% from recentMultiDomainTrouble, plus blocks that
-  // carry proposed spend, less a 0.9% overlap), against 7.6% if this line were
-  // also changed. The remainder is a guardrail decision and belongs to that
-  // stage rather than being folded in here.
-  const escalated = mustBlockDiscount || mustEscalate ? true : afterUniversal.escalate_to_human;
+  // Only a signal that explicitly declares forcesEscalation now escalates, which
+  // after the signals rework is recentMultiDomainTrouble alone: a customer
+  // failing across two domains in a fortnight is a genuine judgment call. A
+  // customer who has simply used up their discount budget is not — that is
+  // arithmetic, and the fallback is a free reminder rather than a person's time.
+  const escalated = mustEscalate ? true : afterUniversal.escalate_to_human;
   // True only when policy escalated a decision the model did not escalate.
   const forcedEscalation = escalated && !decision.escalate_to_human;
 

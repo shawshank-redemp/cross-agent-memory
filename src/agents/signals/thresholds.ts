@@ -148,6 +148,64 @@ export const MIN_SUCCESSFUL_PAYMENTS = 2;
 export const MIN_LIFETIME_PAID_PAISE = 250_000; // ₹2,500
 
 // ---------------------------------------------------------------------------
+// ABSOLUTE BOUNDS — the limits nothing may cross
+// ---------------------------------------------------------------------------
+//
+// Everything else in this file is a PERCENTAGE of an event amount, which means
+// every limit scales with a number the agent does not control. These three are
+// the only absolute ones, and they exist because a percentage cannot bound
+// anything on its own.
+//
+// All three are UNIVERSAL: they apply to both arms identically, like the rest of
+// the universal policy layer. A bound that applied to one arm only would make
+// any measured difference partly the bound's doing rather than memory's — the
+// same confound the universal layer was introduced to remove.
+
+// No resolved cap may exceed this, whatever a signal declares.
+//
+// resolveSignalEffects takes the MINIMUM across brakes, so brakes are already
+// bounded below. Accelerators are not bounded above at all: provenPayer sets 25%
+// today, and a signal registered tomorrow declaring 60% would simply get 60%.
+// The "universal" default of 20% is a FALLBACK, not a maximum, so nothing in the
+// system currently says how wide is too wide. This does.
+export const MAX_DISCOUNT_CAP_PERCENT = 25;
+
+// No single discount may exceed this, whatever the percentage works out to.
+//
+// A percentage of an arbitrary order is not a bound. At the batch's largest cart
+// (₹5,000) the widest ceiling yields ₹1,250, so THIS LIMIT DOES NOT BIND HERE —
+// and that is the correct state for a safety limit rather than a defect in it.
+// It exists because the rule is a share of a number nobody bounded: a ₹5,00,000
+// order would otherwise authorise ₹1,25,000 with no human involved.
+export const MAX_SINGLE_DISCOUNT_PAISE = 250_000; // ₹2,500
+
+// THE CIRCUIT BREAKER. Total discount an entire run may approve, per arm.
+//
+// Every other rule here is per-decision, so nothing bounded a RUN. The batch
+// holds ₹31,33,800 of addressable cart value; at the widest ceiling a run could
+// approve ₹7,83,450 and the first anyone would know is the report afterwards.
+//
+// Set at ~9.6% of addressable value — high enough that ordinary discounting
+// never reaches it, low enough to catch a signal misfire or a model turning
+// uniformly generous. It is a BREAKER, not a budget: if it trips, something is
+// wrong, and the run summary says so.
+//
+// IT REFUSES FURTHER SPEND RATHER THAN HALTING THE RUN, and that distinction is
+// load-bearing. Halting would let one arm process fewer events than the other,
+// which voids the paired comparison outright — the same class of confound the
+// universal layer exists to prevent. Refusing spend keeps every event decided
+// under identical rules in both arms, so a trip is a reported result rather than
+// a truncated run.
+export const RUN_DISCOUNT_BUDGET_PAISE = 30_000_000; // ₹3,00,000 per arm
+
+// Total forced escalations a run may make, per arm. Same breaker logic: with the
+// value floor in place the batch forces ~4% (about 69 of 1,720), so this sits
+// far above normal and catches a systematic misfire routing an unbounded number
+// of customers to human review — the "no escalation budget" gap recorded in
+// CLAUDE.md's known limits.
+export const MAX_FORCED_ESCALATIONS_PER_RUN = 250;
+
+// ---------------------------------------------------------------------------
 // CEILINGS
 // ---------------------------------------------------------------------------
 //
