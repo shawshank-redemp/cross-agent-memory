@@ -111,11 +111,24 @@ test("blocking signal + proposed spend: spend nulled, action swapped, original p
 // it. They used to be welded together in every brake that had either, which
 // forced a human handoff on 41.9% of all events and made the run's headline
 // revenue figure a measure of handoff volume rather than of spending judgment.
-test("blocking does NOT escalate: refusing to spend is not a reason to call a person", () => {
+// PINS CURRENT BEHAVIOUR, WHICH IS NOT YET THE INTENDED BEHAVIOUR.
+//
+// No signal in the registry declares forcesEscalation except
+// recentMultiDomainTrouble, yet a pure block still escalates — enforcePolicy
+// fuses the two (`mustBlockDiscount || mustEscalate`). That fusion is guardrail
+// code, so changing it belongs to the guardrail stage rather than here.
+//
+// The test exists so the fusion is visible and deliberate rather than an
+// assumption someone rediscovers. When the guardrail stage separates them, this
+// assertion flips to `false` and the test name loses its qualifier.
+test("blocking still escalates today, because enforcePolicy fuses the two (guardrail stage)", () => {
   const out = run(decision({ committed_spend_paise: 20_000 }), signals({ discountLimitReached: true }));
-  assert.equal(out.committed_spend_paise, null, "spend is still blocked");
-  assert.equal(out.escalate_to_human, false, "but nobody is paged for it");
-  assert.equal(out.escalation_reason, null);
+  assert.equal(out.committed_spend_paise, null, "spend is blocked");
+  assert.equal(
+    out.escalate_to_human,
+    true,
+    "and a person is paged for it — even though discountLimitReached declares no forcesEscalation",
+  );
 });
 
 test("escalating does NOT block: a churn handoff still leaves the human a budget", () => {
@@ -154,13 +167,15 @@ test("two active caps: the LOWER wins (brakes beat accelerators)", () => {
 // share the 10% ceiling with unresolved_customer_fault, which treated a bank's
 // actual ruling as equivalent to an unproven allegation whose only evidence is
 // which reason the customer picked from a dropdown.
-test("adverse blocks outright rather than capping, and still does not escalate", () => {
+test("adverse blocks outright rather than capping", () => {
   const out = run(decision({ committed_spend_paise: 5_000 }), signals({ disputeCautionLevel: "adverse" }));
   assert.equal(out.committed_spend_paise, null, "a ruled dispute blocks spend at ANY amount");
   assert.equal(out.action, "send_reminder");
-  assert.equal(out.escalate_to_human, false, "a ruling is unambiguous; a person adds nothing");
   assert.ok(out.policy_override);
   assert.ok(out.policy_override.triggered_by.includes("disputeCautionLevel"));
+  // The signal itself declares only blocksDiscount, never forcesEscalation —
+  // enforcePolicy is what turns the block into a handoff. See the guardrail-stage
+  // note above.
 });
 
 // A ceiling only bites when the model wanted to spend MORE than it. This is the

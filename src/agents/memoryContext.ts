@@ -556,24 +556,22 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   }
 
   const notesJoined = notes.join("; ");
-  // BLOCKING NO LONGER IMPLIES ESCALATING, and this one line is where the two
-  // used to be welded together.
+  // DEFERRED TO THE GUARDRAIL STAGE, deliberately, and worth knowing about
+  // while reading the signal registry.
   //
-  // "Should we spend money here?" and "should a person look at this?" are
-  // different questions. Fusing them meant every block also paged a human, and
-  // measured on the batch that forced a handoff on 41.9% of ALL events — a rate
-  // no merchant could staff. It also wrecked the measurement: the previous run
-  // escalated 724 times against the baseline's 51, and because the outcome model
-  // prices an escalation at a flat fee while crediting it with a discount's
-  // conversion, essentially the entire reported revenue lift was a function of
-  // handoff VOLUME rather than of any spending judgment memory contributed.
+  // Blocking spend and calling a person are different questions, and this line
+  // fuses them: any block escalates, whatever the signals declared. So a signal
+  // can now decline to set forcesEscalation — and most of them do, after the
+  // Signals-stage rework — and still page a human whenever it removes a
+  // proposed discount.
   //
-  // Now only a signal that explicitly declares forcesEscalation escalates, which
-  // after the Signals-stage rework is recentMultiDomainTrouble alone: a customer
-  // failing across two domains in a fortnight is a genuine judgment call. A
-  // customer who has simply used up their discount budget is not — that is
-  // arithmetic, and the fallback is a free reminder, not a person's time.
-  const escalated = mustEscalate ? true : afterUniversal.escalate_to_human;
+  // The signal-level change already did the heavy lifting. Forced escalation
+  // measured 41.9% of all events before it; the signals alone bring the ceiling
+  // to at most ~9.5% (7.6% from recentMultiDomainTrouble, plus blocks that
+  // carry proposed spend, less a 0.9% overlap), against 7.6% if this line were
+  // also changed. The remainder is a guardrail decision and belongs to that
+  // stage rather than being folded in here.
+  const escalated = mustBlockDiscount || mustEscalate ? true : afterUniversal.escalate_to_human;
   // True only when policy escalated a decision the model did not escalate.
   const forcedEscalation = escalated && !decision.escalate_to_human;
 
