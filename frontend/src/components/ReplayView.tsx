@@ -864,9 +864,10 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             <b>What it means:</b> the rupee value of the disputes resolved against this customer.
           </p>
           <p>
-            <b>Why it matters:</b> prose carries judgments, JSON carries magnitudes. A signal can say a
-            dispute went against this customer; only this says whether it was trivial or ruinous. It is
-            always sent, so a zero here positively states that nothing has been resolved against them.
+            <b>Why it matters:</b> a signal can tell the agent a dispute went against this customer, but
+            not whether it was for a trivial sum or a serious one — and those should lead to different
+            decisions. It is always sent, so a zero here is a positive statement that nothing has been
+            decided against them.
           </p>
         </ExpandableRow>
         <ExpandableRow
@@ -902,9 +903,10 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             all-time, and within the last 90 days.
           </p>
           <p>
-            <b>Why two counts:</b> these used to be two separate profile fields computed from the same
-            events, one all-time and one 90-day. They disagreed, and whichever a signal happened to read
-            decided whether it fired. Holding both on one record removes the contradiction.
+            <b>Why two counts:</b> different rules need different windows. A spending limit cares whether
+            we have ever discounted this customer; a churn check only cares about the last few weeks.
+            Keeping both on one record means every rule reads the same source and picks the window it
+            needs.
           </p>
           <p>
             <b>Why it matters:</b> summed across agents it catches gaming spread thin across domains,
@@ -955,8 +957,10 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
         <b>
           {fired.length} of {evaluated.length} signals fired.
         </b>{" "}
-        All are listed — a brake that stayed silent is as much a part of the justification as one that
-        did not.
+        All nine go to the agent on every call, each carrying the measurement behind it rather than a
+        yes or no — &ldquo;2 payments, ₹1,699 lifetime&rdquo; tells it more than &ldquo;not an
+        established customer&rdquo;. The ones that did not fire are sent too: knowing a limit was
+        nowhere near being reached is part of the reasoning.
       </p>
       <div className="rp-signals">
         <Accordion>
@@ -982,34 +986,39 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
             }
           >
             <p>
-              <b>Scope:</b> {s.scope}-scoped ·{" "}
+              <b>Measured:</b> <code>{JSON.stringify(s.value)}</code>
+            </p>
+            <p>
+              <b>Applies to:</b>{" "}
               {s.scope === "customer"
-                ? "true about the person, so any new agent inherits it unchanged."
-                : "computed against the asking agent, so a new agent implements its own."}
+                ? "the customer. It is true about the person whichever agent asks, so a new agent would inherit it as-is."
+                : "this agent only. Each agent measures its own, so Cart Abandonment and Subscription Recovery can reach different answers."}
             </p>
             <p>
-              <b>Value:</b> <code>{JSON.stringify(s.value)}</code>
-            </p>
-            <p>
-              <b>What the model was told:</b> every signal is now reported on every
-              call, with the quantity behind it rather than a bare true/false — see
-              the signals block in the model request step above. A signal nowhere
-              near its threshold is still stated, because "1 payment, ₹450 lifetime"
-              is a fact about this customer rather than the absence of one.
-            </p>
-            <p>
-              <b>Effects:</b>{" "}
-              {Object.keys(s.effects).length === 0 ? (
-                <em>none — this signal changes no limit</em>
-              ) : (
-                <code>{JSON.stringify(s.effects)}</code>
-              )}
+              <b>What it permits:</b> <EffectWords effects={s.effects} />
             </p>
           </ExpandableRow>
         ))}
         </Accordion>
       </div>
     </>
+  );
+}
+
+// Effects as a sentence rather than a JSON dump. The raw object is precise and
+// unreadable to anyone who has not seen the registry; this is the same
+// information in the words the agent itself is given.
+function EffectWords({ effects }: { effects: Record<string, unknown> }) {
+  const parts: string[] = [];
+  if (effects.suppressesOutreach) parts.push("no contact at all");
+  if (effects.blocksDiscount) parts.push("no discount");
+  if (typeof effects.discountCapPercent === "number")
+    parts.push(`discounts capped at ${effects.discountCapPercent}% of the order`);
+  if (effects.forcesEscalation) parts.push("a person reviews it before anything is sent");
+  return parts.length === 0 ? (
+    <em>nothing — this one informs the agent but changes no limit</em>
+  ) : (
+    <>{parts.join(", ")}</>
   );
 }
 
@@ -1083,16 +1092,14 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
                   <code>{(request.detail.policy_signals_keys as string[]).join(", ")}</code>
                 </p>
                 <p>
-                  <b>Every signal, every call, in one block.</b> Signals used to be split: the ones worth
-                  mentioning became prose in the system prompt, the rest became bare JSON booleans in the
-                  user message — so which half a signal landed in depended on its value, and the model
-                  reconciled two formats in two places for one idea.
+                  <b>Every signal, every call, in one block.</b> Each line states what was measured and
+                  the threshold it is judged against &mdash; &ldquo;5 events across all agents
+                  (threshold 5)&rdquo; rather than <code>true</code>.
                 </p>
                 <p>
-                  Each line now carries the <b>measurement</b> rather than a verdict &mdash; &ldquo;5
-                  events across all agents (threshold 5)&rdquo; instead of <code>true</code>. The booleans
-                  were throwing away magnitude: one signal read <code>true</code> across anywhere from 3
-                  to 7 actual events, and the model could not tell those apart.
+                  The number matters. A customer who came back three times and one who came back seven
+                  both clear the same threshold, and the agent should be able to tell them apart when it
+                  decides how much to spend.
                 </p>
               </ExpandableRow>
               </Accordion>
