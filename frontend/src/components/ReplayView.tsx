@@ -596,11 +596,22 @@ function StepCard(props: {
   baselineGuard: GuardrailDetail | null;
 }) {
   const { index } = props;
+
+  // READ FROM THE EVENT, never hardcoded. This line used to assert that the
+  // customer "tried to pay and the payment failed", which described the one
+  // customer the page was first built around and is wrong for any cart with no
+  // payment attempt — the two are different drop-offs with different remedies,
+  // and stating the wrong one on the first screen undermines everything after it.
+  const attempts = props.trace.event?.detail.attempts as number | undefined;
+  const eventSummary =
+    attempts == null
+      ? "Razorpay already recorded this event — this is that record, and it is what wakes the agent up."
+      : attempts >= 1
+        ? `A customer filled a cart, tried to pay ${attempts === 1 ? "once" : `${attempts} times`}, and the payment did not go through. Razorpay already recorded that as an order — this is that record, and it is what wakes the agent up.`
+        : "A customer filled a cart and left without ever attempting payment. Razorpay already recorded that as an order — this is that record, and it is what wakes the agent up.";
+
   const heads = [
-    {
-      t: "Event received",
-      s: "A customer filled a cart, tried to pay, and the payment failed. Razorpay already recorded that as an order — this is that record, and it is what wakes the agent up.",
-    },
+    { t: "Event received", s: eventSummary },
     {
       t: "Memory read",
       s: "What all three agents already know about this customer, as it stood the moment this event arrived.",
