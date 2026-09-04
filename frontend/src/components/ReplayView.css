@@ -256,7 +256,15 @@
 }
 .rp-card-title { font-family: var(--rp-display); font-size: 23px; font-weight: 600; letter-spacing: -.015em; margin: 0; }
 .rp-card-sub { color: var(--rp-dim); font-size: 13.5px; line-height: 1.45; margin: 0 0 14px; }
-.rp-prose { font-size: 14px; line-height: 1.55; color: var(--rp-dim); margin: 0 0 12px; max-width: 86ch; }
+/* The measure is capped so long lines stay readable, but 86ch stopped well short
+   of the full-width content below it (the signal accordion, the data tables), and
+   a paragraph ending two-thirds across a card reads as broken alignment rather
+   than as a deliberate measure. 108ch is still inside a comfortable range for
+   14px UI text and closes most of that gap.
+
+   Inside .has-aside the prose sits in a narrower grid column, so the column wins
+   and this cap never applies there. */
+.rp-prose { font-size: 14px; line-height: 1.55; color: var(--rp-dim); margin: 0 0 12px; max-width: 108ch; }
 .rp-prose b { color: var(--rp-text); }
 
 .rp-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rp-border-soft); }
