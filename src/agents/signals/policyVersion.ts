@@ -16,6 +16,10 @@ import type { AnySignalDefinition } from "./types.js";
 // THE GAP.
 //
 // Format is date-plus-counter so two bumps on the same day stay ordered.
+// .5 bumped for the two objective additions (no second touch; a discount is
+// contingent), diagnosed from a real 10-call run rather than guessed. Prompt
+// text only, so the hash does not move.
+//
 // .4 bumped for the guardrail stage: absolute bounds, run breakers, and the
 // block/escalate split. The new constants move the hash on their own; the manual
 // half covers the split, which changes decisions without changing a value.
@@ -40,7 +44,7 @@ import type { AnySignalDefinition } from "./types.js";
 // half exists for what a hash cannot see, and this bump covers exactly that:
 // effects() functions changed shape (a cap became a block; three brakes stopped
 // escalating), which touches no threshold value and no signal id/scope/kind.
-export const POLICY_VERSION = "2026-09-04.4";
+export const POLICY_VERSION = "2026-09-04.5";
 
 // Canonical JSON: object keys sorted at every depth, no whitespace. The hash
 // must not move when unrelated code changes, or it is worthless as a version —

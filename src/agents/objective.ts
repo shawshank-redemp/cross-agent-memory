@@ -57,6 +57,43 @@
 // against 557 genuine checkout drop-offs — that is a GENERATOR scoping question
 // to settle separately, not something to paper over with a clause here.
 //
+// TWO BELIEFS THE MODEL BRINGS ON ITS OWN, both measured on a real 10-call run
+// (2026-09-04, cust_4lqAKoEY2Il2Vw, both arms) after the effectiveness half was
+// already in place. That run still produced zero discounts in either arm, and
+// the reasoning said exactly why.
+//
+// DEFERRAL. "the discount lever stays available if this cart stalls again";
+// "a small discount within the ceiling can be revisited then". The model
+// believes it is opening a sequence — cheap now, escalate later if it fails —
+// which is sound reasoning about a system we do not have. Each event is decided
+// exactly once and nothing further is ever sent. The closing paragraph now says
+// so. It is a fact about the harness, not a nudge.
+//
+// THE EVIDENCE BAR. "a discount would be spending margin to solve a problem I
+// have no evidence exists". The model wants proof that price was the obstacle
+// before committing margin — a burden this domain can never discharge, because
+// an abandoned checkout is precisely the absence of that evidence. Waiting for
+// it means never using the lever, forever.
+//
+// The first fix drafted for this was to tell the model the evidence would never
+// arrive. That was weak: it removes an excuse without supplying grounds, and a
+// careful model would reasonably conclude it therefore never has grounds.
+//
+// What actually dissolves it is that THE MODEL IS COSTING THE LEVER WRONG. It
+// treats a discount as money paid up front, spent whether or not it lands — of
+// course it wants proof first. A discount is contingent: the offer expires
+// unspent if the customer does not return, and resolveOutcomes computes it that
+// way (discount_redeemed is 0 on every unpaid branch). So the risk is not margin
+// spent on someone who was never going to buy — that case is free. It is margin
+// given to someone who would have bought anyway, which is a question about the
+// customer's history rather than about their price sensitivity, and one memory
+// can actually speak to. It is also the exact question the experimentation layer
+// exists to measure.
+//
+// Both statements are arm-neutral, carry no figures, and command nothing. They
+// remove two reasons the model invented for never considering the lever, and
+// hand it a better question than the unanswerable one it was asking.
+//
 // It is also SHORT on purpose. An earlier draft ran ~230 words across two
 // sections, one for costs and one for effectiveness, which forced every lever to
 // be named twice. One bullet per lever carrying both halves says the same
@@ -69,10 +106,16 @@ more than the recovery is worth.
   what they already chose not to do.
 - A discount is the only lever whose cost you choose, and the only one that
   changes the terms of the customer's decision rather than repeating the
-  request.
+  request. It costs nothing unless it is used: if the customer does not
+  return, the offer expires unspent. What it risks is not margin spent on
+  someone who was never going to buy — that case costs nothing. It is margin
+  given to someone who would have bought without it.
 - Escalating costs a person's time, and only a few cases can reach one. It
   buys judgment automation cannot supply, and is worth it only when an
   automated decision would be wrong.
+
+This is the only decision that will be made for this event. If what you choose
+does not recover the sale, nothing further will be sent.
 
 Choose the least expensive action that will actually work, and where that is a
 discount, the smallest amount that will work rather than the largest permitted.
