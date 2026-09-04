@@ -15,27 +15,69 @@
 // churn, or customer history. Anything memory-specific belongs in the memory
 // policy block, which only the memory arm receives.
 //
-// Costs are expressed as a RELATIVE ORDERING, not as rupee figures. The outcome model
-// does carry concrete numbers (ESCALATION_HANDLING_COST_PAISE,
-// DISPUTE_HANDLING_FEE_PAISE in src/outcomes/probabilities.ts), and they are
-// deliberately NOT surfaced here: those numbers are how decisions get SCORED,
-// and an agent optimising against the same table that grades it would be
-// marking its own homework. The agent gets the shape of the trade-off; the
-// scorer keeps the numbers.
+// IT STATES EFFECTIVENESS AS WELL AS COST, and that second half is not optional.
+//
+// This block used to price every lever and describe the efficacy of none, which
+// left "the lowest cost that achieves it" with no way to decide what achieves
+// anything: to judge a reminder insufficient the agent needs some basis for
+// believing a reminder often fails, and it was given the opposite impression.
+// With cost fully specified and efficacy entirely unspecified, minimising cost
+// was the only defined objective and send_reminder was the argmin on every
+// event. Measured on the batch of 2026-08-30: `send_discount` was proposed 0
+// times in 3,440 decisions across BOTH arms, so both arms scored zero spend and
+// the comparison this project exists to make measured nothing. Nothing
+// downstream was at fault — the model was never asked to spend, so the caps, the
+// block rules and the clamping all governed a lever that was never pulled.
+//
+// EFFICACY IS QUALITATIVE, for the same marking-its-own-homework reason the
+// costs are. OUTCOME_PROBABILITIES holds exactly the numbers that would answer
+// "how much better is a discount" (paysWithDiscount vs paysWithoutDiscount, per
+// scenario), and putting them here would let the agent optimise against the
+// table that grades it. An earlier draft said a reminder "leaves most of these
+// cases unrecovered" — close enough to those rates to be a leak, and wrong for
+// the loyal_payer cohort besides, where the majority convert unaided. The
+// logical form ("it asks the customer to do what they already chose not to do")
+// is stronger and cannot be accused of either.
+//
+// NO FIXED ORDERING OF THE THREE LEVERS. The block used to assert that a
+// discount is "the most expensive lever you have", which is simply false at
+// small amounts: a 2% discount on a typical cart costs less than a human
+// review. The model reasons from that ordering, so stating it as fixed pushed
+// it away from exactly the small, efficient discounts most likely to be worth
+// making. A discount is instead described as the only lever whose cost the
+// agent CHOOSES — which is accurate, and which is what makes the sizing
+// instruction ("the smallest amount that will work") follow naturally rather
+// than being bolted on.
+//
+// DELIBERATELY SILENT ON DECLINED PAYMENTS. An earlier draft said a discount is
+// wasted when the payment was attempted and mechanically declined. It was cut
+// on a product judgment: an attempted-and-failed payment is a payment-failure
+// flow with its own retry logic, not a cart abandonment, so the case should not
+// be reaching this agent at all. The batch currently contains 589 such events
+// against 557 genuine checkout drop-offs — that is a GENERATOR scoping question
+// to settle separately, not something to paper over with a clause here.
+//
+// It is also SHORT on purpose. An earlier draft ran ~230 words across two
+// sections, one for costs and one for effectiveness, which forced every lever to
+// be named twice. One bullet per lever carrying both halves says the same
+// fourteen things in half the words. Length was the only thing removed.
 export const OBJECTIVE_BLOCK = `
-Your goal is to recover revenue that would otherwise be lost, at the lowest cost
-that achieves it.
+Your goal is to recover revenue that would otherwise be lost, without spending
+more than the recovery is worth.
 
-The actions available to you do not cost the same:
-- A discount permanently gives up margin on this sale. It is the most expensive
-  lever you have.
-- A reminder or a payment retry costs almost nothing.
-- Escalating to a human costs that person's time. It is worth spending when an
-  automated decision would be wrong or risky, and wasted when automation would
-  have handled the case perfectly well.
+- A reminder or retry costs little, but it is weak: it asks the customer to do
+  what they already chose not to do.
+- A discount is the only lever whose cost you choose, and the only one that
+  changes the terms of the customer's decision rather than repeating the
+  request.
+- Escalating costs a person's time, and only a few cases can reach one. It
+  buys judgment automation cannot supply, and is worth it only when an
+  automated decision would be wrong.
 
-A recovery that did not need a discount is a better outcome than one that did.
-And not every case is worth recovering at any price.`;
+Choose the least expensive action that will actually work, and where that is a
+discount, the smallest amount that will work rather than the largest permitted.
+A recovery that needed no discount beats one that did — but a sale never
+recovered is worse than either.`;
 
 // Appended AFTER the data in the user message, in BOTH arms, for the same
 // reason OBJECTIVE_BLOCK is shared: it is arm-neutral task framing, and a
@@ -44,8 +86,7 @@ And not every case is worth recovering at any price.`;
 // before being asked to rule on it, and the request does not trail off on a
 // closing brace.
 export const CLOSING_INSTRUCTION = `Decide now for this customer and this event, following the objective and the
-constraints above. Reason first, then choose the cheapest action that is
-sufficient.`;
+constraints above. Reason first, then decide.`;
 
 // Helper so no caller hand-assembles the two halves differently.
 export function withClosingInstruction(payload: string): string {

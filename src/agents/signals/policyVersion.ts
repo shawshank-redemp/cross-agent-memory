@@ -16,6 +16,10 @@ import type { AnySignalDefinition } from "./types.js";
 // THE GAP.
 //
 // Format is date-plus-counter so two bumps on the same day stay ordered.
+// .3 bumped for the objective rewrite. Pure prompt text, so the thresholds hash
+// does not move at all — this is the clearest case there is for why the manual
+// half exists. Every decision in the batch changes and no constant does.
+//
 // .2 bumped for the decide-stage rework. The thresholds hash moves on its own
 // for ESCALATION_MIN_EVENT_AMOUNT_PAISE, but the prompt restructure is the part
 // a hash cannot see: every signal now reports its measured magnitude instead of
@@ -32,7 +36,7 @@ import type { AnySignalDefinition } from "./types.js";
 // half exists for what a hash cannot see, and this bump covers exactly that:
 // effects() functions changed shape (a cap became a block; three brakes stopped
 // escalating), which touches no threshold value and no signal id/scope/kind.
-export const POLICY_VERSION = "2026-09-04.2";
+export const POLICY_VERSION = "2026-09-04.3";
 
 // Canonical JSON: object keys sorted at every depth, no whitespace. The hash
 // must not move when unrelated code changes, or it is worthless as a version —
