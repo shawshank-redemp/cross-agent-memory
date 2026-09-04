@@ -918,8 +918,10 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             <b>What it means:</b> completed payments across every domain.
           </p>
           <p>
-            <b>Why it matters:</b> the only fact <code>provenPayer</code> checks — 2 or more widens the
-            discount cap to 25%.
+            <b>Why it matters:</b> one half of <code>provenPayer</code>, which widens the discount cap
+            to 25%. It needs both: 2 or more payments <i>and</i> meaningful lifetime spend. A count
+            alone would treat someone who has spent a few hundred rupees the same as someone who has
+            spent thousands.
           </p>
         </ExpandableRow>
         </Accordion>
@@ -1066,8 +1068,9 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
                 })()}
               >
                 <p>
-                  Generated from each active signal's own description, so the prompt cannot drift from
-                  what the guardrail enforces — both are read off the same registry entry.
+                  Generated from the signals themselves — each one reports what it measured, and what
+                  policy permits given that is derived from the same rule the guardrail enforces. The
+                  prompt and the enforcement cannot drift apart, because neither is written by hand.
                 </p>
                 <pre className="rp-pre">{String(request.detail.signal_prose)}</pre>
               </ExpandableRow>
@@ -1425,6 +1428,19 @@ function ExecutionStep({
           {diverged ? "arms diverged" : "arms agreed"}
         </div>
       </div>
+
+      {diverged && memoryGuard && (
+        <p className="rp-prose">
+          <b>The two arms did not agree.</b> Both agents saw the same cart. The baseline, which knows
+          only about this order, chose{" "}
+          <code>{armProposal(baseline)?.action ?? baseline.decision?.action}</code>. The memory-informed
+          agent read the same customer's dispute and subscription record and ended at{" "}
+          <code>{memory.decision?.action}</code>
+          {memoryGuard.notes.length > 0 ? <> — {memoryGuard.notes.join("; ")}</> : null}. Neither agent
+          could have reached that on its own: Cart Abandonment cannot see a dispute ruling, and the
+          Dispute Responder cannot see an abandoned cart.
+        </p>
+      )}
 
       {!diverged && memoryGuard && (
         <p className="rp-prose">
