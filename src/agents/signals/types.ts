@@ -67,7 +67,19 @@ export type SignalScope = "customer" | "agent";
 //                 every signal was one of these before provenPayer).
 //   accelerator — widens what the agent may do for a customer who has earned it.
 //   router      — changes WHICH intervention fits, without changing limits.
-export type SignalKind = "brake" | "accelerator" | "router";
+// What a signal DOES, not what it is about.
+//
+// `context` replaces `router`. Two signals used to be tagged `brake` while
+// having no effects at all, which made this field unreliable: it was doing
+// double duty as "restricts things" and "is vaguely negative". A signal is now
+// either one of the three that change the decision, or honestly labelled as
+// informing the model and constraining nothing.
+//
+// `router` is gone with paymentFriction, the only signal that carried it. It
+// promised to change WHICH action fits, but no action existed to route to, so
+// it changed nothing. If a retry action is added later, `router` comes back
+// with a signal that actually does something.
+export type SignalKind = "brake" | "accelerator" | "context";
 
 // One signal, entirely self-contained: how to compute it, how to explain it to
 // the model, and what it does to the decision. Generic over the value so a

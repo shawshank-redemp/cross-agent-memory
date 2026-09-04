@@ -88,13 +88,15 @@ export const EXPERIMENT_CONFIGS: Record<AgentType, ExperimentConfig> = {
       { id: "send_discount", isControl: false, label: `Reminder + ${FIXED_DISCOUNT_PERCENT}% discount` },
     ],
     blockRules: [
-      { intervention: "send_discount", blockedWhen: "gamingSuspected" },
-      { intervention: "send_discount", blockedWhen: "crossAgentGamingSuspected" },
-      { intervention: "send_discount", blockedWhen: "stoppingRuleHit" },
+      { intervention: "send_discount", blockedWhen: "discountLimitReached" },
+      { intervention: "send_discount", blockedWhen: "crossAgentSpendLimitReached" },
+      { intervention: "send_discount", blockedWhen: "pastDiscountsIneffective" },
+      { intervention: "send_discount", blockedWhen: "repeatRecoveryWithThisAgent" },
+      { intervention: "send_discount", blockedWhen: "repeatRecoveryAcrossAgents" },
     ],
     // Composite churn is a critical state: the memory layer's answer there is
     // escalate to a human, and that must not be overridden by a coin flip.
-    excludeEntirelyWhen: ["compositeChurnSignal"],
+    excludeEntirelyWhen: ["recentMultiDomainTrouble"],
     bucketSignal: bucketByPriorDiscountHistory,
     outcomeFields: ["recovered", "revenue_paise", "discount_cost_paise", "later_dispute"],
   },

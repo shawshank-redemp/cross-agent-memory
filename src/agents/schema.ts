@@ -18,15 +18,15 @@ const MEMORY_PROFILE_FACTORS = MEMORY_PROFILE_EMITTABLE_KEYS;
 // citable. Spelled out literally because z.enum needs a literal tuple, then
 // checked against the registry below so the two cannot drift.
 const SIGNAL_FACTORS = [
-  "disputeCautionWarranted",
   "disputeCautionLevel",
-  "discountAttemptsForAgent",
-  "stoppingRuleHit",
-  "gamingSuspected",
-  "crossAgentGamingSuspected",
-  "compositeChurnSignal",
+  "repeatRecoveryWithThisAgent",
+  "repeatRecoveryAcrossAgents",
+  "discountLimitReached",
+  "crossAgentSpendLimitReached",
+  "pastDiscountsIneffective",
+  "recentMultiDomainTrouble",
   "provenPayer",
-  "paymentFriction",
+  "discountsGrantedByThisAgent",
 ] as const;
 
 // Compile-time guard: every registered signal must be citable. Registering a

@@ -60,18 +60,25 @@ export type MemorySignals = {
 // with the same value type. If a future edit renames or retypes one of these
 // in the registry, this stops compiling instead of silently breaking the
 // dashboard, the audit rows, and the experiment layer's signal keys.
-interface LegacyMemorySignalsShape {
-  disputeCautionWarranted: boolean;
+// Updated with the Signals-stage rename. The assertion still earns its place:
+// it pins that MemorySignals stays a real mapped type over the registry, so a
+// signal cannot be registered without appearing here. Only the NAMES moved —
+// disputeCautionWarranted and paymentFriction are gone entirely, both because
+// they had no effects (see definitions.ts for why each was removed).
+interface RegisteredMemorySignalsShape {
   disputeCautionLevel: DisputeCautionLevel;
-  discountAttemptsForAgent: number;
-  stoppingRuleHit: boolean;
-  gamingSuspected: boolean;
-  crossAgentGamingSuspected: boolean;
-  compositeChurnSignal: boolean;
+  discountsGrantedByThisAgent: number;
+  discountLimitReached: boolean;
+  repeatRecoveryWithThisAgent: boolean;
+  repeatRecoveryAcrossAgents: boolean;
+  crossAgentSpendLimitReached: boolean;
+  pastDiscountsIneffective: boolean;
+  recentMultiDomainTrouble: boolean;
+  provenPayer: boolean;
 }
-type AssertDerivedCoversLegacy = MemorySignals extends LegacyMemorySignalsShape ? true : never;
-const _assertDerivedCoversLegacy: AssertDerivedCoversLegacy = true;
-void _assertDerivedCoversLegacy;
+type AssertDerivedCoversRegistry = MemorySignals extends RegisteredMemorySignalsShape ? true : never;
+const _assertDerivedCoversRegistry: AssertDerivedCoversRegistry = true;
+void _assertDerivedCoversRegistry;
 
 // Each entry's `id` must match its key, since the id is what appears in audit
 // rows and policy_override.triggered_by. Cheap to check, and a mismatch would

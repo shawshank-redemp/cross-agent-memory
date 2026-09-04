@@ -254,7 +254,7 @@ function crossCheckAgainstLiveRule(
       paymentErrorCode: null,
     };
     const live = computeMemorySignals(computeMemoryProfile(db, point.customer_id, "memory", asOf), facts)
-      .compositeChurnSignal;
+      .recentMultiDomainTrouble;
     const local = firesUnderNewLookbackRule(eventsByCustomer.get(point.customer_id) ?? [], point.ts);
     checked += 1;
     if (live !== local) {

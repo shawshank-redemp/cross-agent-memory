@@ -280,7 +280,7 @@ function buildUserContent(
     // Always sent regardless of the prose: a count is a magnitude, and
     // "already discounted twice" reads differently from "already
     // discounted once".
-    discountAttemptsForAgent: signals.discountAttemptsForAgent,
+    discountsGrantedByThisAgent: signals.discountsGrantedByThisAgent,
   };
 
   const payload = JSON.stringify(
@@ -556,7 +556,24 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   }
 
   const notesJoined = notes.join("; ");
-  const escalated = mustBlockDiscount || mustEscalate ? true : afterUniversal.escalate_to_human;
+  // BLOCKING NO LONGER IMPLIES ESCALATING, and this one line is where the two
+  // used to be welded together.
+  //
+  // "Should we spend money here?" and "should a person look at this?" are
+  // different questions. Fusing them meant every block also paged a human, and
+  // measured on the batch that forced a handoff on 41.9% of ALL events — a rate
+  // no merchant could staff. It also wrecked the measurement: the previous run
+  // escalated 724 times against the baseline's 51, and because the outcome model
+  // prices an escalation at a flat fee while crediting it with a discount's
+  // conversion, essentially the entire reported revenue lift was a function of
+  // handoff VOLUME rather than of any spending judgment memory contributed.
+  //
+  // Now only a signal that explicitly declares forcesEscalation escalates, which
+  // after the Signals-stage rework is recentMultiDomainTrouble alone: a customer
+  // failing across two domains in a fortnight is a genuine judgment call. A
+  // customer who has simply used up their discount budget is not — that is
+  // arithmetic, and the fallback is a free reminder, not a person's time.
+  const escalated = mustEscalate ? true : afterUniversal.escalate_to_human;
   // True only when policy escalated a decision the model did not escalate.
   const forcedEscalation = escalated && !decision.escalate_to_human;
 

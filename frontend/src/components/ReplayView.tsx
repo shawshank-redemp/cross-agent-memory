@@ -720,7 +720,7 @@ function EventStep({ trace }: { trace: ReplayTrace }) {
 
         {/* One row, not three: method + error are a single fact about the last
             payment attempt. last_error_code is the load-bearing one — it is
-            what paymentFriction reads. */}
+            what the payment-decline fields carry. */}
         <div className="rp-kv-row">
           <span className="rp-k">last attempt</span>
           <span className="rp-v">
@@ -868,8 +868,9 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             <b>What it means:</b> every discount any agent has already granted this customer in this run.
           </p>
           <p>
-            <b>Why it matters:</b> it feeds <code>discountAttemptsForAgent</code> and{" "}
-            <code>stoppingRuleHit</code>, the per-agent cutoff after 3 discounts.
+            <b>Why it matters:</b> it feeds <code>discountsGrantedByThisAgent</code> and{" "}
+            <code>discountLimitReached</code>, the per-agent cutoff after 3 discounts, and{" "}
+            <code>crossAgentSpendLimitReached</code>, the ceiling on total margin across every agent.
           </p>
         </ExpandableRow>
         <ExpandableRow
@@ -914,9 +915,9 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
 // The trace's `active` flag means "this signal contributed prompt text", which
 // is the definition summarizeActiveSignals and the generated policy block use.
 // Two signals deliberately carry no prompt text at any value —
-// disputeCautionWarranted (the level signal already says it) and, when
+// the dispute caution level (which already says it) and, when
 // inactive, every boolean — so rendering `active` as "fired" reported
-// disputeCautionWarranted as not fired on a customer whose dispute caution was
+// a dispute signal as not fired on a customer whose dispute caution was
 // the whole story.
 //
 // Fired is a property of the VALUE: the same inactive test the guardrail uses
@@ -955,7 +956,7 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
               </>
             }
             value={
-              // A counter is not a switch. discountAttemptsForAgent is a number,
+              // A counter is not a switch. discountsGrantedByThisAgent is a number,
               // and "not fired" for a count of zero says less than the count.
               typeof s.value === "number"
                 ? `${s.value}`
@@ -1072,7 +1073,7 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
                 </p>
                 <p>
                   Only signals the prose does not already state, plus{" "}
-                  <code>discountAttemptsForAgent</code> regardless — a count is a magnitude, and prose
+                  <code>discountsGrantedByThisAgent</code> regardless — a count is a magnitude, and prose
                   carries magnitudes badly.
                 </p>
               </ExpandableRow>

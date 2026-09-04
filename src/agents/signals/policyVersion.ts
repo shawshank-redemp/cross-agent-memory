@@ -16,7 +16,16 @@ import type { AnySignalDefinition } from "./types.js";
 // THE GAP.
 //
 // Format is date-plus-counter so two bumps on the same day stay ordered.
-export const POLICY_VERSION = "2026-08-30.1";
+// Bumped for the Signals-stage rework: five signals renamed, two deleted
+// (disputeCautionWarranted, paymentFriction), two added
+// (crossAgentSpendLimitReached, pastDiscountsIneffective), `adverse` changed
+// from a ceiling to a block, and blocking decoupled from escalating.
+//
+// The thresholds hash moves on its own for the constant changes. The manual
+// half exists for what a hash cannot see, and this bump covers exactly that:
+// effects() functions changed shape (a cap became a block; three brakes stopped
+// escalating), which touches no threshold value and no signal id/scope/kind.
+export const POLICY_VERSION = "2026-09-04.1";
 
 // Canonical JSON: object keys sorted at every depth, no whitespace. The hash
 // must not move when unrelated code changes, or it is worthless as a version —

@@ -432,7 +432,7 @@
 
 
 /* Collapsed last-attempt row: the error code is the load-bearing half (it is
-   what paymentFriction reads), so it is the half that gets colour. */
+   what the payment-decline fields carry), so it is the half that gets colour. */
 .rp-err { color: var(--rp-coral); }
 .rp-kv-note {
   font-size: 12px; color: var(--rp-faint); line-height: 1.45; padding: 4px 0 2px;

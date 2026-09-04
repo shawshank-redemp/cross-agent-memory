@@ -4,10 +4,18 @@ import {
   CHURN_LOOKBACK_DAYS,
   DEFAULT_DISCOUNT_CAP_PERCENT,
   DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL,
-  MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
-  MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS,
+  CROSS_AGENT_SPEND_FLOOR_PAISE,
+  CROSS_AGENT_SPEND_SHARE_OF_LIFETIME_PAID,
+  DISCOUNT_HISTORY_LOOKBACK_DAYS,
+  INEFFECTIVE_DISCOUNT_MIN_ATTEMPTS,
+  MAX_DISCOUNTS_PER_AGENT,
+  MIN_LIFETIME_PAID_PAISE,
   MIN_SUCCESSFUL_PAYMENTS,
   PROVEN_PAYER_DISCOUNT_CAP_PERCENT,
+  REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT,
+  REPEAT_RECOVERY_LOOKBACK_DAYS,
+  REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS,
+  REPEAT_RECOVERY_THRESHOLD_PER_AGENT,
 } from "./thresholds.js";
 import type { AnySignalDefinition, DisputeCautionLevel, SignalContext, SignalDefinition } from "./types.js";
 
@@ -45,9 +53,12 @@ const DISPUTE_CAUTION_PROMPT: Record<DisputeCautionLevel, string | null> = {
   unresolved_customer_fault:
     'dispute_caution_level = "unresolved_customer_fault": an unresolved dispute whose reason points at the CUSTOMER (they do not recognise their own transaction). No ruling has been made, but this is the one unresolved shape that carries real risk, and policy permits spend up to ' +
     `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.unresolved_customer_fault}% of the event amount.`,
+  // The only caution level that BLOCKS rather than caps. A bank has actually
+  // ruled against this customer — the strongest negative evidence a payments
+  // business has, and the one place where a ceiling could silently do nothing
+  // because the model might not have wanted to exceed it anyway.
   adverse:
-    'dispute_caution_level = "adverse": a dispute was resolved against this customer — the merchant contested it and the complaint did not hold up. Policy permits spend up to ' +
-    `${DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL.adverse}% of the event amount on a customer in this state.`,
+    'dispute_caution_level = "adverse": a dispute was resolved against this customer — the merchant contested it and the complaint did not hold up. This is a ruling that has actually been made, not an allegation. Policy does not permit committing margin to a customer in this state.',
 };
 
 const disputeCautionLevel: SignalDefinition<DisputeCautionLevel> = {
@@ -59,6 +70,10 @@ const disputeCautionLevel: SignalDefinition<DisputeCautionLevel> = {
     return DISPUTE_CAUTION_PROMPT[value];
   },
   effects(value) {
+    // `adverse` blocks outright and sets no ceiling — see the cap table in
+    // thresholds.ts for why it is deliberately absent from it. It does NOT
+    // escalate: a ruled dispute is unambiguous, and a person adds nothing.
+    if (value === "adverse") return { blocksDiscount: true };
     const cap = DISCOUNT_CAP_PERCENT_BY_CAUTION_LEVEL[value];
     // A level at or above the standing default is NOT a brake — it contributes
     // no cap at all, so it cannot hold a proven payer back from the wider
@@ -67,94 +82,223 @@ const disputeCautionLevel: SignalDefinition<DisputeCautionLevel> = {
   },
 };
 
-// Derived convenience kept because consumers (the trace summary, the
-// dashboard) want a plain boolean. Carries no effects of its own — the level
-// signal above owns the cap — and no prompt text, since describing the same
-// fact twice just costs tokens.
-const disputeCautionWarranted: SignalDefinition<boolean> = {
-  id: "disputeCautionWarranted",
-  scope: "customer",
-  kind: "brake",
-  compute: (ctx) => computeDisputeCautionLevel(ctx) !== "none",
-  describe: () => null,
-  effects: () => ({}),
-};
+// ---------------------------------------------------------------------------
+// REMOVED: disputeCautionWarranted
+//
+// It computed `disputeCautionLevel !== "none"` and fired on the identical 393
+// events, with no effects and no prompt text — the level signal with its detail
+// thrown away, kept only because a dashboard wanted a boolean. A dashboard can
+// ask whether the level is "none" itself. It was also tagged `brake` while
+// braking nothing, which is what made the `kind` field meaningless.
+// ---------------------------------------------------------------------------
 
-// The raw counter the stopping rule reads. Not itself a constraint; exposed
-// because the model benefits from knowing how much has already been spent.
-const discountAttemptsForAgent: SignalDefinition<number> = {
-  id: "discountAttemptsForAgent",
+// ---------------------------------------------------------------------------
+// REMOVED: paymentFriction
+//
+// It read `ctx.event`, never memory, so the BASELINE arm saw the identical
+// fact — any divergence it produced could never be evidence that cross-agent
+// memory helped, which is the one thing this system exists to show.
+//
+// It was also redundant three times over: the raw event we already send the
+// model carries `attempts` and `last_error_code`, so the signal restated a
+// field sitting in the same payload; `paymentAttempted` was hardcoded TRUE for
+// subscription_recovery, where a failed charge IS a declined payment by
+// definition, so it fired on every event and told that agent nothing; and it
+// was hardcoded FALSE for dispute_responder, where it never fired at all.
+//
+// The idea is worth keeping in a form that is actually memory: "this customer's
+// payments keep being declined, across carts AND subscription cycles" is a
+// genuine cross-agent fact pointing at a different remedy (fix the instrument,
+// do not spend margin). That needs decline history in the profile, which is a
+// MEMORY change, so it is logged as follow-up rather than smuggled in here.
+// ---------------------------------------------------------------------------
+
+// Recovery-flow events in the policy window, optionally for one agent.
+//
+// Reads the raw asOf-scoped list rather than the profile's precomputed
+// count_recent, so the WINDOW belongs to the rule and not to storage: profile.ts
+// answers what is true, the registry answers over what period it counts. If the
+// two ever diverge, the rule stays correct.
+function recoveryEventsInWindow(ctx: SignalContext, agent?: AgentType): number {
+  const asOfMs = Date.parse(ctx.event.timestamp);
+  const floorMs = asOfMs - REPEAT_RECOVERY_LOOKBACK_DAYS * DAY_MS;
+  let n = 0;
+  for (const e of ctx.profile.recovery_activity.recent_events) {
+    const ts = Date.parse(e.timestamp);
+    if (ts <= asOfMs && ts >= floorMs && (agent === undefined || e.agent === agent)) n += 1;
+  }
+  return n;
+}
+
+// Discounts granted in the policy window, optionally by one agent.
+function discountsInWindow(ctx: SignalContext, agent?: AgentType) {
+  const asOfMs = Date.parse(ctx.event.timestamp);
+  const floorMs = asOfMs - DISCOUNT_HISTORY_LOOKBACK_DAYS * DAY_MS;
+  return ctx.profile.discount_usage_history.filter((d) => {
+    const ts = Date.parse(d.timestamp);
+    return ts <= asOfMs && ts >= floorMs && (agent === undefined || d.agent === agent);
+  });
+}
+
+// How much margin this customer may still absorb across ALL agents. Expressed
+// against what they have actually paid us, with a floor so a customer who has
+// never paid is not frozen out entirely — see thresholds.ts.
+function crossAgentSpendAllowancePaise(ctx: SignalContext): number {
+  return Math.max(
+    CROSS_AGENT_SPEND_FLOOR_PAISE,
+    Math.round(ctx.profile.total_paid_amount * CROSS_AGENT_SPEND_SHARE_OF_LIFETIME_PAID),
+  );
+}
+
+// CONTEXT, not a brake. It constrains nothing; it tells the model what has
+// already been spent here so its reasoning is informed. It was tagged `brake`
+// while having no effects, which is precisely what made `kind` unreliable.
+const discountsGrantedByThisAgent: SignalDefinition<number> = {
+  id: "discountsGrantedByThisAgent",
   scope: "agent",
-  kind: "brake",
-  compute: (ctx) => ctx.profile.discount_usage_history.filter((d) => d.agent === ctx.agent).length,
+  kind: "context",
+  compute: (ctx) => discountsInWindow(ctx, ctx.agent).length,
   describe: (value) =>
     value > 0
-      ? `discount_attempts_for_agent = ${value}: margin already committed to this customer by this agent during this run.`
+      ? `discounts_granted_by_this_agent = ${value}: margin this agent has already committed to this customer in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days.`
       : null,
   effects: () => ({}),
 };
 
-const stoppingRuleHit: SignalDefinition<boolean> = {
-  id: "stoppingRuleHit",
+// Counts DISCOUNTS WE GAVE, which is what separates it from the repeat-recovery
+// signals below — those count events the customer had. The two used to share one
+// threshold constant despite measuring unrelated things.
+//
+// Blocks spend and does NOT escalate: an agent reaching its own budget is a
+// budgeting fact, not something a person needs to adjudicate.
+const discountLimitReached: SignalDefinition<boolean> = {
+  id: "discountLimitReached",
   scope: "agent",
   kind: "brake",
-  compute: (ctx) =>
-    ctx.profile.discount_usage_history.filter((d) => d.agent === ctx.agent).length >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
+  compute: (ctx) => discountsInWindow(ctx, ctx.agent).length >= MAX_DISCOUNTS_PER_AGENT,
   describe: (value) =>
     value
-      ? `stopping_rule_hit: this agent has already committed spend to this customer ${MAX_DISCOUNT_ATTEMPTS_PER_AGENT}+ times in this run. Policy does not permit committing further margin here — the negotiation has run its course.`
+      ? `discount_limit_reached: this agent has already committed margin to this customer ${MAX_DISCOUNTS_PER_AGENT}+ times in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days. Policy does not permit committing further margin here — the negotiation has run its course.`
       : null,
   effects: (value) => (value ? { blocksDiscount: true } : {}),
 };
 
-const gamingSuspected: SignalDefinition<boolean> = {
-  id: "gamingSuspected",
+// Renamed from `gamingSuspected`, and downgraded from "block and escalate" to a
+// tighter ceiling.
+//
+// The old name accused the customer of farming discounts while the rule only
+// counted events they had — so a customer who abandoned three carts and was
+// never offered anything was flagged as a discount farmer, blocked, and sent to
+// a person. You cannot farm a discount you were never given. Repeatedly failing
+// to complete a purchase is a reason for caution, not proof of abuse, and
+// caution is a ceiling.
+const repeatRecoveryWithThisAgent: SignalDefinition<boolean> = {
+  id: "repeatRecoveryWithThisAgent",
   scope: "agent",
   kind: "brake",
-  compute: (ctx) =>
-    // OPEN DECISION (Signals stage): count_all_time preserves this signal's
-    // previous behaviour exactly, because recovery_frequency was all-time. It
-    // means the rule has NO recency bound — three abandoned carts across two
-    // years fire identically to three in a week, which is the same "nothing
-    // ages out" defect already fixed in compositeChurnSignal. count_recent is
-    // now available on the same record if we decide this should age out.
-    (ctx.profile.recovery_activity.by_agent.find((r) => r.agent === ctx.agent)?.count_all_time ?? 0) >=
-      MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
+  compute: (ctx) => recoveryEventsInWindow(ctx, ctx.agent) >= REPEAT_RECOVERY_THRESHOLD_PER_AGENT,
   describe: (value) =>
     value
-      ? `gaming_suspected: this customer has triggered this agent's recovery flow ${MAX_DISCOUNT_ATTEMPTS_PER_AGENT}+ times, a pattern more consistent with farming the recovery nudge than with genuine difficulty paying. Policy does not permit spending margin on a customer in this state, and cases like this are handled by a person rather than automation.`
+      ? `repeat_recovery_with_this_agent: this customer has entered this agent's recovery flow ${REPEAT_RECOVERY_THRESHOLD_PER_AGENT}+ times in the last ${REPEAT_RECOVERY_LOOKBACK_DAYS} days. Repeated difficulty completing a purchase warrants a smaller commitment than a first occurrence, and policy permits spend up to ${REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT}% of the event amount.`
       : null,
-  effects: (value) => (value ? { blocksDiscount: true, forcesEscalation: true } : {}),
+  effects: (value) => (value ? { discountCapPercent: REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT } : {}),
 };
 
-const crossAgentGamingSuspected: SignalDefinition<boolean> = {
-  id: "crossAgentGamingSuspected",
+// The same pattern seen across agents rather than within one, where no single
+// agent's count would ever reach its own threshold.
+//
+// KEPT rather than folded into the spend limit below, deliberately. The two ask
+// different questions — how often they came back, versus how much we spent —
+// and only this one can fire before any margin has been committed. Deleting it
+// would also silently un-test the `cross_agent_gaming` scenario, 6% of the
+// batch, which is constructed precisely to reach a cross-agent total while
+// every per-agent count stays below its threshold.
+const repeatRecoveryAcrossAgents: SignalDefinition<boolean> = {
+  id: "repeatRecoveryAcrossAgents",
   scope: "customer",
   kind: "brake",
-  // recovery_activity is already asOf-scoped (see profile.ts), so summing it
-  // here stays causal for free.
-  compute: (ctx) =>
-    // Same open decision as gamingSuspected above: all-time preserves prior
-    // behaviour; count_recent is available if this should age out.
-    ctx.profile.recovery_activity.by_agent.reduce((sum, r) => sum + r.count_all_time, 0) >=
-      MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS,
+  compute: (ctx) => recoveryEventsInWindow(ctx) >= REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS,
   describe: (value) =>
     value
-      ? `cross_agent_gaming_suspected: this customer has triggered recovery flows ${MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS}+ times in total across multiple agents, no single agent's flow having reached its own threshold. Spreading triggers across agents rather than repeating one is the same pattern seen from a different angle. Policy does not permit spending margin on a customer in this state, and cases like this are handled by a person rather than automation.`
+      ? `repeat_recovery_across_agents: this customer has entered recovery flows ${REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS}+ times in total across multiple agents in the last ${REPEAT_RECOVERY_LOOKBACK_DAYS} days, without any single agent's flow reaching its own threshold. Spread across agents, the pattern is invisible to each one alone. Policy permits spend up to ${REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT}% of the event amount.`
       : null,
-  effects: (value) => (value ? { blocksDiscount: true, forcesEscalation: true } : {}),
+  effects: (value) => (value ? { discountCapPercent: REPEAT_RECOVERY_DISCOUNT_CAP_PERCENT } : {}),
 };
 
-// Two or more DISTINCT domains with at least one event in the
-// CHURN_LOOKBACK_DAYS immediately preceding and including the triggering
-// event. The triggering event itself counts as one of them, since
-// recent_events is asOf-scoped inclusive of its own timestamp.
+// THE CROSS-AGENT SPEND CEILING, and the hole it closes:
 //
-// Recency-bounded and self-ageing by construction: a cluster of trouble drops
-// out once it is older than the lookback, which is the whole point of
-// replacing the previous window-pair rule.
-const compositeChurnSignal: SignalDefinition<boolean> = {
-  id: "compositeChurnSignal",
+// discountLimitReached is per agent, so Cart could grant 2, Subscription 2 and
+// Dispute 2 — six discounts to one customer — with no agent reaching its own
+// limit of 3 and no signal firing. The signal this replaces
+// (`crossAgentGamingSuspected`) sounded like it covered that and did not: it
+// counted the customer's EVENTS, never our SPEND.
+//
+// This is the only signal that reads money committed across every agent, which
+// makes it the sharpest expression of the whole thesis: no individual agent can
+// compute it, because no individual agent can see the others' spend.
+const crossAgentSpendLimitReached: SignalDefinition<boolean> = {
+  id: "crossAgentSpendLimitReached",
+  scope: "customer",
+  kind: "brake",
+  compute: (ctx) => {
+    const spent = discountsInWindow(ctx).reduce((sum, d) => sum + d.amount, 0);
+    return spent > 0 && spent >= crossAgentSpendAllowancePaise(ctx);
+  },
+  describe: (value) =>
+    value
+      ? `cross_agent_spend_limit_reached: the margin already committed to this customer across every agent in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days has reached what their history with us supports. No single agent can see this, because each sees only its own spend. Policy does not permit committing further margin.`
+      : null,
+  effects: (value) => (value ? { blocksDiscount: true } : {}),
+};
+
+// THE FEEDBACK LOOP, as policy.
+//
+// Every other brake asks what the customer did. This one asks what WE did and
+// whether it worked: we have discounted this customer at least
+// INEFFECTIVE_DISCOUNT_MIN_ATTEMPTS times and not one of those discounts
+// converted. Continuing to spend against that record is the clearest waste this
+// system can identify.
+//
+// Customer-scoped on purpose. If discounts do not move this customer, that is
+// true of the person, not of one agent's relationship with them, so Subscription
+// Recovery should inherit what Cart Abandonment learned.
+const pastDiscountsIneffective: SignalDefinition<boolean> = {
+  id: "pastDiscountsIneffective",
+  scope: "customer",
+  kind: "brake",
+  compute: (ctx) => {
+    const paid = ctx.profile.intervention_outcomes.filter((o) => o.spend_paise > 0);
+    const attempts = paid.reduce((sum, o) => sum + o.attempts, 0);
+    const conversions = paid.reduce((sum, o) => sum + o.conversions, 0);
+    return attempts >= INEFFECTIVE_DISCOUNT_MIN_ATTEMPTS && conversions === 0;
+  },
+  describe: (value) =>
+    value
+      ? `past_discounts_ineffective: this customer has been given ${INEFFECTIVE_DISCOUNT_MIN_ATTEMPTS}+ discounts across our agents and none of them was taken up. Discounting has been tried on this customer and has not worked, so policy does not permit committing further margin.`
+      : null,
+  effects: (value) => (value ? { blocksDiscount: true } : {}),
+};
+
+// Renamed from compositeChurnSignal. Two or more DISTINCT domains with at least
+// one event in the CHURN_LOOKBACK_DAYS immediately preceding and including the
+// triggering event. The triggering event counts as one of them.
+//
+// Recency-bounded and self-ageing by construction, which is what makes it the
+// soundest brake we have.
+//
+// IT NO LONGER BLOCKS SPEND — it only escalates. Blocking was backwards: we
+// detect that a customer is leaving and respond by refusing to spend anything on
+// keeping them, and then hand a person a case with no budget to work with. The
+// argument for this signal was always that another automated nudge will not fix
+// it, and that argument supports the handoff, not the block.
+//
+// It is also now the ONLY signal that escalates. Blocking and escalating used to
+// be welded together in all three brakes that had either, which forced a human
+// handoff on 41.9% of all events — no merchant can staff that, and it made the
+// last run's headline revenue number a measure of handoff volume rather than of
+// spending judgment.
+const recentMultiDomainTrouble: SignalDefinition<boolean> = {
+  id: "recentMultiDomainTrouble",
   scope: "customer",
   kind: "brake",
   compute(ctx) {
@@ -169,62 +313,51 @@ const compositeChurnSignal: SignalDefinition<boolean> = {
   },
   describe: (value) =>
     value
-      ? `composite_churn_signal: two or more of this customer's recovery flows (cart, subscription, dispute) have fired within the last ${CHURN_LOOKBACK_DAYS} days. That concentration is a churn risk in its own right, and it is not something another automated nudge resolves. Policy does not permit spending margin in this state, and cases like this are handled by a person rather than automation.`
+      ? `recent_multi_domain_trouble: two or more of this customer's recovery flows (cart, subscription, dispute) have fired within the last ${CHURN_LOOKBACK_DAYS} days. That concentration is a churn risk in its own right, and it is not something another automated nudge resolves. Cases like this are handled by a person rather than automation.`
       : null,
-  effects: (value) => (value ? { blocksDiscount: true, forcesEscalation: true } : {}),
+  effects: (value) => (value ? { forcesEscalation: true } : {}),
 };
 
-// The one accelerator. Purely factual: it asks "has this person successfully
-// transacted with us" and nothing else. It deliberately does NOT check for
-// gaming or disputes — those are separate signals, and the precedence rule in
-// resolveSignalEffects (brakes take the minimum cap) is what settles a
-// customer who is both proven and suspect.
+// The one accelerator. TWO conditions now, not one: a count says whether they
+// have paid, only an amount says whether it was worth anything. Measured on the
+// batch, the count alone admitted lifetime spends from ₹398 to ₹14,298 — all
+// granted the identical extra margin.
+//
+// This absorbs what would have been a separate `highValueCustomer` signal. Two
+// accelerators reading the same two facts and widening the same ceiling is
+// duplication, not nuance.
+//
+// Still purely factual: it does not check for repeat patterns or disputes, and
+// the precedence rule in resolveSignalEffects (brakes take the minimum) is what
+// settles a customer who is both established and suspect.
 const provenPayer: SignalDefinition<boolean> = {
   id: "provenPayer",
   scope: "customer",
   kind: "accelerator",
-  compute: (ctx) => ctx.profile.successful_payment_count >= MIN_SUCCESSFUL_PAYMENTS,
+  compute: (ctx) =>
+    ctx.profile.successful_payment_count >= MIN_SUCCESSFUL_PAYMENTS &&
+    ctx.profile.total_paid_amount >= MIN_LIFETIME_PAID_PAISE,
   describe: (value) =>
     value
-      ? `proven_payer: this customer has ${MIN_SUCCESSFUL_PAYMENTS}+ successful payments with us across all domains. Policy extends more room to an established customer than to a stranger, permitting spend up to ${PROVEN_PAYER_DISCOUNT_CAP_PERCENT}% of the event amount where no other signal permits less.`
+      ? `proven_payer: this customer has ${MIN_SUCCESSFUL_PAYMENTS}+ successful payments with us across all domains and meaningful lifetime spend. Policy extends more room to an established customer than to a stranger, permitting spend up to ${PROVEN_PAYER_DISCOUNT_CAP_PERCENT}% of the event amount where no other signal permits less.`
       : null,
   effects: (value) => (value ? { discountCapPercent: PROVEN_PAYER_DISCOUNT_CAP_PERCENT } : {}),
 };
 
-// The one router. Reads the TRIGGERING EVENT, not memory: it separates a
-// customer who never reached payment (an intent problem, which a discount can
-// address) from one whose payment was declined (a mechanical problem, which a
-// discount does not address — they need a different method or a retry).
-//
-// DELIBERATELY A SOFT SIGNAL. It carries no effects, so enforcePolicy never
-// overrides on it. There is no "retry with another payment method" action in
-// the decision schema, and adding one would change the outcome model — a
-// documented future step, out of scope here. Until then this steers the model
-// through the prompt and is recorded on the audit row so its influence on
-// decision divergence is still measurable.
-const paymentFriction: SignalDefinition<boolean> = {
-  id: "paymentFriction",
-  scope: "agent",
-  kind: "router",
-  compute: (ctx) => ctx.event.paymentAttempted && ctx.event.paymentErrorCode != null,
-  describe: (value) =>
-    value
-      ? "payment_friction: this customer attempted to pay and the payment was declined. The obstacle was mechanical — a declined card or a failed mandate — rather than a pricing objection, and a discount does not remove a mechanical obstacle. What unblocks a payment in this state is an alternative payment method or a retry."
-      : null,
-  effects: () => ({}),
-};
-
 // Order here is the order signals appear in the generated policy block.
-// Brakes first, then the accelerator, then the router: the model should read
-// what it must not do before what it may.
+// Brakes first, then the accelerator, then context: the model should read what
+// it must not do before what it may.
+//
+// EVERY SIGNAL HERE HAS AN EFFECT OR IS TAGGED `context`. Three of the previous
+// nine did nothing at all while being labelled brakes.
 export const SIGNAL_DEFINITIONS = {
-  disputeCautionWarranted,
   disputeCautionLevel,
-  discountAttemptsForAgent,
-  stoppingRuleHit,
-  gamingSuspected,
-  crossAgentGamingSuspected,
-  compositeChurnSignal,
+  repeatRecoveryWithThisAgent,
+  repeatRecoveryAcrossAgents,
+  discountLimitReached,
+  crossAgentSpendLimitReached,
+  pastDiscountsIneffective,
+  recentMultiDomainTrouble,
   provenPayer,
-  paymentFriction,
+  discountsGrantedByThisAgent,
 } satisfies Record<string, AnySignalDefinition>;
