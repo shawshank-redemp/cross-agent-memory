@@ -272,19 +272,43 @@ assert(`every scenario is within ${DISTRIBUTION_TOLERANCE_PP}pp of its configure
 // signal was sitting in a memory registry. That signal is gone, so the assertion
 // is now total: in the control cohort, nothing fires, with no exceptions to
 // explain away.
+// SIGNALS DERIVED FROM THE GENERATED BATCH. These are what this script can
+// assert about, because they read only the event tables it produced.
 const MEMORY_DERIVED_DEFAULTS: Record<string, unknown> = {
   disputeCautionLevel: "none",
-  discountsGrantedByThisAgent: 0,
-  discountLimitReached: false,
   repeatRecoveryWithThisAgent: false,
   repeatRecoveryAcrossAgents: false,
-  crossAgentSpendLimitReached: false,
-  pastDiscountsIneffective: false,
   recentMultiDomainTrouble: false,
   provenPayer: false,
 };
 
+// SIGNALS DERIVED FROM RUN OUTPUT — discounts granted and their outcomes, which
+// only exist once agents have decided. They are asserted only against a database
+// with no decisions in it.
+//
+// Including them unconditionally passed for as long as no run had ever granted a
+// discount, and started failing the moment one did: the 2026-09-05 batch gave
+// real discounts to ten control customers, and the check reported them as
+// violations. That was the check misreading its own scope, not a defect in the
+// batch. A control customer has no adverse HISTORY, which is what this script
+// verifies; what an agent later chose to spend on them is a different question
+// and belongs to the comparison, not to batch hygiene.
+const RUN_DERIVED_DEFAULTS: Record<string, unknown> = {
+  discountsGrantedByThisAgent: 0,
+  discountLimitReached: false,
+  crossAgentSpendLimitReached: false,
+  pastDiscountsIneffective: false,
+};
+
+// Whether this database already holds decisions. On a fresh load it does not,
+// and the run-derived signals can be asserted too.
+const decisionsPresent =
+  (openDb().prepare("SELECT COUNT(*) AS n FROM discount_usage").get() as { n: number }).n > 0;
+
 console.log("\nControl-cohort silence (real computeMemorySignals)");
+if (decisionsPresent) {
+  console.log("        (this db holds decisions from a run — run-derived signals are not asserted)");
+}
 
 const normalIds = idsIn("normal");
 const db = openDb();
@@ -336,7 +360,10 @@ for (const id of normalIds) {
   const profile = computeMemoryProfile(db, id, "memory", facts.timestamp);
   const signals = computeMemorySignals(profile, facts) as unknown as Record<string, unknown>;
 
-  const offending = Object.entries(MEMORY_DERIVED_DEFAULTS).filter(([k, def]) => signals[k] !== def);
+  const applicable = decisionsPresent
+    ? MEMORY_DERIVED_DEFAULTS
+    : { ...MEMORY_DERIVED_DEFAULTS, ...RUN_DERIVED_DEFAULTS };
+  const offending = Object.entries(applicable).filter(([k, def]) => signals[k] !== def);
   if (offending.length > 0) {
     for (const [k, def] of offending) {
       firedTally[k] = (firedTally[k] ?? 0) + 1;
