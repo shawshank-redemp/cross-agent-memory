@@ -4,6 +4,11 @@
 // node:test + tsx deliberately: a heavier framework would be more machinery
 // than this needs, and `npm test` running by default matters more than features.
 import assert from "node:assert/strict";
+import {
+  MAX_DISCOUNT_CAP_PERCENT,
+  MAX_SINGLE_DISCOUNT_PAISE,
+  RUN_DISCOUNT_BUDGET_PAISE,
+} from "../src/agents/signals/thresholds.js";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -11,7 +16,7 @@ import Database from "better-sqlite3";
 
 import { decideWithMemory, enforcePolicy } from "../src/agents/memoryContext.js";
 import { CartAbandonmentDecisionSchema } from "../src/agents/schema.js";
-import { applyBaselinePolicy, enforceUniversalPolicy, spendCeilingPaise } from "../src/agents/enforcement.js";
+import { applyBaselinePolicy, enforceUniversalPolicy, getRunTotals, resetRunTotals, spendCeilingPaise } from "../src/agents/enforcement.js";
 import { appendAuditLog, computeMemoryProfile, recordDiscountUsage } from "../src/memory/profile.js";
 import type { MemorySignals, TriggeringEventFacts } from "../src/agents/policy.js";
 import type { AgentType } from "../src/types/index.js";
@@ -31,15 +36,15 @@ function memDb(): Database.Database {
 // All signals inactive. Individual cases override only what they are about.
 function signals(overrides: Partial<MemorySignals> = {}): MemorySignals {
   return {
-    disputeCautionWarranted: false,
     disputeCautionLevel: "none",
-    discountAttemptsForAgent: 0,
-    stoppingRuleHit: false,
-    gamingSuspected: false,
-    crossAgentGamingSuspected: false,
-    compositeChurnSignal: false,
+    discountsGrantedByThisAgent: 0,
+    discountLimitReached: false,
+    repeatRecoveryWithThisAgent: false,
+    repeatRecoveryAcrossAgents: false,
+    crossAgentSpendLimitReached: false,
+    pastDiscountsIneffective: false,
+    recentMultiDomainTrouble: false,
     provenPayer: false,
-    paymentFriction: false,
     ...overrides,
   };
 }
@@ -96,39 +101,82 @@ test("no active signal: decision passes through untouched, no override", () => {
 
 // ---------------------------------------------------------------------- blocks
 
-test("blocking signal + proposed spend: spend nulled, action swapped, escalation forced, original preserved", () => {
-  const out = run(decision({ committed_spend_paise: 20_000 }), signals({ gamingSuspected: true }));
+test("blocking signal + proposed spend: spend nulled, action swapped, original preserved", () => {
+  const out = run(decision({ committed_spend_paise: 20_000 }), signals({ discountLimitReached: true }));
   assert.equal(out.committed_spend_paise, null);
   assert.equal(out.action, "send_reminder", "cart's non-spend fallback");
-  assert.equal(out.escalate_to_human, true);
-  assert.equal(out.escalation_reason, "policy_constraint");
   assert.ok(out.policy_override);
   assert.equal(out.policy_override.original_action, "send_discount");
   assert.equal(out.policy_override.original_committed_spend_paise, 20_000);
   assert.equal(out.policy_override.original_escalate_to_human, false);
-  assert.equal(out.policy_override.escalation_reason_forced, true);
-  assert.ok(out.policy_override.triggered_by.includes("gamingSuspected"));
+  assert.ok(out.policy_override.triggered_by.includes("discountLimitReached"));
 });
 
-test("blocking signal + NO proposed spend: no spend change, escalation still forced", () => {
+// BLOCKING AND ESCALATING ARE SEPARATE, and this is the pair of tests that pins
+// it. They used to be welded together in every brake that had either, which
+// forced a human handoff on 41.9% of all events and made the run's headline
+// revenue figure a measure of handoff volume rather than of spending judgment.
+// Blocking spend and paging a person are different questions, and enforcePolicy
+// used to fuse them (`mustBlockDiscount || mustEscalate`). Measured on the batch
+// that forced a handoff on 41.9% of ALL events, and it made the previous run's
+// revenue lift a function of handoff volume rather than of spending judgment.
+//
+// discountLimitReached declares blocksDiscount and NOT forcesEscalation, so it
+// must now block without escalating.
+test("blocking does not escalate: refusing to spend is not a reason to page a person", () => {
+  const out = run(decision({ committed_spend_paise: 20_000 }), signals({ discountLimitReached: true }));
+  assert.equal(out.committed_spend_paise, null, "spend is blocked");
+  assert.equal(out.escalate_to_human, false, "and nobody is paged for it");
+  assert.equal(out.escalation_reason, null);
+});
+
+// EVENT_AMOUNT is 100_000 paise (₹1,000), below ESCALATION_MIN_EVENT_AMOUNT_PAISE,
+// so this case has to name an amount that clears the floor — see the floor test
+// directly below for why the floor exists.
+test("escalating does NOT block: a churn handoff still leaves the human a budget", () => {
   const out = run(
-    decision({ action: "send_reminder", committed_spend_paise: null }),
-    signals({ compositeChurnSignal: true }),
+    decision({ committed_spend_paise: 15_000 }),
+    signals({ recentMultiDomainTrouble: true }),
+    facts("cart_abandonment", 300_000),
   );
-  assert.equal(out.committed_spend_paise, null);
-  assert.equal(out.action, "send_reminder", "action must not be swapped when there was no spend to block");
   assert.equal(out.escalate_to_human, true);
+  assert.equal(out.escalation_reason, "policy_constraint");
+  assert.equal(out.committed_spend_paise, 15_000, "spend survives — the person decides, not the block");
+  assert.equal(out.action, "send_discount", "and the action is not swapped out from under them");
   assert.ok(out.policy_override);
-  assert.ok(out.policy_override.triggered_by.includes("compositeChurnSignal"));
+  assert.ok(out.policy_override.triggered_by.includes("recentMultiDomainTrouble"));
+  assert.equal(out.policy_override.escalation_reason_forced, true);
+});
+
+// A handoff has to be worth the person's time. Measured on the batch before this
+// floor, the system escalated a ₹199 abandoned cart, and a quarter of all forced
+// escalations sat under ₹1,000 against a ₹300 modelled review cost.
+//
+// The floor gates the EFFECT, not the signal: recentMultiDomainTrouble still
+// computes and still reports the fact, and policy decides separately whether an
+// event this size justifies a person.
+test("escalation floor: the same signal does not page a person on a small event", () => {
+  const small = run(
+    decision({ committed_spend_paise: 15_000 }),
+    signals({ recentMultiDomainTrouble: true }),
+    facts("cart_abandonment", 50_000),
+  );
+  assert.equal(small.escalate_to_human, false, "₹500 is not worth a human review");
+
+  const large = run(
+    decision({ committed_spend_paise: 15_000 }),
+    signals({ recentMultiDomainTrouble: true }),
+    facts("cart_abandonment", 300_000),
+  );
+  assert.equal(large.escalate_to_human, true, "₹3,000 is");
 });
 
 // ------------------------------------------------------------------------ caps
 
 test("cap only: spend clamped, action unchanged, escalation NOT forced", () => {
-  // adverse => 10% of 100000 = 10000
+  // unresolved_customer_fault => 10% of 100000 = 10000
   const out = run(decision({ committed_spend_paise: 50_000 }), signals({
-    disputeCautionWarranted: true,
-    disputeCautionLevel: "adverse",
+    disputeCautionLevel: "unresolved_customer_fault",
   }));
   assert.equal(out.committed_spend_paise, 10_000);
   assert.equal(out.action, "send_discount", "a clamp prices the decision, it does not change it");
@@ -138,11 +186,39 @@ test("cap only: spend clamped, action unchanged, escalation NOT forced", () => {
 
 test("two active caps: the LOWER wins (brakes beat accelerators)", () => {
   const out = run(decision({ committed_spend_paise: 90_000 }), signals({
-    disputeCautionWarranted: true,
-    disputeCautionLevel: "adverse", // 10%
+    disputeCautionLevel: "unresolved_customer_fault", // 10%
     provenPayer: true, // 25%
   }));
   assert.equal(out.committed_spend_paise, 10_000, "min(10%, 25%) of 100000");
+});
+
+// `adverse` is the one caution level that BLOCKS rather than caps. It used to
+// share the 10% ceiling with unresolved_customer_fault, which treated a bank's
+// actual ruling as equivalent to an unproven allegation whose only evidence is
+// which reason the customer picked from a dropdown.
+test("adverse blocks spend AND suppresses outreach", () => {
+  const out = run(decision({ committed_spend_paise: 5_000 }), signals({ disputeCautionLevel: "adverse" }));
+  assert.equal(out.committed_spend_paise, null, "a ruled dispute blocks spend at ANY amount");
+  // Suppression outranks the block's reminder fallback: no point swapping a
+  // discount for a message we have also decided not to send.
+  assert.equal(out.action, "no_action", "and we stop contacting them entirely");
+  assert.ok(out.policy_override);
+  assert.ok(out.policy_override.triggered_by.includes("disputeCautionLevel"));
+  // The signal itself declares only blocksDiscount, never forcesEscalation —
+  // enforcePolicy is what turns the block into a handoff. See the guardrail-stage
+  // note above.
+});
+
+// A ceiling only bites when the model wanted to spend MORE than it. This is the
+// case that made capping `adverse` unsafe: a small proposed discount slips
+// under a 10% ceiling untouched, so the strongest negative evidence in a
+// payments business would have changed nothing at all.
+test("a cap would NOT have caught a small adverse discount, which is why it blocks", () => {
+  const capped = run(
+    decision({ committed_spend_paise: 5_000 }),
+    signals({ disputeCautionLevel: "unresolved_customer_fault" }),
+  );
+  assert.equal(capped.committed_spend_paise, 5_000, "5000 is under the 10% ceiling and survives a cap");
 });
 
 test("provenPayer alone: ceiling rises to 25%, proving the default is a fallback not a participant", () => {
@@ -157,7 +233,7 @@ test("provenPayer alone: ceiling rises to 25%, proving the default is a fallback
 test("provenPayer + a blocking signal: blocked, not accelerated", () => {
   const out = run(decision({ committed_spend_paise: 24_000 }), signals({
     provenPayer: true,
-    stoppingRuleHit: true,
+    discountLimitReached: true,
   }));
   assert.equal(out.committed_spend_paise, null);
   assert.equal(out.action, "send_reminder");
@@ -176,7 +252,7 @@ test("coherence: spend on a non-spend action is nulled and the action is NOT swa
 test("coherence runs before blocking: no_action + spend + blocking signal still yields no_action", () => {
   const out = run(
     decision({ action: "no_action", committed_spend_paise: 5_000 }),
-    signals({ gamingSuspected: true }),
+    signals({ discountLimitReached: true }),
   );
   assert.equal(out.action, "no_action", "block must not resurrect an action swap on already-incoherent spend");
   assert.equal(out.committed_spend_paise, null);
@@ -406,4 +482,44 @@ test("fail closed: an unevaluable guardrail yields no spend and a human handoff"
   assert.equal(out.guardrail_failed, true);
   assert.equal(out.signals, null);
   assert.ok(out.policy_override?.triggered_by.includes("guardrail_evaluation_failed"));
+});
+
+// ---------------------------------------------------------- run breakers
+
+// Every other rule in the guardrail is per-decision, so nothing bounded a RUN.
+// The batch holds ₹31,33,800 of addressable cart value and a run could have
+// approved ₹7,83,450 with the first sign of trouble being the report afterwards.
+//
+// The breaker REFUSES SPEND RATHER THAN HALTING, and that is the property this
+// test pins. Halting would let one arm process fewer events than the other and
+// void the paired comparison — the same confound the universal layer exists to
+// prevent. Every event must still be decided.
+test("run breaker: refuses spend once the budget is exhausted, and keeps deciding", () => {
+  resetRunTotals(RUN_DISCOUNT_BUDGET_PAISE); // start already at the limit
+  const out = run(decision({ committed_spend_paise: 20_000 }), signals());
+  assert.equal(out.committed_spend_paise, null, "spend refused");
+  assert.equal(out.action, "send_reminder", "but the event is still decided and acted on");
+  assert.ok(out.policy_override);
+  assert.ok(out.policy_override.triggered_by.includes("run_budget_exhausted"));
+  assert.equal(getRunTotals().spendRefusals, 1);
+  resetRunTotals();
+});
+
+test("run breaker: approved spend accumulates toward the budget", () => {
+  resetRunTotals();
+  run(decision({ committed_spend_paise: 15_000 }), signals());
+  assert.equal(getRunTotals().spendPaise, 15_000);
+  run(decision({ committed_spend_paise: 5_000 }), signals());
+  assert.equal(getRunTotals().spendPaise, 20_000, "the breaker counts across decisions, not per decision");
+  resetRunTotals();
+});
+
+// A percentage of an arbitrary order is not a bound. At the batch's largest cart
+// the widest ceiling yields ₹1,250, so this limit does not bind on real data —
+// which is the correct state for a safety limit, not a defect in it.
+test("absolute caps bound what a percentage cannot", () => {
+  // 25% of ₹1,00,000 would be ₹25,000; MAX_SINGLE_DISCOUNT_PAISE is ₹2,500.
+  assert.equal(spendCeilingPaise(10_000_000, 25), MAX_SINGLE_DISCOUNT_PAISE);
+  // A signal declaring 60% cannot widen past MAX_DISCOUNT_CAP_PERCENT.
+  assert.equal(spendCeilingPaise(1_000, 60), spendCeilingPaise(1_000, MAX_DISCOUNT_CAP_PERCENT));
 });

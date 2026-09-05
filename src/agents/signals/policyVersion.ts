@@ -16,7 +16,39 @@ import type { AnySignalDefinition } from "./types.js";
 // THE GAP.
 //
 // Format is date-plus-counter so two bumps on the same day stay ordered.
-export const POLICY_VERSION = "2026-08-30.1";
+// .6 bumped for suppressesOutreach — the first memory effect that does not run
+// through spend — and the discount bullet reframed from compensation to
+// incentive. New effect kind, no threshold value moves, so the hash stays put.
+//
+// .5 bumped for the two objective additions (no second touch; a discount is
+// contingent), diagnosed from a real 10-call run rather than guessed. Prompt
+// text only, so the hash does not move.
+//
+// .4 bumped for the guardrail stage: absolute bounds, run breakers, and the
+// block/escalate split. The new constants move the hash on their own; the manual
+// half covers the split, which changes decisions without changing a value.
+//
+// .3 bumped for the objective rewrite. Pure prompt text, so the thresholds hash
+// does not move at all — this is the clearest case there is for why the manual
+// half exists. Every decision in the batch changes and no constant does.
+//
+// .2 bumped for the decide-stage rework. The thresholds hash moves on its own
+// for ESCALATION_MIN_EVENT_AMOUNT_PAISE, but the prompt restructure is the part
+// a hash cannot see: every signal now reports its measured magnitude instead of
+// a bare boolean, per-case content moved out of the system prompt, and the field
+// glossary is generated rather than hand-written. Decisions change; no threshold
+// value does. That gap is exactly what this manual half exists for.
+//
+// .1 bumped for the Signals-stage rework: five signals renamed, two deleted
+// (disputeCautionWarranted, paymentFriction), two added
+// (crossAgentSpendLimitReached, pastDiscountsIneffective), `adverse` changed
+// from a ceiling to a block, and blocking decoupled from escalating.
+//
+// The thresholds hash moves on its own for the constant changes. The manual
+// half exists for what a hash cannot see, and this bump covers exactly that:
+// effects() functions changed shape (a cap became a block; three brakes stopped
+// escalating), which touches no threshold value and no signal id/scope/kind.
+export const POLICY_VERSION = "2026-09-04.6";
 
 // Canonical JSON: object keys sorted at every depth, no whitespace. The hash
 // must not move when unrelated code changes, or it is worthless as a version —

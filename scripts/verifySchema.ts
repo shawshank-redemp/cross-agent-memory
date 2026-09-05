@@ -245,11 +245,11 @@ if (!concededDispute) {
   check('asOf AFTER resolved_at -> disputeCautionLevel "none"', afterLevel === "none", `got ${afterLevel}`);
   check("a conceded dispute still counts in dispute_count", afterProfile.dispute_count >= 1);
   check("a conceded dispute contributes 0 to adverse_disputed_amount", afterProfile.adverse_disputed_amount === 0);
-  check(
-    "health score is not penalised once the merchant concedes",
-    afterProfile.rolling_health_score >= midProfile.rolling_health_score,
-    `${midProfile.rolling_health_score} -> ${afterProfile.rolling_health_score}`,
-  );
+  // The "health score is not penalised once the merchant concedes" check went
+  // with the field it tested. What it was really asserting — that a conceded
+  // dispute carries no penalty — is still covered by the two checks above, on
+  // the breakdown and on adverse_disputed_amount, which is where the property
+  // actually lives.
 }
 
 // --- 5. breakdown partitions dispute_count --------------------------------

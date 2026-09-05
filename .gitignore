@@ -13,3 +13,9 @@ data/db/
 
 # agent decision runs (regenerate with npm run agents:baseline, etc.)
 data/results/
+
+# Claude Code worktrees — full nested checkouts, never part of a commit.
+.claude/worktrees/
+
+# TypeScript incremental build cache (tsc -b)
+*.tsbuildinfo

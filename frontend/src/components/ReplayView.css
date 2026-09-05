@@ -1,0 +1,575 @@
+/* LIVE DECISION TRACE — design language taken from the reference mockup:
+   Space Grotesk headings, Inter body, JetBrains Mono for every value that came
+   out of the database. Scoped to .rp-* so none of it reaches the dashboard.
+
+   Light only, deliberately — see the note in index.css. */
+.rp-root {
+  --rp-bg: #f6f7fa;
+  --rp-panel: #ffffff;
+  --rp-panel-alt: #f1f3f7;
+  --rp-panel-raised: #ebeef3;
+  --rp-border: #e3e6ec;
+  --rp-border-soft: #eceef2;
+  --rp-text: #12151c;
+  --rp-dim: #5a6472;
+  --rp-faint: #8891a0;
+  --rp-amber: #b9791c;
+  --rp-teal: #0e9a70;
+  --rp-violet: #6551e0;
+  --rp-coral: #e0475a;
+  --rp-blue: #2e6be0;
+  --rp-display: "Space Grotesk", system-ui, sans-serif;
+  --rp-body: Inter, system-ui, -apple-system, sans-serif;
+  --rp-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--rp-bg);
+  color: var(--rp-text);
+  min-height: 100vh;
+  font-family: var(--rp-body);
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+}
+.rp-root *,
+.rp-root *::before,
+.rp-root *::after { box-sizing: border-box; }
+.rp-root h1, .rp-root h2, .rp-root h3, .rp-root h4, .rp-root h5 {
+  color: var(--rp-text); font-family: var(--rp-display);
+}
+.rp-root code { color: inherit; font-family: var(--rp-mono); }
+.rp-root button { font-family: inherit; }
+
+/* --------------------------------------------------------------- top bar */
+.rp-topbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  padding: 10px 26px; border-bottom: 1px solid var(--rp-border); background: var(--rp-panel);
+}
+.rp-eyebrow {
+  font-family: var(--rp-mono); font-size: 10px; letter-spacing: .14em;
+  color: var(--rp-faint); text-transform: uppercase;
+}
+.rp-brand h1 { font-size: 18px; margin: 1px 0 0; font-weight: 600; letter-spacing: -.01em; }
+.rp-topbar-right { display: flex; align-items: center; gap: 18px; }
+.rp-pills { display: flex; gap: 7px; flex-wrap: wrap; }
+.rp-pill {
+  font-family: var(--rp-mono); font-size: 11px; padding: 6px 12px; border-radius: 100px;
+  border: 1px solid var(--rp-border); background: var(--rp-panel-alt); color: var(--rp-dim);
+  white-space: nowrap;
+}
+.rp-pill.active { background: rgba(46,107,224,.1); border-color: var(--rp-blue); color: var(--rp-blue); }
+.rp-pill[aria-disabled="true"] { opacity: .38; cursor: not-allowed; }
+@keyframes rp-pulse { 0%,100% { opacity: 1; } 50% { opacity: .25; } }
+
+/* ------------------------------------------------------------------ shell */
+/* The shell fills exactly what is left below the topbar, and the rail simply
+   stretches to it. The rail used to carry `min-height: calc(100vh - 55px)` with
+   the topbar height hardcoded — once the topbar was made more compact the two
+   disagreed and the page overflowed by the difference. Nothing here restates
+   the topbar's height. */
+.rp-shell { display: grid; grid-template-columns: 310px 1fr; align-items: stretch; }
+@media (max-width: 1040px) { .rp-shell { grid-template-columns: 1fr; } }
+
+.rp-rail {
+  border-right: 1px solid var(--rp-border); padding: 18px 18px 20px; background: var(--rp-panel-raised);
+  display: flex; flex-direction: column; gap: 18px;
+}
+.rp-identity { display: flex; align-items: center; gap: 12px; }
+.rp-avatar {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; color: #fff;
+  background: linear-gradient(135deg, var(--rp-blue), var(--rp-violet));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--rp-display); font-weight: 600; font-size: 17px;
+}
+.rp-identity h2 { margin: 0; font-size: 17px; }
+.rp-identity span { font-size: 11.5px; color: var(--rp-faint); font-family: var(--rp-mono); }
+.rp-rail-label {
+  font-family: var(--rp-mono); font-size: 10px; letter-spacing: .12em; color: var(--rp-faint);
+  text-transform: uppercase; margin-bottom: 8px;
+}
+
+.rp-legend { display: flex; gap: 13px; margin-bottom: 11px; }
+.rp-legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--rp-faint); font-family: var(--rp-mono); }
+.rp-legend-dot, .rp-tdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+/* Scoped to the dots — unscoped these also matched .rp-trow and painted the row. */
+.rp-legend-dot.d-cart_abandonment, .rp-tdot.d-cart_abandonment { background: var(--rp-teal); }
+.rp-legend-dot.d-subscription_recovery, .rp-tdot.d-subscription_recovery { background: var(--rp-violet); }
+.rp-legend-dot.d-dispute_responder, .rp-tdot.d-dispute_responder { background: var(--rp-coral); }
+
+.rp-timeline { display: flex; flex-direction: column; gap: 4px; }
+.rp-trow {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 7px 10px; border-radius: 8px; border-left: 3px solid transparent; opacity: .58;
+  transition: opacity .3s ease, background .3s ease;
+}
+.rp-trow.trigger { opacity: 1; background: var(--rp-panel); }
+.rp-trow.d-cart_abandonment { border-left-color: color-mix(in srgb, var(--rp-teal) 50%, transparent); }
+.rp-trow.d-subscription_recovery { border-left-color: color-mix(in srgb, var(--rp-violet) 50%, transparent); }
+.rp-trow.d-dispute_responder { border-left-color: color-mix(in srgb, var(--rp-coral) 50%, transparent); }
+.rp-tleft { display: flex; align-items: center; gap: 9px; min-width: 0; flex: 1; }
+.rp-tname { font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rp-tname em { color: var(--rp-faint); font-style: normal; font-family: var(--rp-mono); font-size: 11px; }
+.rp-ttime { font-size: 11px; color: var(--rp-faint); font-family: var(--rp-mono); white-space: nowrap; }
+.rp-tdot.pulse { animation: rp-pulse 1.3s infinite; }
+
+.rp-compare { margin-top: 12px; display: flex; flex-direction: column; gap: 4px; }
+.rp-compare-row {
+  display: flex; justify-content: space-between; align-items: center; gap: 8px;
+  padding: 8px 11px; border-radius: 8px; background: var(--rp-panel); font-size: 12.5px;
+  border-left: 3px solid var(--rp-faint);
+}
+.rp-compare-row.memory { border-left-color: var(--rp-blue); }
+.rp-tag { color: var(--rp-dim); }
+.rp-val { font-family: var(--rp-mono); font-size: 12.5px; font-weight: 600; }
+
+.rp-stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.rp-tile {
+  background: var(--rp-panel); border-radius: 12px; padding: 10px 12px;
+  border: 1px solid var(--rp-border); border-left: 3px solid var(--rp-faint);
+}
+.rp-tile.coral { border-left-color: var(--rp-coral); }
+.rp-tile.amber { border-left-color: var(--rp-amber); }
+.rp-tile.blue { border-left-color: var(--rp-blue); }
+.rp-tile.violet { border-left-color: var(--rp-violet); }
+.rp-tile-num { font-family: var(--rp-display); font-size: 21px; font-weight: 600; line-height: 1.05; }
+.rp-tile-lbl { font-size: 11px; color: var(--rp-faint); margin-top: 4px; line-height: 1.3; }
+.rp-recovery { display: flex; gap: 11px; flex-wrap: wrap; margin-top: 11px; font-family: var(--rp-mono); font-size: 11px; color: var(--rp-dim); }
+
+.rp-outcome-zone {
+  margin-top: auto; background: var(--rp-panel); border: 1px dashed var(--rp-border);
+  border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 3px;
+}
+.rp-outcome-zone strong { font-family: var(--rp-mono); font-size: 14px; font-weight: 600; }
+.rp-outcome-zone span { color: var(--rp-dim); font-size: 12px; }
+.rp-outcome-zone .muted { color: var(--rp-faint); font-size: 11.5px; }
+
+/* ------------------------------------------------------------------- main */
+/* CONTENT MEASURE. The main column used to stretch to whatever the viewport
+   gave it — 1530px at 1920 wide — while the prose inside it capped at a
+   readable 760px. That left ~780px of dead space to the right of every
+   paragraph, and pushed each table value ~1160px from the label it belongs to,
+   far enough that the eye cannot pair them.
+   Capping the column and centring it fixes both: the whitespace sits evenly on
+   both sides and reads as margin, and label/value land close enough to
+   associate. */
+/* Capped so the column does not sprawl on a wide screen, but wide enough that
+   the data tables still breathe. Prose inside keeps its own readable measure
+   and the leftover width is used, not left blank — see .rp-explain-grid. */
+.rp-main { padding: 16px 26px 10px; min-width: 0; max-width: 1320px; margin-inline: auto; width: 100%; }
+.rp-main-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin-bottom: 14px; flex-wrap: wrap; }
+.rp-main-head h3 { margin: 0; font-size: 16px; }
+.rp-main-head p { margin: 0; color: var(--rp-faint); font-size: 12.5px; font-family: var(--rp-mono); }
+
+/* STEPPER. Equal-width nodes with a connector line running behind the circles;
+   the segment BEHIND a completed node turns blue, so the line visibly advances
+   as the viewer steps forward. */
+.rp-stepper { display: flex; align-items: flex-start; margin-bottom: 18px; }
+.rp-node {
+  flex: 1; display: flex; flex-direction: column; align-items: center; position: relative;
+  background: none; border: none; padding: 0; cursor: pointer; color: inherit;
+}
+.rp-connector {
+  position: absolute; top: 15px; left: 50%; width: 100%; height: 2px;
+  background: var(--rp-border); z-index: 0; overflow: hidden;
+}
+.rp-connector::after {
+  content: ""; position: absolute; inset: 0; width: 100%; background: var(--rp-blue);
+  transform: scaleX(0); transform-origin: left center; transition: transform .5s cubic-bezier(.16,.8,.3,1);
+}
+.rp-node.done .rp-connector::after { transform: scaleX(1); }
+.rp-node:last-child .rp-connector { display: none; }
+.rp-circle {
+  width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--rp-border);
+  display: flex; align-items: center; justify-content: center; background: var(--rp-panel);
+  font-family: var(--rp-mono); font-size: 12.5px; color: var(--rp-faint);
+  z-index: 1; transition: border-color .2s ease, color .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.rp-node.current .rp-circle { border-color: var(--rp-blue); color: var(--rp-blue); box-shadow: 0 0 0 5px rgba(46,107,224,.12); }
+.rp-node.done .rp-circle { background: var(--rp-blue); border-color: var(--rp-blue); color: #fff; }
+.rp-node.unbacked .rp-circle { border-color: var(--rp-coral); color: var(--rp-coral); background: rgba(224,71,90,.08); }
+.rp-node-label {
+  font-family: var(--rp-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em;
+  color: var(--rp-faint); margin-top: 8px; transition: color .2s ease;
+}
+.rp-node.current .rp-node-label { color: var(--rp-blue); font-weight: 600; }
+.rp-node.done .rp-node-label { color: var(--rp-dim); }
+.rp-node.unbacked .rp-node-label { color: var(--rp-coral); }
+
+/* CARD TRANSITION. One enter phase only — no leave. A leave-then-enter pair
+   makes the viewer wait twice for one change, so the whole budget is spent on
+   the entrance instead.
+   Paced to be watchable rather than instant: the card eases in over ~450ms and
+   its blocks follow on an 80ms cadence, so a section visibly assembles
+   top-to-bottom and the eye can follow what arrived. Everything overlaps, so
+   the last block has landed by ~900ms. min-height stops the frame collapsing
+   between a short step and a tall one. */
+.rp-card {
+  background: var(--rp-panel); border: 1px solid var(--rp-border); border-radius: 16px;
+  padding: 18px 22px; box-shadow: 0 4px 20px rgba(18,21,28,.06); min-height: 360px;
+  display: flex; flex-direction: column;
+  animation: rp-card-in .45s cubic-bezier(.16,.8,.3,1) both;
+}
+@keyframes rp-card-in {
+  from { opacity: 0; transform: translate3d(34px, 0, 0) scale(.982); }
+  to   { opacity: 1; transform: none; }
+}
+.rp-card[data-dir="back"] { animation-name: rp-card-in-back; }
+@keyframes rp-card-in-back {
+  from { opacity: 0; transform: translate3d(-34px, 0, 0) scale(.982); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Staggered reveal of the section's own blocks. Capped at six children —
+   past that a further delay would outlast the viewer's attention. */
+.rp-card-body > * { animation: rp-stagger .5s cubic-bezier(.16,.8,.3,1) both; }
+.rp-card-body > *:nth-child(1) { animation-delay: .10s; }
+.rp-card-body > *:nth-child(2) { animation-delay: .18s; }
+.rp-card-body > *:nth-child(3) { animation-delay: .26s; }
+.rp-card-body > *:nth-child(4) { animation-delay: .34s; }
+.rp-card-body > *:nth-child(5) { animation-delay: .42s; }
+.rp-card-body > *:nth-child(n+6) { animation-delay: .48s; }
+@keyframes rp-stagger {
+  from { opacity: 0; transform: translate3d(0, 16px, 0); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The stepper circle the viewer just landed on gets one pop, so the eye is
+   pulled to where it is in the sequence. */
+.rp-node.current .rp-circle { animation: rp-pop .5s cubic-bezier(.34,1.4,.64,1) both; }
+@keyframes rp-pop {
+  0% { transform: scale(.8); }
+  55% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rp-card, .rp-card[data-dir="back"], .rp-card-body > *,
+  .rp-node.current .rp-circle, .rp-io-glyph { animation: none; }
+  .rp-connector::after { transition: none; }
+}
+.rp-card-body { flex: 1; }
+
+/* Eyebrow and title share a baseline row — the step number is a label on the
+   title, not a line of its own. */
+.rp-card-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 6px; flex-wrap: wrap; }
+.rp-card-eyebrow {
+  font-family: var(--rp-mono); font-size: 10.5px; letter-spacing: .1em; color: var(--rp-faint);
+  text-transform: uppercase; white-space: nowrap; padding: 3px 8px; border-radius: 5px;
+  background: var(--rp-panel-alt); flex-shrink: 0;
+}
+.rp-card-title { font-family: var(--rp-display); font-size: 23px; font-weight: 600; letter-spacing: -.015em; margin: 0; }
+.rp-card-sub { color: var(--rp-dim); font-size: 13.5px; line-height: 1.45; margin: 0 0 14px; }
+/* The measure is capped so long lines stay readable, but 86ch stopped well short
+   of the full-width content below it (the signal accordion, the data tables), and
+   a paragraph ending two-thirds across a card reads as broken alignment rather
+   than as a deliberate measure. 108ch is still inside a comfortable range for
+   14px UI text and closes most of that gap.
+
+   Inside .has-aside the prose sits in a narrower grid column, so the column wins
+   and this cap never applies there. */
+.rp-prose { font-size: 14px; line-height: 1.55; color: var(--rp-dim); margin: 0 0 12px; max-width: 108ch; }
+.rp-prose b { color: var(--rp-text); }
+
+.rp-nav { display: flex; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rp-border-soft); }
+.rp-nav button {
+  font-family: var(--rp-mono); font-size: 12px; padding: 9px 18px; border-radius: 9px;
+  border: 1px solid var(--rp-border); background: var(--rp-panel-alt); color: var(--rp-text);
+  cursor: pointer; transition: background .15s ease, border-color .15s ease;
+}
+.rp-nav button:hover:not(:disabled) { border-color: var(--rp-faint); }
+.rp-nav button.primary { background: var(--rp-blue); border-color: var(--rp-blue); color: #fff; font-weight: 600; }
+.rp-nav button:disabled { opacity: .38; cursor: not-allowed; }
+
+/* --------------------------------------------------------- generic blocks */
+.rp-kv-card { border: 1px solid var(--rp-border); border-radius: 12px; padding: 11px 16px; margin-bottom: 10px; background: var(--rp-panel-alt); }
+.rp-kv-card h4 { margin: 0 0 10px; font-size: 11px; font-family: var(--rp-mono); color: var(--rp-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+.rp-kv-row { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; border-top: 1px solid var(--rp-border-soft); font-size: 13px; }
+.rp-kv-row:first-of-type { border-top: none; }
+.rp-k { color: var(--rp-dim); font-size: 13px; display: flex; align-items: center; gap: 7px; }
+.rp-v { font-family: var(--rp-mono); font-size: 13px; text-align: right; word-break: break-word; font-weight: 500; }
+
+.rp-xrow { border-top: 1px solid var(--rp-border-soft); }
+.rp-xrow:first-child { border-top: none; }
+.rp-xrow.open { background: rgba(46,107,224,.05); border-radius: 8px; }
+.rp-xrow-main {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 9px 8px; background: none; border: none; cursor: pointer; text-align: left; color: inherit;
+}
+.rp-xrow-main:hover .rp-k { color: var(--rp-text); }
+.rp-vgroup { display: flex; align-items: center; gap: 10px; }
+/* The affordance. At 11px this read as punctuation and people did not know the
+   row opened, so it is now a bordered target that rotates when expanded. */
+.rp-chev {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
+  border: 1px solid var(--rp-border); background: var(--rp-panel);
+  color: var(--rp-dim); font-size: 13px; line-height: 1;
+  transition: transform .22s ease, color .22s ease, background .22s ease, border-color .22s ease;
+}
+.rp-xrow-main:hover .rp-chev { border-color: var(--rp-blue); color: var(--rp-blue); }
+.rp-xrow.open .rp-chev {
+  transform: rotate(180deg); background: var(--rp-blue); border-color: var(--rp-blue); color: #fff;
+}
+.rp-xrow-main { cursor: pointer; }
+.rp-xrow-main:hover { background: rgba(46,107,224,.035); border-radius: 8px; }
+.rp-xrow.open .rp-xpanel {
+  padding: 2px 10px 14px 24px; font-size: 13px; line-height: 1.6; color: var(--rp-dim);
+  border-left: 2px solid var(--rp-border); margin: 0 4px 10px 12px;
+  animation: rp-panel .16s ease both;
+}
+@keyframes rp-panel { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.rp-xpanel p { margin: 0 0 9px; }
+.rp-xpanel p:last-child { margin-bottom: 0; }
+.rp-xpanel b { color: var(--rp-text); font-weight: 600; }
+.rp-xpanel code, .rp-v code { font-size: 12px; background: var(--rp-panel-alt); padding: 1px 5px; border-radius: 4px; }
+.rp-pre { font-family: var(--rp-mono); font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; margin: 0; color: var(--rp-text); }
+
+.rp-info {
+  border-left: 3px solid var(--rp-blue); background: rgba(46,107,224,.06);
+  padding: 13px 15px; border-radius: 0 9px 9px 0; font-size: 13px; line-height: 1.6; color: var(--rp-dim);
+}
+.rp-info b { color: var(--rp-text); }
+.rp-warn { color: var(--rp-coral); }
+
+/* MISSING DATA — deliberately loud. A gap must read as a defect, never as a
+   tasteful blank, because an invented value would look identical to a real one. */
+.rp-missing {
+  color: var(--rp-coral); font-family: var(--rp-mono); font-size: 12px;
+  background: rgba(224,71,90,.08); padding: 2px 7px; border-radius: 5px;
+}
+.rp-missing-block {
+  border: 1px dashed var(--rp-coral); background: rgba(224,71,90,.05); border-radius: 10px;
+  padding: 16px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--rp-dim);
+}
+.rp-missing-block strong { color: var(--rp-coral); font-family: var(--rp-body); }
+
+/* ---------------------------------------------------------------- signals */
+.rp-signals { border: 1px solid var(--rp-border); border-radius: 12px; padding: 4px 16px; background: var(--rp-panel-alt); }
+.rp-sigdot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.rp-sigdot.fired { background: var(--rp-amber); box-shadow: 0 0 0 3px rgba(185,121,28,.16); }
+.rp-sigdot.off { background: var(--rp-border); }
+.rp-signals .rp-k { font-family: var(--rp-mono); font-size: 13px; color: var(--rp-text); }
+.rp-xrow.fired .rp-k { color: var(--rp-amber); font-weight: 600; }
+.rp-kind {
+  font-family: var(--rp-mono); font-size: 9.5px; text-transform: uppercase; letter-spacing: .06em;
+  padding: 2px 7px; border-radius: 5px; background: var(--rp-panel-raised); color: var(--rp-faint);
+}
+.rp-kind.brake { color: var(--rp-coral); }
+.rp-kind.accelerator { color: var(--rp-teal); }
+.rp-kind.router { color: var(--rp-violet); }
+
+/* ------------------------------------------------------------ decision io */
+.rp-io-row { display: grid; grid-template-columns: 1fr 104px 1fr; align-items: stretch; margin-bottom: 16px; }
+@media (max-width: 900px) { .rp-io-row { grid-template-columns: 1fr; gap: 12px; } }
+.rp-io-col { border: 1px solid var(--rp-border); border-radius: 12px; overflow: hidden; background: var(--rp-panel-alt); min-width: 0; }
+.rp-io-col.input { border-top: 3px solid var(--rp-violet); }
+.rp-io-col.output { border-top: 3px solid var(--rp-teal); }
+.rp-io-header { padding: 12px 16px; border-bottom: 1px solid var(--rp-border); display: flex; flex-direction: column; gap: 2px; }
+.rp-io-title { font-family: var(--rp-display); font-size: 14.5px; font-weight: 600; }
+.rp-io-sub { font-size: 11px; color: var(--rp-faint); font-family: var(--rp-mono); }
+.rp-io-body { padding: 4px 16px 12px; }
+.rp-io-arrow { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: var(--rp-faint); padding: 0 8px; }
+.rp-io-glyph {
+  font-size: 26px; line-height: 1; color: var(--rp-blue);
+  animation: rp-arrow 2.4s ease-in-out infinite;
+}
+@keyframes rp-arrow { 0%,100% { transform: translateX(-3px); opacity: .55; } 50% { transform: translateX(3px); opacity: 1; } }
+.rp-io-cap { font-family: var(--rp-mono); font-size: 10.5px; text-align: center; color: var(--rp-dim); }
+.rp-io-ms { font-family: var(--rp-mono); font-size: 10px; color: var(--rp-faint); }
+.rp-arm-out + .rp-arm-out { border-top: 1px solid var(--rp-border); margin-top: 6px; }
+.rp-arm-out h5 { margin: 12px 0 2px; font-size: 10.5px; font-family: var(--rp-mono); color: var(--rp-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+
+/* -------------------------------------------------------------- guardrail */
+.rp-override-row { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 12px; align-items: stretch; margin-bottom: 12px; }
+@media (max-width: 900px) { .rp-override-row { grid-template-columns: 1fr; } .rp-slot-arrow { display: none; } }
+.rp-slot { border: 1px solid var(--rp-border); border-radius: 12px; padding: 12px 13px; background: var(--rp-panel-alt); }
+.rp-slot h5 { margin: 0 0 8px; font-size: 10.5px; font-family: var(--rp-mono); color: var(--rp-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+.rp-slot p { margin: 0; font-size: 13.5px; font-family: var(--rp-mono); line-height: 1.5; }
+.rp-slot.proposed { border-top: 3px solid var(--rp-faint); }
+.rp-slot.check { border-color: rgba(185,121,28,.35); background: rgba(185,121,28,.06); border-top: 3px solid var(--rp-amber); }
+.rp-slot.final { border-top: 3px solid var(--rp-teal); }
+.rp-slot.final.changed { border-top-color: var(--rp-coral); }
+.rp-slot.final p { font-weight: 600; }
+.rp-slot-arrow { display: flex; align-items: center; color: var(--rp-faint); font-size: 17px; }
+.rp-badge { display: inline-block; margin-top: 10px; font-family: var(--rp-mono); font-size: 10.5px; padding: 4px 9px; border-radius: 100px; }
+.rp-badge.clean { background: rgba(14,154,112,.12); color: var(--rp-teal); }
+.rp-badge.changed { background: rgba(224,71,90,.12); color: var(--rp-coral); }
+
+.rp-cap-compare { border: 1px solid var(--rp-border); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
+.rp-cap-compare h4 { margin: 0 0 10px; font-size: 11px; font-family: var(--rp-mono); color: var(--rp-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+.rp-cap-bars { display: flex; flex-direction: column; gap: 9px; margin-bottom: 10px; }
+.rp-capbar { display: grid; grid-template-columns: 80px 1fr 140px; gap: 12px; align-items: center; font-size: 13px; }
+.rp-capbar-label { color: var(--rp-dim); }
+.rp-capbar-track { background: var(--rp-panel-raised); border-radius: 100px; height: 11px; overflow: hidden; }
+.rp-capbar-fill { display: block; height: 100%; border-radius: 100px; transition: width .4s ease; }
+.rp-capbar-fill.baseline { background: var(--rp-faint); }
+.rp-capbar-fill.memory { background: var(--rp-blue); }
+.rp-capbar-val { font-family: var(--rp-mono); font-size: 12.5px; text-align: right; font-weight: 500; }
+
+/* -------------------------------------------------------------- execution */
+.rp-final-compare { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: center; margin-bottom: 18px; }
+@media (max-width: 760px) { .rp-final-compare { grid-template-columns: 1fr; } }
+.rp-final-col { border: 1px solid var(--rp-border); border-radius: 12px; padding: 14px 15px; background: var(--rp-panel-alt); }
+.rp-final-col h5 { margin: 0 0 6px; font-size: 10.5px; font-family: var(--rp-mono); color: var(--rp-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+.rp-final-col p { margin: 0; font-family: var(--rp-mono); font-size: 13.5px; font-weight: 500; }
+.rp-final-verdict { font-family: var(--rp-mono); font-size: 11.5px; padding: 9px 14px; border-radius: 100px; white-space: nowrap; }
+.rp-final-verdict.same { background: var(--rp-panel-raised); color: var(--rp-dim); }
+.rp-final-verdict.diverged { background: rgba(224,71,90,.12); color: var(--rp-coral); }
+
+.rp-paylink-card { border: 1px solid var(--rp-border); border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; background: var(--rp-panel-alt); }
+.rp-paylink-amount { font-family: var(--rp-display); font-size: 30px; font-weight: 600; display: flex; align-items: baseline; gap: 10px; letter-spacing: -.02em; }
+.rp-paylink-orig { font-size: 16px; color: var(--rp-faint); text-decoration: line-through; font-weight: 400; }
+.rp-paylink-hint { font-size: 12.5px; color: var(--rp-faint); margin-top: 6px; }
+.rp-paylink-actions { margin-top: 16px; }
+.rp-paylink-actions .payment-link-trigger { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.rp-paylink-actions .payment-link-trigger button {
+  font-family: var(--rp-mono); font-size: 13px; font-weight: 600; padding: 12px 22px; border-radius: 9px;
+  border: none; background: var(--rp-blue); color: #fff; cursor: pointer; transition: filter .15s ease;
+}
+.rp-paylink-actions .payment-link-trigger button:hover:not(:disabled) { filter: brightness(1.08); }
+.rp-paylink-actions .payment-link-trigger button:disabled { opacity: .45; cursor: not-allowed; }
+.rp-paylink-actions .payment-link-trigger .muted { font-size: 12px; color: var(--rp-faint); font-family: var(--rp-mono); }
+/* Sits on the same flex row as the amount and event id rather than wrapping to
+   its own line — it is a continuation of that string, not a separate block. */
+.rp-paylink-actions .payment-link-result {
+  font-family: var(--rp-mono); font-size: 12px; color: var(--rp-faint);
+  margin-left: -6px; word-break: break-all;
+}
+.rp-paylink-actions .payment-link-result a { color: var(--rp-blue); }
+.rp-paylink-actions .payment-link-error { margin-top: 12px; color: var(--rp-coral); font-size: 13px; width: 100%; }
+
+.rp-shell-error { padding: 48px 32px; }
+.rp-shell-error h2 { margin: 0 0 10px; font-size: 21px; }
+
+
+/* Collapsed last-attempt row: the error code is the load-bearing half (it is
+   what the payment-decline fields carry), so it is the half that gets colour. */
+.rp-err { color: var(--rp-coral); }
+.rp-kv-note {
+  font-size: 12px; color: var(--rp-faint); line-height: 1.45; padding: 4px 0 2px;
+  text-align: right; font-style: italic;
+}
+.rp-compare-row.blocked { border-left-color: var(--rp-coral); }
+.rp-compare-row.blocked .rp-val { color: var(--rp-coral); }
+.rp-compare-delta {
+  font-family: var(--rp-mono); font-size: 11px; color: var(--rp-blue);
+  text-align: right; padding: 2px 4px 0;
+}
+
+
+/* Names the point-agent that owns this decision. */
+.rp-agent-badge {
+  font-family: var(--rp-mono); font-size: 10.5px; font-weight: 500; letter-spacing: .04em;
+  text-transform: uppercase; padding: 4px 9px; border-radius: 100px; margin-left: 10px;
+  background: rgba(46,107,224,.1); color: var(--rp-blue); vertical-align: middle;
+}
+
+/* The readable twin of a stored value — paise as rupees, an ISO stamp as a
+   date. Always trails the raw value, never replaces it. */
+.rp-gloss { color: var(--rp-faint); font-size: 11px; margin-left: 8px; }
+
+.rp-recovery-label,
+.rp-outcome-label {
+  display: block; width: 100%; font-family: var(--rp-mono); font-size: 9.5px;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--rp-faint);
+}
+.rp-recovery-label { margin-bottom: 2px; }
+.rp-outcome-label { margin-bottom: 4px; }
+
+
+/* Names the kind of event, and where the row lives. Replaces a small grey
+   table name that was not communicating either. */
+.rp-source { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--rp-border); }
+.rp-source-kind {
+  display: inline-block; font-family: var(--rp-display); font-size: 15px; font-weight: 600;
+  margin-bottom: 3px;
+}
+.rp-source-table { display: block; font-size: 11.5px; color: var(--rp-faint); line-height: 1.5; }
+.rp-source-table code { font-size: 11px; color: var(--rp-dim); }
+
+
+/* WHERE THE EMPTY RIGHT-HAND SPACE WENT. Prose wants a readable measure and the
+   card is wider than that, which left a large blank column beside every
+   paragraph. Rather than shrink the card (which pushed lines out to ~120
+   characters) or leave the gap, a step may supply an ASIDE that occupies it.
+
+   The split is at the CARD BODY, above the step header, so the aside's heading
+   starts level with the step title. Putting it inside the body and nudging it
+   up with a negative margin would depend on the height of that step's title and
+   subtitle, which differ per step. */
+.rp-card-body.has-aside {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 340px);
+  gap: 0 26px;
+  align-items: start;
+}
+/* display:contents dissolves the wrapper so the step's own blocks become grid
+   items. Without it the aside would sit beside the ENTIRE step — including the
+   wide data table below it, which would then be squeezed into the narrow
+   column with the panel's leftover space empty to its right. */
+.rp-card-body.has-aside .rp-card-main { display: contents; }
+.rp-card-body.has-aside .rp-card-head,
+.rp-card-body.has-aside .rp-card-sub,
+.rp-card-body.has-aside .rp-intro { grid-column: 1; }
+.rp-card-body.has-aside .rp-sources { grid-column: 2; grid-row: 1 / 4; }
+/* Everything after the intro spans the full width — the aside has ended. */
+.rp-card-body.has-aside .rp-kv-card { grid-column: 1 / -1; }
+/* Stacked. The aside is the LAST dom child, so it would fall below the table.
+   Flex ordering handles this without depending on row numbers: with every other
+   item at the default order, DOM order gives head, sub, intro, aside, and
+   pushing only the table to order 1 puts it last. Explicit grid rows were
+   brittle here — the row heights and the aside's own height disagreed by a few
+   pixels and the boxes overlapped. */
+@media (max-width: 1080px) {
+  .rp-card-body.has-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .rp-card-body.has-aside .rp-sources { grid-column: auto; grid-row: auto; margin: 0; }
+  .rp-card-body.has-aside .rp-kv-card { grid-column: auto; grid-row: auto; order: 1; margin-bottom: 0; }
+  .rp-card-body.has-aside .rp-card-head,
+  .rp-card-body.has-aside .rp-card-sub { margin-bottom: 0; }
+}
+.rp-card-main { min-width: 0; }
+.rp-intro .rp-prose:last-child { margin-bottom: 12px; }
+
+.rp-sources {
+  border: 1px solid var(--rp-border); border-radius: 12px;
+  background: var(--rp-panel-alt);
+  /* NO NEGATIVE MARGIN. Aligning the heading with the step title used to be
+     done with margin-top: -26px, which lifted the box out of the card's 18px
+     top padding and left it protruding above the card's own first element —
+     visually colliding with the row above. A negative offset here can only ever
+     escape, because nothing clips it: the card sets no overflow and the panel
+     carries its own background and border.
+     The heading is raised INSIDE the box instead, via a smaller top padding.
+     The box stays exactly where the grid puts it, so it is contained at every
+     viewport by construction rather than by a value that happened to fit one. */
+  padding: 6px 15px 13px;
+}
+.rp-sources h5 {
+  margin: 0 0 10px; font-family: var(--rp-mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--rp-faint);
+}
+.rp-source-item { display: flex; align-items: baseline; gap: 8px; padding: 5px 0; font-size: 12px; }
+.rp-source-item + .rp-source-item { border-top: 1px solid var(--rp-border-soft); }
+.rp-source-item code { font-family: var(--rp-mono); font-size: 11px; color: var(--rp-text); }
+.rp-source-item span { color: var(--rp-faint); margin-left: auto; white-space: nowrap; }
+.rp-sources-foot {
+  margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--rp-border);
+  font-size: 11.5px; color: var(--rp-faint); line-height: 1.5;
+}
+
+
+/* LEADER LINES. In a card this wide a value sits ~900px from the label it
+   belongs to, which is past the distance an eye can pair across empty space.
+   Narrowing the tables would just move the blank column somewhere else, so a
+   faint dotted rule connects the two the way a table of contents does. */
+.rp-kv-row .rp-k,
+.rp-xrow-main .rp-k { flex: 1; min-width: 0; }
+.rp-kv-row .rp-k::after,
+.rp-xrow-main .rp-k::after {
+  content: ""; flex: 1; min-width: 18px; align-self: flex-end;
+  margin: 0 4px 5px 2px;
+  border-bottom: 1px dotted color-mix(in srgb, var(--rp-faint) 42%, transparent);
+}
+/* The source panel's rows are short enough to pair without help. */
+.rp-source-item .rp-k::after { display: none; }

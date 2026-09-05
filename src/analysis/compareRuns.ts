@@ -285,7 +285,7 @@ function main(): void {
     // never needs to be read next to the source to understand what it means.
     methodology: {
       scope:
-        "Two outcome models, by agent. cart_abandonment / subscription_recovery decisions solicit a NEW payment, so they resolve through the recovery model: paid/not-paid (probabilistic, per scenario), and if paid, whether it later became a dispute. dispute_responder decisions manage a dispute on a payment that already happened outside this batch, so they resolve through a separate, deterministic dispute-response model instead: conceding (accept_dispute) costs the full disputed amount plus the handling fee, contesting is treated as retaining the revenue (no contest-loss rate was given as a business assumption, so none was invented). The dispute-response model is ALSO scoped to only a customer's 3rd-and-later dispute event — the same MAX_DISCOUNT_ATTEMPTS_PER_AGENT=3 threshold policy.ts already uses for gamingSuspected on this agent — so it measures the repeat-offender mechanism the memory system targets, not ordinary one-off dispute judgment calls (which are LLM-reasoning noise unrelated to cross-agent memory and would otherwise swamp the comparison).",
+        "Two outcome models, by agent. cart_abandonment / subscription_recovery decisions solicit a NEW payment, so they resolve through the recovery model: paid/not-paid (probabilistic, per scenario), and if paid, whether it later became a dispute. dispute_responder decisions manage a dispute on a payment that already happened outside this batch, so they resolve through a separate, deterministic dispute-response model instead: conceding (accept_dispute) costs the full disputed amount plus the handling fee, contesting is treated as retaining the revenue (no contest-loss rate was given as a business assumption, so none was invented). The dispute-response model is ALSO scoped to only a customer's 3rd-and-later dispute event — the same REPEAT_RECOVERY_THRESHOLD_PER_AGENT=3 threshold policy.ts already uses for repeatRecoveryWithThisAgent on this agent — so it measures the repeat-offender mechanism the memory system targets, not ordinary one-off dispute judgment calls (which are LLM-reasoning noise unrelated to cross-agent memory and would otherwise swamp the comparison).",
       rng: "The recovery model draws from a PRNG seeded deterministically from event_id alone, in a fixed order (paid roll, then dispute roll), computed once per event and reused for both arms. Both arms see identical dice — only the probability compared against (based on that arm's own decision) differs. This is the standard common-random-numbers technique for a paired comparison: it removes luck as a source of measured lift. The dispute-response model is deterministic by action and uses no randomness at all.",
       escalation:
         "Escalation is a REAL, PRICED outcome, not an exclusion — every decision is scored, in both arms, over the identical set of events; nothing is dropped. Escalating hands the case to a human (via the merchant's dashboard) instead of auto-acting, so it costs staff time rather than margin: a human is modeled as at least as effective as an automated discount (an escalated cart/subscription decision converts at that scenario's pays-WITH-discount probability but spends no discount; an escalated dispute decision avoids the concede cost entirely, like a successful contest) and is charged a flat handling cost regardless of outcome. Two earlier versions of this model treated escalation as producing 'no outcome' (excluded per-arm, then excluded in a paired fashion) — both were workarounds for not pricing the thing memory actually does more of. Per-arm exclusion let baseline bank revenue on events where memory's matching decision was silently dropped; paired exclusion fixed that asymmetry but, combined with the dispute model's mandatory-escalate policy on gaming_suspected, ended up excluding 100% of repeat_offender_dispute's scoreable events. Pricing escalation directly removes the need for any exclusion.",
@@ -313,16 +313,35 @@ function main(): void {
 function printCrossDomainSummary(result: CrossDomainSuppressionResult): void {
   const { adverse, merchant_conceded: merchantConceded, summary } = result;
   const rate = (n: number | null): string => (n == null ? "n/a" : `${n}%`);
-  console.log("\n=== Cross-domain suppression, split by dispute outcome ===");
+  // SPEND PER COHORT LEADS, because that is the question the design asks.
+  // The suppression counts stay underneath it: they are only meaningful when
+  // the baseline actually spent on the cohort, and they read as failure when it
+  // did not.
+  const rupees = (paise: number): string => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+  const line = (label: string, c: typeof adverse, expectation: string): void =>
+    console.log(
+      `  ${label.padEnd(34)} baseline ${String(c.baselineDiscountCount).padStart(3)} discount(s) ` +
+        `${rupees(c.baselineSpendPaise).padStart(9)}  |  memory ${String(c.memoryDiscountCount).padStart(3)} ` +
+        `${rupees(c.memorySpendPaise).padStart(9)}   ${expectation}`,
+    );
+
+  console.log("\n=== Cross-domain risk: where each arm put its margin ===");
+  line("adverse (rzp won/under_review)", adverse, "memory SHOULD spend less");
+  line("merchant_conceded (rzp lost)", merchantConceded, "memory should NOT hold back");
   console.log(
-    `adverse (rzp won/under_review):  suppressed ${adverse.suppressed}/${adverse.customersChecked} (${rate(
-      summary.adverseSuppressionRatePct,
-    )}) — suppression is CORRECT here`,
+    "\n  The second row is the falsifiable half: a system reacting to the mere EXISTENCE of a\n" +
+      "  dispute would pull back on both. Reading the OUTCOME means holding back only where the\n" +
+      "  ruling went against the customer, and spending freely where the merchant conceded.",
+  );
+
+  console.log(
+    `\n  suppression counts (memory undercut baseline on the same event): ` +
+      `adverse ${adverse.suppressed}/${adverse.customersChecked}, ` +
+      `merchant_conceded ${merchantConceded.suppressed}/${merchantConceded.customersChecked}`,
   );
   console.log(
-    `merchant_conceded (rzp lost):    suppressed ${merchantConceded.suppressed}/${merchantConceded.customersChecked} (${rate(
-      summary.merchantConcededSuppressionRatePct,
-    )}) — suppression is a FALSE POSITIVE here`,
+    "  These only register when the BASELINE spent first, so a low number can mean either arm\n" +
+      "  spent nothing rather than that memory failed to act. Read the spend rows above them.",
   );
   console.log(
     `of ${summary.totalSuppressions} suppressions overall, ${summary.correctSuppressions} landed on the right cohort (${rate(
@@ -399,6 +418,22 @@ interface CohortResult {
   // memory discount strictly less than baseline on the later cart
   suppressed: number;
   unchanged: number;
+  // WHAT EACH ARM ACTUALLY SPENT ON THIS COHORT.
+  //
+  // `suppressed` alone cannot see the result. It only counts events where the
+  // BASELINE discounted and memory then did not — so when the baseline spends
+  // nothing on a cohort, the metric reports 0 suppressions and looks like a
+  // failure, when in fact neither arm spent and there was nothing to suppress.
+  // Measured on the 2026-09-05 run that is exactly what happened: the `won`
+  // cohort drew ₹0 from both arms and the headline read 1/80.
+  //
+  // Spend per cohort is the question the design actually asks — not "did memory
+  // undercut the baseline on this event", but "where did each arm put its
+  // margin". That is what makes the three planted outcomes falsifiable.
+  baselineDiscountCount: number;
+  memoryDiscountCount: number;
+  baselineSpendPaise: number;
+  memorySpendPaise: number;
   details: SuppressionDetail[];
 }
 
@@ -476,7 +511,20 @@ function checkCrossDomainSuppression(
 
   const toCohortResult = (details: SuppressionDetail[]): CohortResult => {
     const suppressed = details.filter((d) => d.suppressed).length;
-    return { customersChecked: details.length, suppressed, unchanged: details.length - suppressed, details };
+    const sum = (pick: (d: SuppressionDetail) => number | null): number =>
+      details.reduce((t, d) => t + (pick(d) ?? 0), 0);
+    const count = (pick: (d: SuppressionDetail) => number | null): number =>
+      details.filter((d) => (pick(d) ?? 0) > 0).length;
+    return {
+      customersChecked: details.length,
+      suppressed,
+      unchanged: details.length - suppressed,
+      baselineDiscountCount: count((d) => d.baselineDiscount),
+      memoryDiscountCount: count((d) => d.memoryDiscount),
+      baselineSpendPaise: sum((d) => d.baselineDiscount),
+      memorySpendPaise: sum((d) => d.memoryDiscount),
+      details,
+    };
   };
 
   const adverse = toCohortResult(byCohort.adverse);

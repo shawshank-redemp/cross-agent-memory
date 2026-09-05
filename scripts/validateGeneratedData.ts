@@ -36,8 +36,8 @@ import type { TriggeringEventFacts } from "../src/agents/signals/types.js";
 import { SCENARIO_WEIGHTS, SIM_NOW_ISO, CHURN_SAFE_GAP_DAYS } from "../src/data/generator.js";
 import {
   CHURN_LOOKBACK_DAYS,
-  MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
-  MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS,
+  REPEAT_RECOVERY_THRESHOLD_PER_AGENT,
+  REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS,
   MIN_SUCCESSFUL_PAYMENTS,
 } from "../src/agents/signals/thresholds.js";
 
@@ -210,20 +210,20 @@ assertReach(
 );
 
 assertReach(
-  `cross_agent_gaming reaches the cross-agent total (>= ${MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS}) ` +
-    `with no single agent at ${MAX_DISCOUNT_ATTEMPTS_PER_AGENT}`,
+  `cross_agent_gaming reaches the cross-agent total (>= ${REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS}) ` +
+    `with no single agent at ${REPEAT_RECOVERY_THRESHOLD_PER_AGENT}`,
   idsIn("cross_agent_gaming"),
   (a) =>
-    totalRecovery(a) >= MAX_TOTAL_RECOVERY_EVENTS_ACROSS_AGENTS &&
-    a.cart < MAX_DISCOUNT_ATTEMPTS_PER_AGENT &&
-    a.subscription < MAX_DISCOUNT_ATTEMPTS_PER_AGENT &&
-    a.dispute < MAX_DISCOUNT_ATTEMPTS_PER_AGENT,
+    totalRecovery(a) >= REPEAT_RECOVERY_THRESHOLD_ACROSS_AGENTS &&
+    a.cart < REPEAT_RECOVERY_THRESHOLD_PER_AGENT &&
+    a.subscription < REPEAT_RECOVERY_THRESHOLD_PER_AGENT &&
+    a.dispute < REPEAT_RECOVERY_THRESHOLD_PER_AGENT,
 );
 
 assertReach(
   "conflicted_customer satisfies the gaming brake and the proven-payer accelerator at once",
   idsIn("conflicted_customer"),
-  (a) => a.cart >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT && a.successfulPayments >= MIN_SUCCESSFUL_PAYMENTS,
+  (a) => a.cart >= REPEAT_RECOVERY_THRESHOLD_PER_AGENT && a.successfulPayments >= MIN_SUCCESSFUL_PAYMENTS,
 );
 
 // The generator duplicates CHURN_LOOKBACK_DAYS rather than importing it (that
@@ -266,24 +266,49 @@ assert(`every scenario is within ${DISTRIBUTION_TOLERANCE_PP}pp of its configure
 // adverse history, so "no memory signal fires here" is the one property worth
 // checking against production code rather than a reimplementation.
 //
-// paymentFriction is EXCLUDED deliberately. It is the registry's one router and
-// it reads the TRIGGERING EVENT, not memory — it fires whenever a cart was
-// `attempted` rather than `created`, which is a fact about this event that both
-// arms see. It carries no effects, so it cannot move a cap or block a spend and
-// cannot make the arms diverge. Asserting it false would mean banning attempted
-// carts from the control, which would distort the cohort to satisfy a check.
+// EVERY registered signal is now checked. This used to carve out paymentFriction,
+// which read the triggering event rather than memory and so fired on the control
+// cohort legitimately — an exclusion that existed only because a non-memory
+// signal was sitting in a memory registry. That signal is gone, so the assertion
+// is now total: in the control cohort, nothing fires, with no exceptions to
+// explain away.
+// SIGNALS DERIVED FROM THE GENERATED BATCH. These are what this script can
+// assert about, because they read only the event tables it produced.
 const MEMORY_DERIVED_DEFAULTS: Record<string, unknown> = {
-  disputeCautionWarranted: false,
   disputeCautionLevel: "none",
-  discountAttemptsForAgent: 0,
-  stoppingRuleHit: false,
-  gamingSuspected: false,
-  crossAgentGamingSuspected: false,
-  compositeChurnSignal: false,
+  repeatRecoveryWithThisAgent: false,
+  repeatRecoveryAcrossAgents: false,
+  recentMultiDomainTrouble: false,
   provenPayer: false,
 };
 
+// SIGNALS DERIVED FROM RUN OUTPUT — discounts granted and their outcomes, which
+// only exist once agents have decided. They are asserted only against a database
+// with no decisions in it.
+//
+// Including them unconditionally passed for as long as no run had ever granted a
+// discount, and started failing the moment one did: the 2026-09-05 batch gave
+// real discounts to ten control customers, and the check reported them as
+// violations. That was the check misreading its own scope, not a defect in the
+// batch. A control customer has no adverse HISTORY, which is what this script
+// verifies; what an agent later chose to spend on them is a different question
+// and belongs to the comparison, not to batch hygiene.
+const RUN_DERIVED_DEFAULTS: Record<string, unknown> = {
+  discountsGrantedByThisAgent: 0,
+  discountLimitReached: false,
+  crossAgentSpendLimitReached: false,
+  pastDiscountsIneffective: false,
+};
+
+// Whether this database already holds decisions. On a fresh load it does not,
+// and the run-derived signals can be asserted too.
+const decisionsPresent =
+  (openDb().prepare("SELECT COUNT(*) AS n FROM discount_usage").get() as { n: number }).n > 0;
+
 console.log("\nControl-cohort silence (real computeMemorySignals)");
+if (decisionsPresent) {
+  console.log("        (this db holds decisions from a run — run-derived signals are not asserted)");
+}
 
 const normalIds = idsIn("normal");
 const db = openDb();
@@ -307,7 +332,6 @@ for (const x of subs) subByCustomer.set(x.customer_id, [...(subByCustomer.get(x.
 
 const noisy: string[] = [];
 let evaluated = 0;
-let paymentFrictionCount = 0;
 const firedTally: Record<string, number> = {};
 
 for (const id of normalIds) {
@@ -335,9 +359,11 @@ for (const id of normalIds) {
 
   const profile = computeMemoryProfile(db, id, "memory", facts.timestamp);
   const signals = computeMemorySignals(profile, facts) as unknown as Record<string, unknown>;
-  if (signals.paymentFriction === true) paymentFrictionCount += 1;
 
-  const offending = Object.entries(MEMORY_DERIVED_DEFAULTS).filter(([k, def]) => signals[k] !== def);
+  const applicable = decisionsPresent
+    ? MEMORY_DERIVED_DEFAULTS
+    : { ...MEMORY_DERIVED_DEFAULTS, ...RUN_DERIVED_DEFAULTS };
+  const offending = Object.entries(applicable).filter(([k, def]) => signals[k] !== def);
   if (offending.length > 0) {
     for (const [k, def] of offending) {
       firedTally[k] = (firedTally[k] ?? 0) + 1;
@@ -352,10 +378,6 @@ const silentRate = evaluated === 0 ? 0 : ((evaluated - noisy.length) / evaluated
 console.log(
   `        ${evaluated} of ${normalIds.length} normal customers evaluated at their triggering event; ` +
     `${evaluated - noisy.length} silent (${silentRate.toFixed(1)}%)`,
-);
-console.log(
-  `        paymentFriction (router, reads the event not memory, no effects): ` +
-    `${paymentFrictionCount}/${evaluated} — expected, not a failure`,
 );
 if (Object.keys(firedTally).length > 0) {
   console.log(`        memory-derived signals that fired: ${JSON.stringify(firedTally)}`);

@@ -33,7 +33,7 @@
 // prompt declarative is what makes that agreement measurable.
 import type { AgentType, CustomerMemoryProfile } from "../../types/index.js";
 import { SIGNAL_DEFINITIONS } from "./definitions.js";
-import { DEFAULT_DISCOUNT_CAP_PERCENT } from "./thresholds.js";
+import { DEFAULT_DISCOUNT_CAP_PERCENT, ESCALATION_MIN_EVENT_AMOUNT_PAISE } from "./thresholds.js";
 import type {
   AnySignalDefinition,
   DisputeCautionLevel,
@@ -60,18 +60,25 @@ export type MemorySignals = {
 // with the same value type. If a future edit renames or retypes one of these
 // in the registry, this stops compiling instead of silently breaking the
 // dashboard, the audit rows, and the experiment layer's signal keys.
-interface LegacyMemorySignalsShape {
-  disputeCautionWarranted: boolean;
+// Updated with the Signals-stage rename. The assertion still earns its place:
+// it pins that MemorySignals stays a real mapped type over the registry, so a
+// signal cannot be registered without appearing here. Only the NAMES moved —
+// disputeCautionWarranted and paymentFriction are gone entirely, both because
+// they had no effects (see definitions.ts for why each was removed).
+interface RegisteredMemorySignalsShape {
   disputeCautionLevel: DisputeCautionLevel;
-  discountAttemptsForAgent: number;
-  stoppingRuleHit: boolean;
-  gamingSuspected: boolean;
-  crossAgentGamingSuspected: boolean;
-  compositeChurnSignal: boolean;
+  discountsGrantedByThisAgent: number;
+  discountLimitReached: boolean;
+  repeatRecoveryWithThisAgent: boolean;
+  repeatRecoveryAcrossAgents: boolean;
+  crossAgentSpendLimitReached: boolean;
+  pastDiscountsIneffective: boolean;
+  recentMultiDomainTrouble: boolean;
+  provenPayer: boolean;
 }
-type AssertDerivedCoversLegacy = MemorySignals extends LegacyMemorySignalsShape ? true : never;
-const _assertDerivedCoversLegacy: AssertDerivedCoversLegacy = true;
-void _assertDerivedCoversLegacy;
+type AssertDerivedCoversRegistry = MemorySignals extends RegisteredMemorySignalsShape ? true : never;
+const _assertDerivedCoversRegistry: AssertDerivedCoversRegistry = true;
+void _assertDerivedCoversRegistry;
 
 // Each entry's `id` must match its key, since the id is what appears in audit
 // rows and policy_override.triggered_by. Cheap to check, and a mismatch would
@@ -111,6 +118,7 @@ export function computeMemorySignals(
 
 export interface ResolvedEffects {
   blocksDiscount: boolean;
+  suppressesOutreach: boolean;
   forcesEscalation: boolean;
   discountCapPercent: number;
   // Which signals produced a blocking or escalating effect, by registry id.
@@ -135,8 +143,22 @@ export interface ResolvedEffects {
 // A signal contributes only when its effects() returns a cap. An inactive
 // boolean, or a dispute level that does not tighten below the default, returns
 // {} — so merely being present can neither raise nor lower the ceiling.
-export function resolveSignalEffects(signals: MemorySignals): ResolvedEffects {
+// `eventAmountPaise` gates ESCALATION ONLY, and is optional so existing callers
+// that only want the cap/block resolution are unaffected. When omitted, no floor
+// is applied.
+//
+// The floor lives here rather than inside a signal's compute() on purpose: the
+// signal stays a pure fact about the customer ("two domains failed within a
+// fortnight"), and policy decides separately whether that fact is worth a
+// person's time on an event of this size. Folding the amount into compute()
+// would have made the signal mean "multi-domain trouble AND materially large",
+// which is two ideas wearing one name.
+export function resolveSignalEffects(
+  signals: MemorySignals,
+  eventAmountPaise?: number,
+): ResolvedEffects {
   let blocksDiscount = false;
+  let suppressesOutreach = false;
   let forcesEscalation = false;
   const blockingSignals: SignalId[] = [];
   const escalatingSignals: SignalId[] = [];
@@ -148,9 +170,21 @@ export function resolveSignalEffects(signals: MemorySignals): ResolvedEffects {
       blocksDiscount = true;
       blockingSignals.push(id);
     }
+    if (effects.suppressesOutreach) {
+      suppressesOutreach = true;
+      if (!blockingSignals.includes(id)) blockingSignals.push(id);
+    }
     if (effects.forcesEscalation) {
-      forcesEscalation = true;
-      escalatingSignals.push(id);
+      // A handoff has to be worth the person's time. Measured on the batch, the
+      // system was escalating a ₹199 cart against a ₹300 modelled review cost —
+      // a quarter of forced escalations sat under ₹1,000. See
+      // ESCALATION_MIN_EVENT_AMOUNT_PAISE.
+      const worthAPersonsTime =
+        eventAmountPaise === undefined || eventAmountPaise >= ESCALATION_MIN_EVENT_AMOUNT_PAISE;
+      if (worthAPersonsTime) {
+        forcesEscalation = true;
+        escalatingSignals.push(id);
+      }
     }
     if (effects.discountCapPercent != null) caps.push({ id, percent: effects.discountCapPercent });
   }
@@ -162,6 +196,7 @@ export function resolveSignalEffects(signals: MemorySignals): ResolvedEffects {
 
   return {
     blocksDiscount,
+    suppressesOutreach,
     forcesEscalation,
     discountCapPercent: winner?.percent ?? DEFAULT_DISCOUNT_CAP_PERCENT,
     blockingSignals,
@@ -178,39 +213,52 @@ export function resolveSignalEffects(signals: MemorySignals): ResolvedEffects {
 // what actually applies to THIS customer instead of a standing lecture about
 // every rule. The full signal values are still sent separately as
 // policy_signals JSON.
-export function buildSignalPolicyText(signals: MemorySignals): string {
+// What policy DOES about a signal, generated from effects() rather than written
+// by hand. The stated consequence and the enforced one therefore cannot drift:
+// change an effect and the sentence the model reads changes with it.
+function renderSignalEffects(effects: SignalEffects): string | null {
+  const parts: string[] = [];
+  if (effects.blocksDiscount) parts.push("no discount permitted");
+  if (effects.discountCapPercent != null) parts.push(`ceiling ${effects.discountCapPercent}% of the event amount`);
+  if (effects.forcesEscalation) parts.push("a person reviews this before it is sent");
+  return parts.length > 0 ? parts.join("; ") : null;
+}
+
+// THE SIGNALS BLOCK — one block, every signal, one format.
+//
+// This replaces a split that put "interesting" signals into the system prompt as
+// prose and the rest into the user message as bare JSON booleans, so which half
+// a signal landed in depended on its value and the model reconciled two formats
+// in two places for one idea. It also replaces `true`/`false` with the measured
+// quantity behind it: repeatRecoveryWithThisAgent read `true` on 516 decisions
+// covering 3 to 7 actual events, and the model could not tell them apart.
+//
+// Every signal appears on every call, including the unremarkable ones — "1
+// payment, ₹450 lifetime" is information in a way that `provenPayer: false`
+// never was.
+export function buildSignalsBlock(signals: MemorySignals, ctx: SignalContext): string {
   const lines: string[] = [];
   for (const [id, def] of entries()) {
-    const text = def.describe((signals as Record<string, unknown>)[id]);
-    if (text) lines.push(`- ${text}`);
-  }
-  if (lines.length === 0) {
-    return `- No memory signal restricts this decision. The standing discount ceiling is ${DEFAULT_DISCOUNT_CAP_PERCENT}% of the event amount.`;
+    const value = (signals as Record<string, unknown>)[id];
+    const consequence = renderSignalEffects(def.effects(value));
+    lines.push(`- ${id}: ${def.measure(ctx, value)}${consequence ? `\n    -> ${consequence}` : ""}`);
   }
   return lines.join("\n");
 }
 
-// Signals NOT already stated in the generated prose — i.e. those whose
-// describe() returned null. The prose carries the rest, so echoing their values
-// back as JSON would spend tokens restating what the model has already read.
-export function signalsNotInProse(signals: MemorySignals): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [id, def] of entries()) {
-    const value = (signals as Record<string, unknown>)[id];
-    if (def.describe(value) == null) out[id] = value;
-  }
-  return out;
+// A signal is ACTIVE when it changes what the agent may do. Previously this was
+// "describe() returned text", which conflated "worth mentioning" with
+// "constrains the decision" — a context signal could read as active while
+// constraining nothing.
+export function signalIsActive(def: AnySignalDefinition, value: unknown): boolean {
+  return Object.keys(def.effects(value)).length > 0;
 }
 
-// Compact "which signals had something to say" summary, for the trace row.
-// Registry-driven so a newly registered signal appears automatically. A signal
-// counts as active exactly when its describe() returns text — the same
-// definition the generated prompt uses, so trace and prompt never disagree.
 export function summarizeActiveSignals(signals: MemorySignals): string {
   const active: string[] = [];
   for (const [id, def] of entries()) {
     const value = (signals as Record<string, unknown>)[id];
-    if (def.describe(value) != null) active.push(`${id}=${String(value)}`);
+    if (signalIsActive(def, value)) active.push(`${id}=${String(value)}`);
   }
   return active.length > 0 ? active.join(", ") : "none";
 }

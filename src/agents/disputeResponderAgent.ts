@@ -1,13 +1,14 @@
 import type Database from "better-sqlite3";
 import type { Customer, DisputeEvent } from "../types/index.js";
 import { decide } from "./claudeClient.js";
-import { applyBaselinePolicy } from "./enforcement.js";
+import { baselineUserContent, takePrefetchedBaseline } from "./baselinePrefetch.js";
+import type { z } from "zod";
+import { applyBaselinePolicyWithTrace } from "./enforcement.js";
 import type { PolicyOverrideRecord } from "../memory/profile.js";
 import { DISPUTE_COST_MODEL, OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import type { TriggeringEventFacts } from "./policy.js";
 import { DisputeResponderDecisionSchema, type DisputeResponderDecision } from "./schema.js";
-import { emitTrace } from "./trace.js";
 
 export const DISPUTE_BASELINE_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
 ${OBJECTIVE_BLOCK}
@@ -52,30 +53,24 @@ export async function decideDisputeResponderBaseline(
   customer: Customer,
   event: DisputeEvent,
 ): Promise<DisputeResponderDecision & { policy_override: PolicyOverrideRecord | null }> {
-  const userContent = withClosingInstruction(JSON.stringify({ customer, event }, null, 2));
   const stepStart = Date.now();
-  const raw = await decide(DISPUTE_BASELINE_SYSTEM_PROMPT, userContent, DisputeResponderDecisionSchema);
+  // A batched run resolved this before the loop started; anything the batch did
+  // not return falls through to a live call. See baselinePrefetch.ts.
+  const raw =
+    takePrefetchedBaseline<z.infer<typeof DisputeResponderDecisionSchema>>(event.dispute_id) ??
+    (await decide(DISPUTE_BASELINE_SYSTEM_PROMPT, baselineUserContent(customer, event), DisputeResponderDecisionSchema));
   // The UNIVERSAL policy layer runs on the baseline arm too. Without it the
   // control would be the only path where model output reaches the ledger
   // unchecked, which is both a safety gap and a confound — see
   // enforcement.ts.
-  const decision = applyBaselinePolicy(raw, {
+  const decision = applyBaselinePolicyWithTrace(raw, {
     agent: "dispute_responder",
     eventAmount: eventFacts(event).amount,
+    db,
+    customerId: customer.customer_id,
+    eventId: event.dispute_id,
+    modelDurationMs: Date.now() - stepStart,
   });
-  emitTrace(
-    {
-      db,
-      customerId: customer.customer_id,
-      eventId: event.dispute_id,
-      agent: "dispute_responder",
-      mode: "baseline",
-      stepOrder: 1,
-    },
-    "agent_reasoning",
-    decision.reasoning,
-    Date.now() - stepStart,
-  );
   return decision;
 }
 
@@ -95,7 +90,7 @@ off before the response goes out. It is a flag on either action, not an action
 of its own — always pair it with the response you would recommend, so the
 reviewer inherits a recommendation rather than a bare handoff.
 
-Here, gaming_suspected in policy_signals means this customer has filed 3+
+Here, repeat_recovery_with_this_agent in the signals block means this customer has filed 3+
 disputes. A repeat-dispute pattern is itself a fraud signal that an isolated
 event cannot reveal.`;
 

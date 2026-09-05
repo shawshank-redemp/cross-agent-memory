@@ -2,23 +2,37 @@ import type Database from "better-sqlite3";
 import type { z } from "zod";
 import { getMemoryProfile, type PolicyOverrideRecord } from "../memory/profile.js";
 import type { MemoryProfilePayload } from "./memoryPayloadKeys.js";
-import { enforceUniversalPolicy, normalizeEscalationReason } from "./enforcement.js";
+import { MEMORY_PROFILE_EMITTABLE_KEYS, MEMORY_PROFILE_GLOSSARY } from "./memoryPayloadKeys.js";
+import {
+  claimForcedEscalation,
+  enforceUniversalPolicy,
+  normalizeEscalationReason,
+  spendCeilingPaise,
+} from "./enforcement.js";
 import { AGENT_ACTION_POLICY } from "./schema.js";
 import { withClosingInstruction } from "./objective.js";
 import { SIGNAL_REGISTRY } from "./signals/registry.js";
 import type { AgentType, Customer, CustomerMemoryProfile } from "../types/index.js";
 import { decide } from "./claudeClient.js";
+import { SIGNAL_DEFINITIONS } from "./signals/definitions.js";
+import type { AnySignalDefinition } from "./signals/types.js";
 import {
-  buildSignalPolicyText,
+  buildSignalsBlock,
   computeMemorySignals,
   resolveSignalEffects,
-  signalsNotInProse,
+  signalIsActive,
   summarizeActiveSignals,
   type MemorySignals,
   type SignalId,
   type TriggeringEventFacts,
 } from "./policy.js";
-import { emitTrace, type TraceContext } from "./trace.js";
+import {
+  clearTrace,
+  emitTrace,
+  guardrailPayload,
+  toTracedDecision,
+  type TraceContext,
+} from "./trace.js";
 
 // What decideWithMemory returns alongside the decision itself: the signals the
 // decision was made against, and the override record if enforcePolicy stepped
@@ -42,42 +56,33 @@ export type WithMemoryAudit<T> = T & MemoryAuditTrail;
 
 // Static half of the policy block: what the memory profile CONTAINS. This is
 // the same for every decision, so it stays hand-written.
-const MEMORY_PROFILE_PREAMBLE = `
+// THE STABLE HALF OF THE SYSTEM PROMPT.
+//
+// Nothing here varies by customer, which is the whole point. Previously 62% of
+// the system prompt (2,056 of 3,329 characters) was this customer's signal
+// findings, so no two requests shared a prefix past the first third and prompt
+// caching — a prefix match over tools -> system -> messages — could never fire.
+// Per-case content now lives in the user message where it belongs.
+//
+// The field list is GENERATED from MEMORY_PROFILE_GLOSSARY, which is typed
+// against the same key constant the payload is built from, so the prompt cannot
+// describe a field we do not send or omit one we do. It did both before.
+export function buildMemoryGlossaryBlock(): string {
+  const lines = MEMORY_PROFILE_EMITTABLE_KEYS.map((k) => `- ${k}: ${MEMORY_PROFILE_GLOSSARY[k]}`);
+  return `
 You also have this customer's shared memory profile, aggregated across ALL
 of Razorpay's recovery agents (Cart Abandonment, Subscription Recovery,
-Dispute Responder) — not just your own agent's past interactions with them:
+Dispute Responder) — not just your own agent's past interactions with them.
 
-- dispute_count / total_disputed_amount: disputes this customer has filed,
-  and for how much.
-- dispute_breakdown (present only when no dispute finding is stated below):
-  those disputes split by what is KNOWN right now —
-  unresolved (filed, no ruling yet), merchant_conceded (the merchant lost or
-  accepted the chargeback and the customer was refunded), customer_adverse
-  (the merchant contested it successfully — the complaint did not hold up),
-  closed_undetermined (ended with no ruling either way).
-- unresolved_dispute_reasons (same condition): why the still-open disputes
-  were filed. At
-  decision time most disputes ARE unresolved, so the reason is usually the
-  only evidence about who is likely at fault.
-- successful_payment_count / total_paid_amount: how much this customer has
-  successfully transacted with us, across every domain.
-- rolling_health_score (0-100, lower = riskier): a composite risk score.
-- discount_usage_history: every discount ANY agent has already granted this
-  customer in this run.
-- recent_decisions: the last few decisions any agent made for this customer —
-  what was decided and what it cost, without the prose. Treat them as history,
-  not as precedent you are expected to follow.`;
+MEMORY FIELDS:
+${lines.join("\n")}
 
-// The signal half is GENERATED from the registry's describe() outputs, so the
-// prompt cannot drift away from what enforcePolicy actually does — both are
-// read off the same registry entry. Only signals that actually apply to THIS
-// customer are included; the full values still go over as policy_signals JSON.
-export function buildMemoryPolicyBlock(signals: MemorySignals): string {
-  return `${MEMORY_PROFILE_PREAMBLE}
-
-WHAT THIS CUSTOMER'S HISTORY SHOWS, and what policy permits given it:
-
-${buildSignalPolicyText(signals)}
+POLICY SIGNALS: alongside the raw facts you receive a signals block. Each line
+states what was MEASURED about this customer — counts, amounts, and the
+threshold each is judged against — and, where policy acts on it, what that
+means for what you may do. A signal that is nowhere near its threshold is
+reported too: "1 payment, ₹450 lifetime" is a fact about this customer, not an
+absence of one.
 
 These are findings, not instructions. Weigh them as evidence about this case
 and reach your own judgment. Name in memory_factors_used only the facts your
@@ -114,18 +119,69 @@ export interface DecideWithMemoryParams<Schema extends z.ZodType<MemoryDecisionS
   memoryReadReason: string;
 }
 
-function describeProfileForTrace(profile: CustomerMemoryProfile): string {
+// The memory step's payload. The prose summary that used to be this whole
+// value is kept as `summary`; everything a UI needs to render the read is
+// alongside it as structured fields, so nothing has to be recovered by parsing
+// a sentence.
+//
+// This is the profile AS OF the triggering event, which is the only version
+// that means anything — it is what the decision was actually made against.
+function profileTracePayload(profile: CustomerMemoryProfile, asOf: string) {
   const entries = profile.discount_usage_history.length;
   const b = profile.dispute_breakdown;
-  return [
-    `dispute_count: ${profile.dispute_count}`,
-    `disputes(unresolved/merchant_conceded/customer_adverse/closed): ${b.unresolved}/${b.merchant_conceded}/${b.customer_adverse}/${b.closed_undetermined}`,
-    `recovery_frequency: ${profile.recovery_frequency.length} agents`,
-    `discount_history: ${entries} entr${entries === 1 ? "y" : "ies"}`,
-  ].join(", ");
+  return {
+    summary: [
+      `dispute_count: ${profile.dispute_count}`,
+      `disputes(unresolved/merchant_conceded/customer_adverse/closed): ${b.unresolved}/${b.merchant_conceded}/${b.customer_adverse}/${b.closed_undetermined}`,
+      `recovery_activity: ${profile.recovery_activity.by_agent.length} agents`,
+      `discount_history: ${entries} entr${entries === 1 ? "y" : "ies"}`,
+    ].join(", "),
+    as_of: asOf,
+    profile: {
+      dispute_count: profile.dispute_count,
+      total_disputed_amount: profile.total_disputed_amount,
+      dispute_breakdown: profile.dispute_breakdown,
+      adverse_disputed_amount: profile.adverse_disputed_amount,
+      unresolved_dispute_reasons: profile.unresolved_dispute_reasons,
+      discount_usage_history: profile.discount_usage_history,
+      recovery_activity: profile.recovery_activity,
+      intervention_outcomes: profile.intervention_outcomes,
+      successful_payment_count: profile.successful_payment_count,
+      total_paid_amount: profile.total_paid_amount,
+    },
+  };
 }
 
-
+// The signals step's payload. Carries EVERY registered signal, not just the
+// active ones, because "this brake did not fire" is exactly as much a part of
+// the decision's justification as "this one did" — a replay that showed only
+// what fired could not distinguish a signal that stayed silent from one that
+// does not exist. `kind` and `scope` come off the registry so a newly
+// registered signal appears here with no edit.
+function signalsTracePayload(signals: MemorySignals, eventAmountPaise: number) {
+  const registry = Object.values(SIGNAL_DEFINITIONS) as AnySignalDefinition[];
+  const evaluated = registry.map((def) => {
+    const value = (signals as Record<string, unknown>)[def.id];
+    return {
+      id: def.id,
+      kind: def.kind,
+      scope: def.scope,
+      value: value as unknown,
+      // ACTIVE means it changes what the agent may do, read off effects() — the
+      // same test resolveSignalEffects uses, so trace and enforcement agree.
+      active: signalIsActive(def, value),
+      effects: def.effects(value),
+    };
+  });
+  return {
+    summary: summarizeActiveSignals(signals),
+    signals: signals as unknown as Record<string, unknown>,
+    evaluated,
+    // Same amount the decision resolves against, so the replay cannot show a
+    // different escalation verdict than the one that was acted on.
+    resolved: resolveSignalEffects(signals, eventAmountPaise),
+  };
+}
 
 // The request payload, deliberately trimmed.
 //
@@ -141,19 +197,41 @@ function describeProfileForTrace(profile: CustomerMemoryProfile): string {
 //   Only the ones NOT in the prose are sent, plus every numeric value
 //   regardless — magnitude is information prose does not carry well.
 //
-//   recovery_frequency windows are vestigial: composite churn reads
-//   recent_events now, and nothing else consumed the windows.
+//   recovery_activity is not sent at all: every question the model would ask
+//   of it is already answered by a signal (gaming, cross-agent gaming,
+//   composite churn), and the raw event list is long.
+//
+//   rolling_health_score is no longer sent. It subtracts a fixed penalty per
+//   event with no view of recency or density, so it measures event VOLUME
+//   rather than risk — measured on the committed batch it rated the
+//   churn_signal cohort (median 91) healthier than repeat_offender_cart (88).
+//   The model already receives the counts it is built from, so a summary that
+//   argues the wrong way on the highest-risk group is worse than none. It stays
+//   on the profile for the dashboard.
 //   dispute_breakdown and unresolved_dispute_reasons are dropped only when a
 //   dispute caution level is already stated in prose, since in that case the
 //   prose says what they would say. The two AMOUNT fields
 //   (total_disputed_amount, adverse_disputed_amount) are always kept — a small
 //   dispute and a large one are different facts that no signal captures.
+//
+// Returns the key lists alongside the content because WHICH keys were sent is
+// per-call information the request string alone does not expose without
+// re-parsing it, and the replay trace needs it. Derived from the objects
+// actually serialised below, never from a second hand-written list — a list
+// that could disagree with the payload would be worse than no list.
+interface BuiltRequest {
+  content: string;
+  memoryProfileKeys: string[];
+  policySignalsKeys: string[];
+}
+
 function buildUserContent(
   customer: Customer,
   event: unknown,
   profile: CustomerMemoryProfile,
   signals: MemorySignals,
-): string {
+  signalsBlock: string,
+): BuiltRequest {
   const recentDecisions = profile.audit_log
     .filter((e) => e.entry_type === "decision")
     .slice(-5)
@@ -175,8 +253,12 @@ function buildUserContent(
     total_disputed_amount: profile.total_disputed_amount,
     successful_payment_count: profile.successful_payment_count,
     total_paid_amount: profile.total_paid_amount,
-    rolling_health_score: profile.rolling_health_score,
     discount_usage_history: profile.discount_usage_history,
+    // The feedback loop. discount_usage_history says what we GRANTED; this says
+    // whether it WORKED. Without it an agent on its fourth decision about a
+    // customer can only see that it kept trying, never that trying kept
+    // failing.
+    intervention_outcomes: profile.intervention_outcomes,
     recent_decisions: recentDecisions,
     // Always sent, even when a caution level is stated in prose — especially
     // then. The prose says a dispute went against this customer; only this says
@@ -189,25 +271,27 @@ function buildUserContent(
     memoryProfile.unresolved_dispute_reasons = profile.unresolved_dispute_reasons;
   }
 
-  const payload = JSON.stringify(
-    {
-      customer,
-      event,
-      memory_profile: memoryProfile,
-      policy_signals: {
-        ...signalsNotInProse(signals),
-        // Always sent regardless of the prose: a count is a magnitude, and
-        // "already discounted twice" reads differently from "already
-        // discounted once".
-        discountAttemptsForAgent: signals.discountAttemptsForAgent,
-      },
-    },
-    null,
-    2,
+  // The dispute_breakdown / unresolved_dispute_reasons condition above is
+  // unchanged: they are what the caution level is DERIVED from, so once the
+  // signals block states the level they would only restate it.
+  const payload = JSON.stringify({ customer, event, memory_profile: memoryProfile }, null, 2);
+
+  // EVERYTHING ABOUT THIS CASE NOW LIVES HERE, in the user message — the facts
+  // and the signals block together. The signals block used to be split: prose in
+  // the SYSTEM prompt for signals worth mentioning, a separate policy_signals
+  // JSON object here for the rest. One concept, two formats, two locations, and
+  // which half a signal landed in depended on its value.
+  //
+  // Data first, instruction last, as before.
+  const content = withClosingInstruction(
+    `${payload}\n\nSIGNALS (measured as of this event):\n${signalsBlock}`,
   );
 
-  // Shared with the baseline arm — see CLOSING_INSTRUCTION.
-  return withClosingInstruction(payload);
+  return {
+    content,
+    memoryProfileKeys: Object.keys(memoryProfile),
+    policySignalsKeys: Object.keys(signals as Record<string, unknown>),
+  };
 }
 
 // FAIL CLOSED. A guardrail that cannot evaluate must take the CONSERVATIVE
@@ -266,6 +350,9 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     mode: "memory",
   };
   let stepOrder = 0;
+  // The trace for this event+mode is rebuilt from scratch, so a re-decide
+  // replaces the previous run's steps instead of interleaving with them.
+  clearTrace(params.db, { eventId: params.eventId, mode: "memory" });
 
   let stepStart = Date.now();
   let profile: CustomerMemoryProfile;
@@ -283,7 +370,7 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     emitTrace(
       { ...traceBase, stepOrder },
       "read_memory_profile",
-      describeProfileForTrace(profile),
+      profileTracePayload(profile, params.eventTimestamp),
       Date.now() - stepStart,
     );
 
@@ -298,7 +385,7 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     emitTrace(
       { ...traceBase, stepOrder },
       "evaluate_policy_signals",
-      summarizeActiveSignals(signals),
+      signalsTracePayload(signals, params.eventFacts.amount),
       Date.now() - stepStart,
     );
   } catch (err) {
@@ -307,16 +394,55 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     return failClosed(params, err);
   }
 
-  const userContent = buildUserContent(params.customer, params.event, profile, signals);
+  stepStart = Date.now();
+  const signalsBlock = buildSignalsBlock(signals, {
+    profile,
+    agent: params.agent,
+    event: { ...params.eventFacts, agent: params.agent, timestamp: params.eventTimestamp },
+  });
+  const request = buildUserContent(params.customer, params.event, profile, signals, signalsBlock);
+  const glossaryBlock = buildMemoryGlossaryBlock();
+  stepOrder += 1;
+  // WHAT WAS ACTUALLY SENT, recorded before the call rather than reconstructed
+  // after it. The payload is trimmed per-decision — conditional profile keys are
+  // dropped when the prose already states the finding, and policy_signals
+  // carries only what the prose does not — so which keys went over is a fact
+  // about THIS call that nothing else records.
+  emitTrace(
+    { ...traceBase, stepOrder },
+    "model_request",
+    {
+      summary:
+        `${request.memoryProfileKeys.length} memory_profile key(s), ` +
+        `${request.policySignalsKeys.length} policy_signals key(s)`,
+      memory_profile_keys: request.memoryProfileKeys,
+      policy_signals_keys: request.policySignalsKeys,
+      // The generated signal prose, verbatim. This is the half of the prompt
+      // that varies by customer; the objective block is identical in both arms
+      // by construction (see objective.ts) and is not repeated here.
+      signal_prose: signalsBlock,
+      policy_block_chars: glossaryBlock.length,
+      user_content_chars: request.content.length,
+    },
+    Date.now() - stepStart,
+  );
 
   stepStart = Date.now();
   const decision = await decide(
-    `${params.systemPrompt}\n${buildMemoryPolicyBlock(signals)}`,
-    userContent,
+    `${params.systemPrompt}\n${glossaryBlock}`,
+    request.content,
     params.schema,
   );
   stepOrder += 1;
-  emitTrace({ ...traceBase, stepOrder }, "agent_reasoning", decision.reasoning, Date.now() - stepStart);
+  emitTrace(
+    { ...traceBase, stepOrder },
+    "agent_reasoning",
+    // The RAW model output, before any guardrail. The guardrail step below
+    // records the final decision, and the pair is what makes "the LLM proposes,
+    // deterministic code disposes" visible rather than merely asserted.
+    { summary: decision.reasoning, decision: toTracedDecision(decision) },
+    Date.now() - stepStart,
+  );
 
   stepOrder += 1;
   try {
@@ -348,7 +474,7 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   stepOrder: number,
 ): WithMemoryAudit<D> {
   const stepStart = Date.now();
-  const resolved = resolveSignalEffects(signals);
+  const resolved = resolveSignalEffects(signals, event.amount);
   const fallbackNonSpendAction = AGENT_ACTION_POLICY[event.agent].nonSpendFallbackAction as D["action"];
 
   // The memory arm's resolved cap flows INTO the shared clamping logic rather
@@ -361,10 +487,24 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   const afterUniversal = universal.decision;
 
   const mustBlockDiscount = resolved.blocksDiscount && afterUniversal.committed_spend_paise != null;
-  const mustEscalate = resolved.forcesEscalation && !afterUniversal.escalate_to_human;
+  // Suppression outranks the block's reminder fallback: there is no point
+  // swapping a discount for a message we have also decided not to send.
+  const mustSuppressOutreach = resolved.suppressesOutreach && afterUniversal.action !== "no_action";
+  // claimForcedEscalation() consumes one unit of the run's escalation budget, so
+  // it must only be called when an escalation would actually be forced —
+  // short-circuit order matters here. The breaker counts POLICY-forced
+  // escalations only: a decision the model escalated of its own accord is its
+  // judgment, not our rule firing, and a budget on our rules should not silence
+  // it. See MAX_FORCED_ESCALATIONS_PER_RUN.
+  const mustEscalate =
+    resolved.forcesEscalation && !afterUniversal.escalate_to_human && claimForcedEscalation();
 
   const notes = [...universal.notes];
   const triggeredBy = new Set<string>(universal.triggeredBy);
+  if (mustSuppressOutreach) {
+    notes.push(`outreach suppressed by: ${resolved.blockingSignals.join(", ")}`);
+    for (const id of resolved.blockingSignals) triggeredBy.add(id);
+  }
   if (mustBlockDiscount) {
     notes.push(`spend blocked by: ${resolved.blockingSignals.join(", ")}`);
     for (const id of resolved.blockingSignals) triggeredBy.add(id);
@@ -379,13 +519,47 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
 
   const unsupported = unsupportedFactorCitations(decision.memory_factors_used, signals);
 
+  // ALWAYS EMITTED, including when policy changed nothing.
+  //
+  // This row used to be written only when `notes` was non-empty, which made two
+  // opposite outcomes look identical from the outside: "the guardrail ran and
+  // found nothing to correct" and "the guardrail never ran at all" were both an
+  // absent row. A replay could then only ever show enforcement in the cases
+  // where it intervened — exactly the cases where it is least surprising —
+  // while the far more common clean pass left no evidence that anything had
+  // been checked. `applied` is what carries that distinction now.
+  const emitGuardrailTrace = (final: MemoryDecisionShape, applied: boolean): void => {
+    emitTrace(
+      { ...traceBase, stepOrder },
+      "policy_override",
+      guardrailPayload({
+        applied,
+        proposed: toTracedDecision(decision),
+        final: toTracedDecision(final),
+        capPercent: resolved.discountCapPercent,
+        capPaise: spendCeilingPaise(event.amount, resolved.discountCapPercent),
+        eventAmount: event.amount,
+        cappingSignal: resolved.cappingSignal,
+        blockingSignals: resolved.blockingSignals,
+        escalatingSignals: resolved.escalatingSignals,
+        notes,
+        triggeredBy: [...triggeredBy],
+      }),
+      Date.now() - stepStart,
+    );
+  };
+
   if (notes.length === 0) {
-    return {
+    const untouched = {
       ...afterUniversal,
       escalation_reason: normalizeEscalationReason(
         afterUniversal.escalate_to_human,
         afterUniversal.escalation_reason,
       ),
+    };
+    emitGuardrailTrace(untouched, false);
+    return {
+      ...untouched,
       signals,
       policy_override: null,
       unsupported_factor_citations: unsupported,
@@ -393,21 +567,37 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   }
 
   const notesJoined = notes.join("; ");
-  emitTrace(
-    { ...traceBase, stepOrder },
-    "policy_override",
-    `${notesJoined}; pre_override_committed_spend_paise: ${decision.committed_spend_paise ?? "null"}`,
-    Date.now() - stepStart,
-  );
-
-  const escalated = mustBlockDiscount || mustEscalate ? true : afterUniversal.escalate_to_human;
+  // BLOCKING NO LONGER IMPLIES ESCALATING. This line is where the two were
+  // welded together, and unwelding it was deferred to this stage on purpose —
+  // it is guardrail code, not signal code.
+  //
+  // "Should we spend money here?" and "should a person look at this?" are
+  // different questions. Fusing them meant every block also paged a human, and
+  // measured on the batch that forced a handoff on 41.9% of ALL events — a rate
+  // no merchant could staff. It also wrecked the measurement: the previous run
+  // escalated 724 times against the baseline's 51, and because the outcome model
+  // prices an escalation at a flat fee while crediting it with a discount's
+  // conversion, essentially the entire reported revenue lift was a function of
+  // handoff VOLUME rather than of any spending judgment memory contributed.
+  //
+  // Only a signal that explicitly declares forcesEscalation now escalates, which
+  // after the signals rework is recentMultiDomainTrouble alone: a customer
+  // failing across two domains in a fortnight is a genuine judgment call. A
+  // customer who has simply used up their discount budget is not — that is
+  // arithmetic, and the fallback is a free reminder rather than a person's time.
+  const escalated = mustEscalate ? true : afterUniversal.escalate_to_human;
   // True only when policy escalated a decision the model did not escalate.
   const forcedEscalation = escalated && !decision.escalate_to_human;
 
-  return {
+  const final = {
     ...afterUniversal,
-    action: mustBlockDiscount ? fallbackNonSpendAction : afterUniversal.action,
-    committed_spend_paise: mustBlockDiscount ? null : afterUniversal.committed_spend_paise,
+    action: mustSuppressOutreach
+      ? ("no_action" as D["action"])
+      : mustBlockDiscount
+        ? fallbackNonSpendAction
+        : afterUniversal.action,
+    committed_spend_paise:
+      mustSuppressOutreach || mustBlockDiscount ? null : afterUniversal.committed_spend_paise,
     // Capping alone does not force escalation — the decision still stands, it
     // is just priced within policy.
     escalate_to_human: escalated,
@@ -418,6 +608,12 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
       ? "policy_constraint"
       : normalizeEscalationReason(escalated, afterUniversal.escalation_reason),
     reasoning: `${decision.reasoning}\n\n[POLICY OVERRIDE] ${notesJoined}.`,
+  };
+
+  emitGuardrailTrace(final, true);
+
+  return {
+    ...final,
     signals,
     policy_override: {
       original_action: decision.action,

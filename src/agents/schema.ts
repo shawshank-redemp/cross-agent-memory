@@ -14,19 +14,19 @@ const MEMORY_PROFILE_FACTORS = MEMORY_PROFILE_EMITTABLE_KEYS;
 
 // Second group: the signal ids from the registry. Every signal can appear in
 // the payload — an ACTIVE one is stated in the generated prose, an INACTIVE one
-// is sent in the policy_signals JSON by signalsNotInProse — so all of them are
+// appears in the signals block, which now carries every signal — so all of them are
 // citable. Spelled out literally because z.enum needs a literal tuple, then
 // checked against the registry below so the two cannot drift.
 const SIGNAL_FACTORS = [
-  "disputeCautionWarranted",
   "disputeCautionLevel",
-  "discountAttemptsForAgent",
-  "stoppingRuleHit",
-  "gamingSuspected",
-  "crossAgentGamingSuspected",
-  "compositeChurnSignal",
+  "repeatRecoveryWithThisAgent",
+  "repeatRecoveryAcrossAgents",
+  "discountLimitReached",
+  "crossAgentSpendLimitReached",
+  "pastDiscountsIneffective",
+  "recentMultiDomainTrouble",
   "provenPayer",
-  "paymentFriction",
+  "discountsGrantedByThisAgent",
 ] as const;
 
 // Compile-time guard: every registered signal must be citable. Registering a
@@ -58,6 +58,11 @@ export type EscalationReason = (typeof ESCALATION_REASONS)[number];
 // memory_factors_used sits second for the same reason: naming the evidence
 // before choosing is part of deciding, not a label applied afterwards.
 //
+// LENGTH IS ASKED FOR, NOT ENFORCED. Output is ~70% of a batch run's cost and
+// this field is most of the output, so the request says 2-3 sentences rather
+// than 3-5. Measured before the change: 455 output tokens per memory-arm call
+// and 311 per baseline call.
+//
 // No .max() on reasoning: under constrained decoding a hard cap either
 // truncates mid-string (mangled audit rows) or fails validation and triggers
 // the retry path, costing more than the tokens saved. max_tokens (2048) plus
@@ -75,7 +80,7 @@ function decisionSchema<T extends readonly [string, ...string[]]>(actions: T) {
       .string()
       .min(20, "reasoning must be a real explanation, not a placeholder")
       .describe(
-        "Think here FIRST, before choosing an action: weigh what this case is, what the objective and constraints imply, and what the cheapest sufficient response is. 3-5 sentences. The action below should follow from this reasoning, not be explained by it after the fact.",
+        "Think here FIRST, before choosing an action: weigh what this case is, what the objective and constraints imply, and which response is the least expensive one that will actually work. 2-3 sentences, and no more — state the reason, not the full argument for it. The action below should follow from this reasoning, not be explained by it after the fact.",
       ),
     memory_factors_used: z
       .array(z.enum(MEMORY_FACTORS))

@@ -12,7 +12,7 @@
     "agents:baseline": "tsx --env-file-if-exists=.env src/agents/runBaseline.ts",
     "agents:memory": "tsx --env-file-if-exists=.env src/agents/runMemory.ts",
     "analyze:compare": "tsx src/analysis/compareRuns.ts",
-    "server:dev": "tsx watch src/server/index.ts",
+    "server:dev": "tsx watch --env-file-if-exists=.env src/server/index.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.scripts.json && npm test",
     "test": "tsx --test tests/*.test.ts",
     "analyze:escalation": "tsx src/analysis/escalationSensitivity.ts",

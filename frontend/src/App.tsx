@@ -3,8 +3,24 @@ import "./App.css";
 import { api, type ComparisonReport, type CustomerSummary } from "./api";
 import { CustomerExplorer } from "./components/CustomerExplorer";
 import { OverviewSection } from "./components/OverviewSection";
+import { ReplayView } from "./components/ReplayView";
+import "./components/ReplayView.css";
+
+// Minimal path routing, no router dependency. There are two pages: the
+// dashboard and one replay. Vite's dev server and any static host serve
+// index.html for unknown paths, so /replay/<id> reaches this component.
+function replayCustomerId(pathname: string): string | null {
+  const match = /^\/replay\/([^/?#]+)/.exec(pathname);
+  return match ? decodeURIComponent(match[1]!) : null;
+}
 
 export default function App() {
+  const replayId = replayCustomerId(window.location.pathname);
+  if (replayId) return <ReplayView customerId={replayId} />;
+  return <Dashboard />;
+}
+
+function Dashboard() {
   const [report, setReport] = useState<ComparisonReport | null>(null);
   const [customers, setCustomers] = useState<CustomerSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);

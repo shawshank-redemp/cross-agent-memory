@@ -13,25 +13,20 @@
   --danger: #dc2626;
 
   font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
-  color-scheme: light dark;
+  /* Pinned. The app is light-themed throughout, so a viewer's OS setting must
+     not repaint it — see the note on the removed dark block below. */
+  color-scheme: light;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #d4d4d8;
-    --text-h: #fafafa;
-    --bg: #121214;
-    --card-bg: #1c1c1f;
-    --border: #2e2e33;
-    --grid-line: #2a2a2e;
-    --muted: #a1a1aa;
-    --baseline-color: #64748b;
-    --memory-color: #a78bfa;
-  }
-}
+/* NO DARK THEME, DELIBERATELY. This file used to redefine every token under
+   @media (prefers-color-scheme: dark). The app is light-themed by design, and
+   a half-supported dark mode is worse than none: component stylesheets that
+   define their own surfaces (see ReplayView.css) then have to mirror the
+   switch exactly or they paint light panels under near-white text, which is
+   precisely what happened once. One palette, one source of truth. */
 
 * {
   box-sizing: border-box;

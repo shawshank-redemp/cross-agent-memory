@@ -11,7 +11,19 @@ import {
   SUBSCRIPTION_ELIGIBLE_SQL,
 } from "../db/eligibility.js";
 import type { Scenario, ScenarioLabel } from "../data/generator.js";
-import { appendAuditLog, recordDiscountUsage, type PolicyOverrideRecord } from "../memory/profile.js";
+import { getRunTotals, resetRunTotals } from "./enforcement.js";
+import { MAX_FORCED_ESCALATIONS_PER_RUN, RUN_DISCOUNT_BUDGET_PAISE } from "./signals/thresholds.js";
+import {
+  appendAuditLog,
+  recordDiscountUsage,
+  recordInterventionOutcome,
+  type PolicyOverrideRecord,
+} from "../memory/profile.js";
+import {
+  resolveDisputeResponseOutcome,
+  resolveRecoveryOutcome,
+  rollsForEvent,
+} from "../outcomes/resolveOutcomes.js";
 import { POLICY_FINGERPRINT, type MemorySignals } from "./policy.js";
 import type {
   AgentType,
@@ -181,14 +193,46 @@ function parseSelection(): EventSelection {
 
 // Scenario labels live alongside the generated batch rather than in the DB —
 // they are generator ground truth about how a customer was planted, not an
-// observed fact an agent is allowed to read. Loaded only when --scenario is
-// actually used, so a plain run never depends on the file being present.
+// observed fact an agent is allowed to read.
+//
+// The OUTCOME MODEL is allowed to read them, and does: it is the hidden ground
+// truth that decides what actually happens, exactly as it already does in
+// compareRuns.ts. The AGENT never sees a scenario. That boundary is what keeps
+// the feedback loop honest — memory records what happened, never the
+// probability that made it happen.
 function loadScenarioLabels(): ScenarioLabel[] {
   const path = join(GENERATED_DIR, "scenario_labels.json");
   try {
     return JSON.parse(readFileSync(path, "utf-8")) as ScenarioLabel[];
   } catch {
     throw new Error(`--scenario needs ${path}; run \`npm run generate:data\` first.`);
+  }
+}
+
+// customer_id -> planted scenario, for the OUTCOME MODEL only. Tolerates a
+// missing labels file: without it the feedback loop simply records nothing,
+// which is better than failing a paid run over a ground-truth file the agents
+// never read.
+function loadScenarioByCustomer(): Map<string, Scenario> {
+  try {
+    return new Map(loadScenarioLabels().map((l) => [l.customer_id, l.scenario]));
+  } catch {
+    console.warn("  warning: scenario_labels.json not found — intervention outcomes will not be recorded.");
+    return new Map();
+  }
+}
+
+// The gross amount this decision was about, in paise. Each event type keeps its
+// own vocabulary here rather than in the outcome model, the same way
+// TriggeringEventFacts does for signals.
+function grossAmountFor(item: TaggedEvent): number {
+  switch (item.agent) {
+    case "cart_abandonment":
+      return item.event.amount;
+    case "subscription_recovery":
+      return item.event.plan_amount;
+    case "dispute_responder":
+      return item.event.amount;
   }
 }
 
@@ -294,9 +338,40 @@ function loadTaggedEvents(db: Database.Database): { customerById: Map<string, Cu
 }
 
 export interface RunAgentBatchParams {
+  // Optional pre-pass, run AFTER selection and resume filtering and BEFORE the
+  // decision loop, with exactly the events that will be decided. The baseline
+  // arm uses it to resolve every model call in one Batch API submission at half
+  // price; the memory arm does not, because 60% of its decisions read state that
+  // earlier decisions in the same run write.
+  //
+  // Deliberately a hook rather than a second runner: the loop below owns resume,
+  // partial-file writes, per-event failure handling, enforcement ordering and the
+  // run breakers, and none of that should exist twice.
+  prepare?: (toProcess: TaggedEvent[], customerById: Map<string, Customer>) => Promise<void>;
   mode: "baseline" | "memory";
   outputFile: string;
   decide: (item: TaggedEvent, customer: Customer, db: Database.Database) => Promise<DecisionLike>;
+}
+
+// --out= redirects this run's results file.
+//
+// The results file is REWRITTEN, not merged, with exactly the decisions this
+// run produced. That is correct for a full batch and destructive for a targeted
+// one: `--customer=X` without this flag replaces a 1,720-decision batch file
+// with a single decision, discarding a run that cost real API calls. Analysis
+// scripts read the default filenames, so a targeted run should write somewhere
+// else and leave the batch alone.
+function parseOutputFile(fallback: string): string {
+  const arg = process.argv.find((a) => a.startsWith("--out="));
+  if (!arg) return fallback;
+  const value = arg.slice("--out=".length).trim();
+  if (value.length === 0) return fallback;
+  // Confined to RESULTS_DIR: this is a filename, not a path, so a stray
+  // "../../src/something" cannot be handed to writeFileSync.
+  if (value.includes("/") || value.includes("\\")) {
+    throw new Error(`--out must be a bare filename (no path separators), got "${value}"`);
+  }
+  return value;
 }
 
 export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> {
@@ -304,9 +379,35 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   const resume = parseResume();
   const db = openDb();
   const { customerById, tagged } = loadTaggedEvents(db);
+  // Read once per run, for the outcome model only — never handed to an agent.
+  const scenarioByCustomer = loadScenarioByCustomer();
+
+  // SEED THE RUN BREAKERS from what this arm has already committed, so --resume
+  // continues the same budget instead of quietly opening a second one. Without
+  // the seed a run resumed three times could approve three full budgets.
+  const priorSpend = (
+    db
+      .prepare("SELECT COALESCE(SUM(amount), 0) AS total FROM discount_usage WHERE mode = ?")
+      .get(params.mode) as { total: number }
+  ).total;
+  const priorForced = (
+    db
+      .prepare(
+        `SELECT COUNT(*) AS n FROM audit_log
+         WHERE mode = ? AND entry_type = 'decision' AND escalate_to_human = 1
+           AND policy_override IS NOT NULL
+           AND json_extract(policy_override, '$.escalation_reason_forced') = 1`,
+      )
+      .get(params.mode) as { n: number }
+  ).n;
+  resetRunTotals(priorSpend, priorForced);
 
   mkdirSync(RESULTS_DIR, { recursive: true });
-  const outputPath = join(RESULTS_DIR, params.outputFile);
+  const outputFile = parseOutputFile(params.outputFile);
+  const outputPath = join(RESULTS_DIR, outputFile);
+  if (outputFile !== params.outputFile) {
+    console.log(`Writing results to ${outputFile} (--out) instead of ${params.outputFile}`);
+  }
   const partialPath = `${outputPath}.partial.jsonl`;
 
   let toProcess = applySelection(tagged, selection);
@@ -343,6 +444,8 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   } else if (existsSync(partialPath)) {
     rmSync(partialPath);
   }
+
+  if (params.prepare) await params.prepare(toProcess, customerById);
 
   const customerCount = new Set(toProcess.map((item) => item.event.customer_id)).size;
   console.log(
@@ -464,6 +567,62 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         });
       }
 
+      // CLOSE THE FEEDBACK LOOP.
+      //
+      // Resolve what this intervention actually achieved and write it down, so a
+      // LATER decision on the same customer can read "we tried this and it did
+      // not work". Every other memory field records what the customer did; this
+      // is the only one that records what we did and how it turned out.
+      //
+      // Two properties make this safe rather than circular:
+      //
+      //   The dice are the SAME dice the comparison uses. rollsForEvent is
+      //   seeded from event_id alone, so resolving here gives byte-identical
+      //   outcomes to resolving at analysis time. Recording early changes what
+      //   is KNOWN during the run, never what HAPPENED.
+      //
+      //   Memory reads the realised OUTCOME, never the PROBABILITY. The scenario
+      //   and OUTCOME_PROBABILITIES stay on this side of the boundary; the
+      //   profile stores only "we discounted, they paid". That is exactly what a
+      //   production payment webhook would deliver.
+      //
+      // recordInterventionOutcome stamps observed_at = timestamp + the
+      // observation lag, and the profile read filters on observed_at — so a
+      // decision can never see an outcome that had not happened yet.
+      const scenario = scenarioByCustomer.get(customer.customer_id);
+      if (scenario) {
+        const outcome =
+          item.agent === "dispute_responder"
+            ? resolveDisputeResponseOutcome(item.event_id, scenario, grossAmountFor(item), {
+                action: decision.action,
+                escalate_to_human: decision.escalate_to_human,
+              })
+            : resolveRecoveryOutcome(
+                item.event_id,
+                item.agent,
+                scenario,
+                grossAmountFor(item),
+                {
+                  committed_spend_paise: decision.committed_spend_paise,
+                  escalate_to_human: decision.escalate_to_human,
+                },
+                rollsForEvent(item.event_id),
+              );
+        recordInterventionOutcome(db, {
+          customerId: customer.customer_id,
+          agent: item.agent,
+          mode: params.mode,
+          eventId: item.event_id,
+          // The FINAL action after enforcePolicy, not what the model first
+          // asked for: the loop must learn from what was actually done.
+          action: decision.action,
+          committedSpendPaise: decision.committed_spend_paise,
+          converted: outcome.paid === true,
+          amountCollectedPaise: outcome.money_collected,
+          decidedAt: item.timestamp,
+        });
+      }
+
       if (assertBaselineCitesNoMemory(params.mode, decision, customer.customer_id, item.event_id)) {
         baselineMemoryLeaks += 1;
       }
@@ -536,11 +695,40 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         unsupportedFactorCitations: unsupportedCitations,
         baselineMemoryLeaks,
         guardrailFailures,
+        // The run breakers. Reported unconditionally, not only when they trip:
+        // "the breaker was never approached" and "there is no breaker" have to
+        // look different in a summary, the same reason the guardrail trace row
+        // is always emitted.
+        discountBudget: {
+          committedPaise: getRunTotals().spendPaise,
+          budgetPaise: RUN_DISCOUNT_BUDGET_PAISE,
+          spendRefusals: getRunTotals().spendRefusals,
+        },
+        escalationBudget: {
+          forced: getRunTotals().forcedEscalations,
+          budget: MAX_FORCED_ESCALATIONS_PER_RUN,
+          refusals: getRunTotals().escalationRefusals,
+        },
       },
       null,
       2,
     ),
   );
+  const totals = getRunTotals();
+  const pctOfBudget = ((totals.spendPaise / RUN_DISCOUNT_BUDGET_PAISE) * 100).toFixed(1);
+  console.log(
+    `\nRun breakers: discount ₹${Math.round(totals.spendPaise / 100).toLocaleString("en-IN")} of ` +
+      `₹${Math.round(RUN_DISCOUNT_BUDGET_PAISE / 100).toLocaleString("en-IN")} (${pctOfBudget}%), ` +
+      `forced escalations ${totals.forcedEscalations} of ${MAX_FORCED_ESCALATIONS_PER_RUN}`,
+  );
+  if (totals.spendRefusals > 0 || totals.escalationRefusals > 0) {
+    console.error(
+      `\n!! A RUN BREAKER TRIPPED: ${totals.spendRefusals} spend refusal(s), ` +
+        `${totals.escalationRefusals} escalation refusal(s). These are safety limits that ordinary ` +
+        `operation should never reach — treat this run's numbers as evidence of a misfire, not as a result.`,
+    );
+  }
+
   if (baselineMemoryLeaks > 0) {
     console.warn(
       `\n!! ${baselineMemoryLeaks} baseline decision(s) cited memory factors. The control arm is ` +

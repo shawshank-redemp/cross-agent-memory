@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MAX_DISCOUNT_ATTEMPTS_PER_AGENT } from "../agents/policy.js";
+import { REPEAT_RECOVERY_THRESHOLD_PER_AGENT } from "../agents/policy.js";
 import type { AgentType, CartAbandonmentEvent, DisputeEvent, SubscriptionFailureEvent } from "../types/index.js";
 
 // Shared inputs for every scoring pass over a recorded batch. Extracted so
@@ -56,7 +56,7 @@ export function buildDisputeAmountByEvent(disputeEvents: DisputeEvent[]): Map<st
 
 // Dispute-response cost is only scored for a customer's 3rd-and-later
 // dispute event — the exact same threshold policy.ts already uses for
-// gamingSuspected on the dispute_responder agent. This isn't a new rule:
+// repeatRecoveryWithThisAgent on the dispute_responder agent. This isn't a new rule:
 // it confines the (deterministic, accept-vs-contest) dispute-cost model to
 // precisely the repeat-offender pattern the memory system is meant to
 // catch, rather than scoring every one-off dispute's LLM judgment call —
@@ -74,7 +74,7 @@ export function buildDisputeGamingThresholdEvents(disputeEvents: DisputeEvent[])
   for (const events of byCustomer.values()) {
     const sorted = [...events].sort((a, b) => a.dispute_created_at.localeCompare(b.dispute_created_at));
     sorted.forEach((e, idx) => {
-      if (idx + 1 >= MAX_DISCOUNT_ATTEMPTS_PER_AGENT) eligible.add(e.dispute_id);
+      if (idx + 1 >= REPEAT_RECOVERY_THRESHOLD_PER_AGENT) eligible.add(e.dispute_id);
     });
   }
   return eligible;
