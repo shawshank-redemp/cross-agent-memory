@@ -614,11 +614,11 @@ function StepCard(props: {
     { t: "Event received", s: eventSummary },
     {
       t: "Memory read",
-      s: "What all three agents already know about this customer, as it stood the moment this event arrived.",
+      s: "The customer's history: prior disputes, how often they've abandoned carts, what discounts we've already given. The memory arm sees all of it; the baseline sees none. This is the experiment.",
     },
-    { t: "Signals derived", s: "What that history means in policy terms — the rules that read the profile." },
+    { t: "Signals derived", s: "Pattern checks that translate history into decisions. \"Has this customer disputed before?\" \"How many times have we tried to recover them?\" These answers shape what's allowed next." },
     { t: "Model proposes", s: "A real Claude call. Input left, raw output right — both arms." },
-    { t: "Guardrails", s: "What policy permitted, and whether it changed anything." },
+    { t: "Guardrails", s: "Spending limits and safety checks. Before any action goes out, a set of business rules runs to make sure it fits the policy — kind of like a final approval before committing money." },
     { t: "Execution", s: "The final decision, and a real Razorpay test-mode link on request." },
   ];
   const head = heads[index]!;
@@ -817,20 +817,21 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
 
   return (
     <>
-      {/* WHAT THE SHARED PROFILE IS. There is no memory_profile table — the
-          question "is this a derived copy or a mirror of Razorpay's own data?"
-          has a real answer and the page was not giving it. */}
+      {/* WHAT MEMORY MEANS: a unified view of customer history that helps all
+          agents make better decisions together. */}
       <div className="rp-intro">
         <p className="rp-prose">
-          <b>Not a stored table.</b> It is computed on every read from records Razorpay already holds,
-          plus the discounts this run granted — an aggregation of existing sources, not a new one.
+          <b>What is "memory" here?</b> It is a single, shared view of everything we already know about
+          this customer from Razorpay's records — disputes they've filed, carts they've abandoned,
+          subscriptions that failed, and discounts we've already tried. All three agents (Cart, Subscription, Dispute)
+          read the same information, so they're not working against each other.
         </p>
         <p className="rp-prose">
-          <b>Shared</b> means all three agents read the same profile: Cart Abandonment sees the
-          disputes the Dispute Responder handled, and vice versa. Read as of{" "}
+          <b>Computed, not stored.</b> This isn't a new database table; it's assembled on the fly
+          from records Razorpay already keeps, plus the discounts granted in this run. Built as of{" "}
           <code title={String(step.detail.as_of)}>{formatWhen(String(step.detail.as_of))}</code>, this
-          event's own timestamp, so no later dispute ruling leaks backwards.{" "}
-          <b>The baseline arm reads none of it</b> — that asymmetry is the experiment.
+          event's timestamp, so nothing that hasn't happened yet leaks in and distorts the decision.{" "}
+          <b>The baseline arm gets no history</b> — that's the test: does knowing history make better decisions?
         </p>
       </div>
 
@@ -838,59 +839,55 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
         <h4>Aggregated from those records</h4>
         <Accordion>
         <ExpandableRow
-          label="dispute_breakdown.customer_adverse"
+          label={`Disputes we lost against this customer (${breakdown.customer_adverse})`}
           value={String(breakdown.customer_adverse)}
         >
           <p>
-            <b>What it means:</b> the customer raised a chargeback, the merchant challenged it with
-            evidence, and the bank ruled for the merchant. The customer's claim did not hold up.
+            <b>What it means:</b> the customer filed a chargeback, we contested it with evidence, and
+            the bank sided with them. Their complaint was valid — something went wrong on our side.
           </p>
           <p>
-            Razorpay stores that outcome as <code>won</code> — won <i>by the merchant</i>, since a
-            dispute belongs to the merchant. It is the one dispute outcome that counts against a
-            customer.
+            This is the strictest dispute signal. If someone has legitimately complained about us before,
+            we should be cautious about offering discounts — we're already on shaky ground with them.
           </p>
           <p>
-            <b>Why it matters:</b> it is the strongest dispute-caution level, and the only one of the four
-            buckets that counts against the customer. Full split here —{" "}
-            {Object.entries(breakdown)
+            <b>Other dispute outcomes:</b> {Object.entries(breakdown)
+              .filter(([k]) => k !== "customer_adverse")
               .map(([k, v]) => `${k}: ${v}`)
-              .join(", ")}
-            .
+              .join(", ")}.
           </p>
         </ExpandableRow>
-        <ExpandableRow label="adverse_disputed_amount" value={money(profile.adverse_disputed_amount as number)}>
+        <ExpandableRow label={`Total amount at risk from lost disputes`} value={money(profile.adverse_disputed_amount as number)}>
           <p>
-            <b>What it means:</b> the rupee value of the disputes resolved against this customer.
+            <b>What it means:</b> the total rupees involved in the disputes we lost with this customer.
           </p>
           <p>
-            <b>Why it matters:</b> a signal can tell the agent a dispute went against this customer, but
-            not whether it was for a trivial sum or a serious one — and those should lead to different
-            decisions. It is always sent, so a zero here is a positive statement that nothing has been
-            decided against them.
+            <b>Why it matters:</b> knowing a customer has one dispute against us is useful. Knowing it was for ₹100,000
+            tells a very different story than if it was ₹1,000 — the stakes change how cautious we should be.
+            A zero here means either no disputes, or we won all of them.
           </p>
         </ExpandableRow>
         <ExpandableRow
-          label="discount_usage_history"
-          value={`${discounts.length} ${discounts.length === 1 ? "entry" : "entries"}`}
+          label={`Discounts we've already given (${discounts.length})`}
+          value={`${discounts.length} ${discounts.length === 1 ? "offer" : "offers"}`}
         >
           <p>
-            <b>What it means:</b> every discount any agent has already granted this customer in this run.
+            <b>What it means:</b> how many times we've already tried to win back this customer with a discount.
           </p>
           <p>
-            <b>Why it matters:</b> it feeds <code>discountsGrantedByThisAgent</code> and{" "}
-            <code>discountLimitReached</code>, the per-agent cutoff after 3 discounts, and{" "}
-            <code>crossAgentSpendLimitReached</code>, the ceiling on total margin across every agent.
+            <b>Why it matters:</b> if we've already offered 3 discounts and none worked, offering a 4th is probably not the answer.
+            We have a limit per agent (Cart, Subscription, Dispute each get a budget) and a total budget across all agents.
+            This keeps us from spinning our wheels on someone who isn't going to bite anyway.
           </p>
         </ExpandableRow>
         <ExpandableRow
-          label="recovery_activity"
+          label={`Times we've tried recovery flows`}
           value={
             recovery === null
               ? "—"
               : recovery.length === 0
                 ? "none"
-                : recovery.map((r) => `${r.agent}: ${r.count_all_time} (${r.count_recent} recent)`).join(", ")
+                : recovery.map((r) => `${r.agent}: ${r.count_all_time}`).join(", ")
           }
         >
           {recovery === null && (
@@ -899,29 +896,25 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             </p>
           )}
           <p>
-            <b>What it means:</b> how often each agent's recovery flow has fired for this customer —
-            all-time, and within the last 90 days.
+            <b>What it means:</b> how many times each recovery agent (Cart, Subscription, Dispute) has tried
+            to handle a problem with this customer. Both all-time total and last 90 days.
           </p>
           <p>
-            <b>Why two counts:</b> different rules need different windows. A spending limit cares whether
-            we have ever discounted this customer; a churn check only cares about the last few weeks.
-            Keeping both on one record means every rule reads the same source and picks the window it
-            needs.
-          </p>
-          <p>
-            <b>Why it matters:</b> summed across agents it catches a pattern spread thin across domains,
-            where no single agent's own count is high enough to notice.
+            <b>Why it matters:</b> if Cart Abandonment has sent 2 reminders, Subscription has retried 3 times, and Dispute
+            has tried to recover once — that's 6 recovery attempts in total. Even if no single agent crosses their limit,
+            the cross-agent total might reveal a customer who's just not responding. That's when we escalate to a person
+            instead of more automation.
           </p>
         </ExpandableRow>
-        <ExpandableRow label="successful_payment_count" value={String(profile.successful_payment_count)}>
+        <ExpandableRow label={`Successful payments made (${profile.successful_payment_count as number})`} value={String(profile.successful_payment_count)}>
           <p>
-            <b>What it means:</b> completed payments across every domain.
+            <b>What it means:</b> how many times this customer has successfully completed a payment across all domains.
           </p>
           <p>
-            <b>Why it matters:</b> one half of <code>provenPayer</code>, which widens the discount cap
-            to 25%. It needs both: 2 or more payments <i>and</i> meaningful lifetime spend. A count
-            alone would treat someone who has spent a few hundred rupees the same as someone who has
-            spent thousands.
+            <b>Why it matters:</b> a customer who's paid us 5 times is lower-risk than a stranger. We can afford to
+            be a bit more generous with them (higher discount caps). But we also look at their total lifetime spend,
+            not just count — someone who paid ₹500 five times is different from someone who paid ₹50,000 once.
+            Together, these two numbers define a "proven payer" — a customer who's proved they're worth extra effort.
           </p>
         </ExpandableRow>
         </Accordion>
@@ -956,13 +949,18 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
   return (
     <>
       <p className="rp-prose">
+        <b>What is a signal?</b> A signal is a question the system asks about this customer's history
+        — questions like "Has this customer disputed us before?" or "How many discounts have we already given them?"
+        The answers shape what the agent is allowed to do next. Some are brake signals (they restrict what can
+        be offered); some are accelerator signals (they permit more generous offers for loyal customers).
+      </p>
+      <p className="rp-prose">
         <b>
           {fired.length} of {evaluated.length} signals fired.
         </b>{" "}
-        All nine go to the agent on every call, each carrying the number behind it rather than a yes
-        or no — how many payments and how much spent, not just &ldquo;not an established
-        customer&rdquo;. The ones that did not fire are sent too: knowing a limit was nowhere near
-        being reached is part of the reasoning.
+        All {evaluated.length} are evaluated on every call, each carrying the actual number rather than just
+        yes/no — for example, "3 disputes" or "₹50,000 at risk", so the agent can see the full picture.
+        The ones that did not fire are sent too: knowing a limit was nowhere near being reached is part of the reasoning.
       </p>
       <div className="rp-signals">
         <Accordion>
@@ -1256,6 +1254,12 @@ function GuardrailStep({
   }
   return (
     <>
+      <p className="rp-prose">
+        <b>What is a guardrail?</b> After Claude decides what to do, the guardrail is a final safety check.
+        It asks: "Is this within our spending limits? Does this fit the business rules for this customer?"
+        It's not overriding the agent to be mean — it's preventing a decision that breaks policy.
+        Think of it like an approval gate that runs before the money leaves.
+      </p>
       {/* THREE SLOTS, ALWAYS. Rendering these only when an override fired would
           hide the far more common case — the guardrail ran and found nothing to
           correct — which is exactly what `applied: false` records. */}
