@@ -376,6 +376,16 @@
 .rp-arm-out + .rp-arm-out { border-top: 1px solid var(--rp-border); margin-top: 6px; }
 .rp-arm-out h5 { margin: 12px 0 2px; font-size: 10.5px; font-family: var(--rp-mono); color: var(--rp-faint); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
 
+/* TWO-ARM COMPARISON: memory vs baseline side-by-side */
+.rp-arms-compare { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: flex-start; }
+@media (max-width: 900px) { .rp-arms-compare { grid-template-columns: 1fr; gap: 16px; } }
+.rp-arm-column { display: flex; flex-direction: column; gap: 8px; }
+.rp-arm-column.memory { border-left: 3px solid var(--rp-blue); padding-left: 12px; }
+.rp-arm-column.baseline { border-left: 3px solid var(--rp-faint); padding-left: 12px; }
+.rp-arm-title { margin: 0; font-size: 12px; font-family: var(--rp-display); font-weight: 600; color: var(--rp-text); }
+.rp-arm-divider { display: flex; align-items: center; color: var(--rp-faint); font-size: 12px; font-family: var(--rp-mono); font-weight: 500; }
+@media (max-width: 900px) { .rp-arm-divider { display: none; } }
+
 /* -------------------------------------------------------------- guardrail */
 .rp-override-row { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 12px; align-items: stretch; margin-bottom: 12px; }
 @media (max-width: 900px) { .rp-override-row { grid-template-columns: 1fr; } .rp-slot-arrow { display: none; } }

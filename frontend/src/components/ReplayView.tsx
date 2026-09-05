@@ -1069,7 +1069,7 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
         <div className="rp-io-col input">
           <div className="rp-io-header">
             <span className="rp-io-title">Input</span>
-            <span className="rp-io-sub">sent to the model (memory arm)</span>
+            <span className="rp-io-sub">sent to both arms (identical)</span>
           </div>
           {request ? (
             <div className="rp-io-body">
@@ -1147,13 +1147,24 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
         <div className="rp-io-col output">
           <div className="rp-io-header">
             <span className="rp-io-title">Output</span>
-            <span className="rp-io-sub">raw, before guardrails</span>
+            <span className="rp-io-sub">two separate decisions, before guardrails</span>
           </div>
           <div className="rp-io-body">
-            <Accordion>
-              <ArmOutput label="Memory arm" proposal={memProposal} arm={memory} />
-              <ArmOutput label="Baseline arm" proposal={baseProposal} arm={baseline} />
-            </Accordion>
+            <div className="rp-arms-compare">
+              <div className="rp-arm-column memory">
+                <h4 className="rp-arm-title">Memory arm</h4>
+                <Accordion>
+                  <ArmOutput label="decision" proposal={memProposal} arm={memory} hideLabel />
+                </Accordion>
+              </div>
+              <div className="rp-arm-divider">vs</div>
+              <div className="rp-arm-column baseline">
+                <h4 className="rp-arm-title">Baseline arm</h4>
+                <Accordion>
+                  <ArmOutput label="decision" proposal={baseProposal} arm={baseline} hideLabel />
+                </Accordion>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1176,15 +1187,17 @@ function ArmOutput({
   label,
   proposal,
   arm,
+  hideLabel,
 }: {
   label: string;
   proposal: TracedDecisionShape | null;
   arm: TraceArm;
+  hideLabel?: boolean;
 }) {
   if (!proposal) {
     return (
       <div className="rp-arm-out">
-        <h5>{label}</h5>
+        {!hideLabel && <h5>{label}</h5>}
         <MissingBlock what={`No agent_reasoning step captured the raw decision for the ${arm.mode} arm.`} />
       </div>
     );
@@ -1192,7 +1205,7 @@ function ArmOutput({
   const unsupported = arm.decision?.unsupported_factor_citations ?? [];
   return (
     <div className="rp-arm-out">
-      <h5>{label}</h5>
+      {!hideLabel && <h5>{label}</h5>}
       <ExpandableRow label="action" value={proposal.action}>
         <p>One of a per-agent action enum. Guardrails can change the spend attached to an action, and
         can swap it for a non-spend fallback, but never invent an action outside the enum.</p>
