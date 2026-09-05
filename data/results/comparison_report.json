@@ -2,233 +2,155 @@
   "overall": {
     "matchedEvents": 1724,
     "customers": 682,
-    "baselineDiscountPaise": 1260350,
-    "memoryDiscountPaise": 7658295,
-    "baselineEscalations": 29,
-    "memoryEscalations": 127,
+    "baselineDiscountPaise": 3968800,
+    "memoryDiscountPaise": 9356350,
+    "baselineEscalations": 27,
+    "memoryEscalations": 35,
     "baselineRevenue": {
       "scoredEvents": 1557,
-      "paidCount": 518,
-      "disputedCount": 57,
-      "escalatedCount": 7,
-      "moneyCollectedPaise": 111587100,
-      "discountRedeemedPaise": 862850,
-      "disputeCostPaise": 9709800,
-      "recurrenceCostPaise": 560775,
-      "escalationCostPaise": 210000,
-      "netRevenuePaise": 100243675
+      "paidCount": 580,
+      "disputedCount": 63,
+      "escalatedCount": 6,
+      "moneyCollectedPaise": 135437100,
+      "discountRedeemedPaise": 2728800,
+      "disputeCostPaise": 13157800,
+      "recurrenceCostPaise": 2000550,
+      "escalationCostPaise": 180000,
+      "netRevenuePaise": 117369950
     },
     "memoryRevenue": {
       "scoredEvents": 1557,
-      "paidCount": 638,
-      "disputedCount": 64,
-      "escalatedCount": 103,
-      "moneyCollectedPaise": 143066200,
-      "discountRedeemedPaise": 5803955,
-      "disputeCostPaise": 12198800,
-      "recurrenceCostPaise": 4870434,
-      "escalationCostPaise": 3090000,
-      "netRevenuePaise": 117103011
+      "paidCount": 656,
+      "disputedCount": 66,
+      "escalatedCount": 34,
+      "moneyCollectedPaise": 149506600,
+      "discountRedeemedPaise": 7428300,
+      "disputeCostPaise": 13246300,
+      "recurrenceCostPaise": 6278102,
+      "escalationCostPaise": 1020000,
+      "netRevenuePaise": 121533898
     },
-    "discountReducedPaise": 148500,
-    "discountIncreasedPaise": 6546445,
-    "netDiscountChangePaise": 6397945,
-    "netRevenueLiftPaise": 16859336
+    "discountReducedPaise": 1574800,
+    "discountIncreasedPaise": 6962350,
+    "netDiscountChangePaise": 5387550,
+    "netRevenueLiftPaise": 4163948
   },
   "byScenario": [
-    {
-      "scenario": "repeat_offender_cart",
-      "customers": 105,
-      "events": 488,
-      "baselineDiscountPaise": 438350,
-      "memoryDiscountPaise": 3892100,
-      "discountReducedPaise": 80500,
-      "discountIncreasedPaise": 3534250,
-      "netDiscountChangePaise": 3453750,
-      "baselineEscalations": 0,
-      "memoryEscalations": 6,
-      "revenue": {
-        "baseline": {
-          "scoredEvents": 488,
-          "paidCount": 173,
-          "disputedCount": 7,
-          "escalatedCount": 0,
-          "moneyCollectedPaise": 45230000,
-          "discountRedeemedPaise": 373850,
-          "disputeCostPaise": 2821000,
-          "recurrenceCostPaise": 560775,
-          "escalationCostPaise": 0,
-          "netRevenuePaise": 41474375
-        },
-        "memory": {
-          "scoredEvents": 488,
-          "paidCount": 237,
-          "disputedCount": 10,
-          "escalatedCount": 6,
-          "moneyCollectedPaise": 62200000,
-          "discountRedeemedPaise": 3167100,
-          "disputeCostPaise": 3754000,
-          "recurrenceCostPaise": 4750650,
-          "escalationCostPaise": 180000,
-          "netRevenuePaise": 50348250
-        },
-        "netRevenueLiftPaise": 8873875
-      }
-    },
     {
       "scenario": "conflicted_customer",
       "customers": 49,
       "events": 249,
-      "baselineDiscountPaise": 298000,
-      "memoryDiscountPaise": 2320400,
-      "discountReducedPaise": 0,
-      "discountIncreasedPaise": 2022400,
-      "netDiscountChangePaise": 2022400,
+      "baselineDiscountPaise": 863000,
+      "memoryDiscountPaise": 3000500,
+      "discountReducedPaise": 42500,
+      "discountIncreasedPaise": 2180000,
+      "netDiscountChangePaise": 2137500,
       "baselineEscalations": 0,
-      "memoryEscalations": 2,
+      "memoryEscalations": 4,
       "revenue": {
         "baseline": {
           "scoredEvents": 249,
-          "paidCount": 84,
-          "disputedCount": 0,
+          "paidCount": 101,
+          "disputedCount": 1,
           "escalatedCount": 0,
-          "moneyCollectedPaise": 23300000,
-          "discountRedeemedPaise": 191000,
-          "disputeCostPaise": 0,
+          "moneyCollectedPaise": 30020000,
+          "discountRedeemedPaise": 663500,
+          "disputeCostPaise": 587000,
           "recurrenceCostPaise": 0,
           "escalationCostPaise": 0,
-          "netRevenuePaise": 23109000
+          "netRevenuePaise": 28769500
         },
         "memory": {
           "scoredEvents": 249,
-          "paidCount": 111,
-          "disputedCount": 0,
-          "escalatedCount": 2,
-          "moneyCollectedPaise": 31590000,
-          "discountRedeemedPaise": 1832000,
-          "disputeCostPaise": 0,
+          "paidCount": 122,
+          "disputedCount": 4,
+          "escalatedCount": 4,
+          "moneyCollectedPaise": 35770000,
+          "discountRedeemedPaise": 2267900,
+          "disputeCostPaise": 1917500,
           "recurrenceCostPaise": 0,
-          "escalationCostPaise": 60000,
-          "netRevenuePaise": 29698000
+          "escalationCostPaise": 120000,
+          "netRevenuePaise": 31464600
         },
-        "netRevenueLiftPaise": 6589000
+        "netRevenueLiftPaise": 2695100
+      }
+    },
+    {
+      "scenario": "repeat_offender_cart",
+      "customers": 105,
+      "events": 488,
+      "baselineDiscountPaise": 1601200,
+      "memoryDiscountPaise": 4899000,
+      "discountReducedPaise": 212200,
+      "discountIncreasedPaise": 3510000,
+      "netDiscountChangePaise": 3297800,
+      "baselineEscalations": 0,
+      "memoryEscalations": 16,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 488,
+          "paidCount": 212,
+          "disputedCount": 9,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 59800000,
+          "discountRedeemedPaise": 1333700,
+          "disputeCostPaise": 4006500,
+          "recurrenceCostPaise": 2000550,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 52459250
+        },
+        "memory": {
+          "scoredEvents": 488,
+          "paidCount": 266,
+          "disputedCount": 12,
+          "escalatedCount": 16,
+          "moneyCollectedPaise": 69270000,
+          "discountRedeemedPaise": 4124500,
+          "disputeCostPaise": 4492000,
+          "recurrenceCostPaise": 6186750,
+          "escalationCostPaise": 480000,
+          "netRevenuePaise": 53986750
+        },
+        "netRevenueLiftPaise": 1527500
       }
     },
     {
       "scenario": "cross_agent_gaming",
       "customers": 42,
       "events": 210,
-      "baselineDiscountPaise": 132000,
-      "memoryDiscountPaise": 573990,
-      "discountReducedPaise": 25000,
-      "discountIncreasedPaise": 466990,
-      "netDiscountChangePaise": 441990,
+      "baselineDiscountPaise": 308500,
+      "memoryDiscountPaise": 735000,
+      "discountReducedPaise": 167500,
+      "discountIncreasedPaise": 594000,
+      "netDiscountChangePaise": 426500,
       "baselineEscalations": 7,
-      "memoryEscalations": 1,
-      "revenue": {
-        "baseline": {
-          "scoredEvents": 168,
-          "paidCount": 52,
-          "disputedCount": 3,
-          "escalatedCount": 0,
-          "moneyCollectedPaise": 8557400,
-          "discountRedeemedPaise": 107000,
-          "disputeCostPaise": 599700,
-          "recurrenceCostPaise": 0,
-          "escalationCostPaise": 0,
-          "netRevenuePaise": 7850700
-        },
-        "memory": {
-          "scoredEvents": 168,
-          "paidCount": 56,
-          "disputedCount": 3,
-          "escalatedCount": 0,
-          "moneyCollectedPaise": 9817400,
-          "discountRedeemedPaise": 446000,
-          "disputeCostPaise": 599700,
-          "recurrenceCostPaise": 0,
-          "escalationCostPaise": 0,
-          "netRevenuePaise": 8771700
-        },
-        "netRevenueLiftPaise": 921000
-      }
-    },
-    {
-      "scenario": "churn_signal",
-      "customers": 63,
-      "events": 145,
-      "baselineDiscountPaise": 26500,
-      "memoryDiscountPaise": 76000,
-      "discountReducedPaise": 11500,
-      "discountIncreasedPaise": 61000,
-      "netDiscountChangePaise": 49500,
-      "baselineEscalations": 8,
-      "memoryEscalations": 63,
-      "revenue": {
-        "baseline": {
-          "scoredEvents": 98,
-          "paidCount": 17,
-          "disputedCount": 0,
-          "escalatedCount": 0,
-          "moneyCollectedPaise": 3459300,
-          "discountRedeemedPaise": 11500,
-          "disputeCostPaise": 0,
-          "recurrenceCostPaise": 0,
-          "escalationCostPaise": 0,
-          "netRevenuePaise": 3447800
-        },
-        "memory": {
-          "scoredEvents": 98,
-          "paidCount": 26,
-          "disputedCount": 0,
-          "escalatedCount": 41,
-          "moneyCollectedPaise": 5288900,
-          "discountRedeemedPaise": 0,
-          "disputeCostPaise": 0,
-          "recurrenceCostPaise": 0,
-          "escalationCostPaise": 1230000,
-          "netRevenuePaise": 4058900
-        },
-        "netRevenueLiftPaise": 611100
-      }
-    },
-    {
-      "scenario": "normal",
-      "customers": 168,
-      "events": 168,
-      "baselineDiscountPaise": 175500,
-      "memoryDiscountPaise": 310000,
-      "discountReducedPaise": 21500,
-      "discountIncreasedPaise": 156000,
-      "netDiscountChangePaise": 134500,
-      "baselineEscalations": 0,
       "memoryEscalations": 0,
       "revenue": {
         "baseline": {
           "scoredEvents": 168,
-          "paidCount": 63,
-          "disputedCount": 2,
+          "paidCount": 57,
+          "disputedCount": 5,
           "escalatedCount": 0,
-          "moneyCollectedPaise": 11426700,
-          "discountRedeemedPaise": 129500,
-          "disputeCostPaise": 489900,
+          "moneyCollectedPaise": 10837400,
+          "discountRedeemedPaise": 204000,
+          "disputeCostPaise": 1678700,
           "recurrenceCostPaise": 0,
           "escalationCostPaise": 0,
-          "netRevenuePaise": 10807300
+          "netRevenuePaise": 8954700
         },
         "memory": {
           "scoredEvents": 168,
-          "paidCount": 64,
-          "disputedCount": 2,
+          "paidCount": 59,
+          "disputedCount": 3,
           "escalatedCount": 0,
-          "moneyCollectedPaise": 11686700,
-          "discountRedeemedPaise": 218000,
-          "disputeCostPaise": 489900,
+          "moneyCollectedPaise": 10487400,
+          "discountRedeemedPaise": 564000,
+          "disputeCostPaise": 599700,
           "recurrenceCostPaise": 0,
           "escalationCostPaise": 0,
-          "netRevenuePaise": 10978800
+          "netRevenuePaise": 9323700
         },
-        "netRevenueLiftPaise": 171500
+        "netRevenueLiftPaise": 369000
       }
     },
     {
@@ -236,10 +158,10 @@
       "customers": 32,
       "events": 154,
       "baselineDiscountPaise": 0,
-      "memoryDiscountPaise": 101805,
+      "memoryDiscountPaise": 98350,
       "discountReducedPaise": 0,
-      "discountIncreasedPaise": 101805,
-      "netDiscountChangePaise": 101805,
+      "discountIncreasedPaise": 98350,
+      "netDiscountChangePaise": 98350,
       "baselineEscalations": 0,
       "memoryEscalations": 0,
       "revenue": {
@@ -260,78 +182,195 @@
           "paidCount": 66,
           "disputedCount": 8,
           "escalatedCount": 0,
-          "moneyCollectedPaise": 3423400,
-          "discountRedeemedPaise": 79855,
+          "moneyCollectedPaise": 3393400,
+          "discountRedeemedPaise": 60900,
           "disputeCostPaise": 1559200,
-          "recurrenceCostPaise": 119784,
+          "recurrenceCostPaise": 91352,
           "escalationCostPaise": 0,
-          "netRevenuePaise": 1664561
+          "netRevenuePaise": 1681948
         },
-        "netRevenueLiftPaise": 119861
+        "netRevenueLiftPaise": 137248
+      }
+    },
+    {
+      "scenario": "churn_signal",
+      "customers": 63,
+      "events": 145,
+      "baselineDiscountPaise": 241500,
+      "memoryDiscountPaise": 82000,
+      "discountReducedPaise": 241500,
+      "discountIncreasedPaise": 82000,
+      "netDiscountChangePaise": -159500,
+      "baselineEscalations": 9,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 98,
+          "paidCount": 17,
+          "disputedCount": 0,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 3439300,
+          "discountRedeemedPaise": 61500,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 3377800
+        },
+        "memory": {
+          "scoredEvents": 98,
+          "paidCount": 17,
+          "disputedCount": 0,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 3549300,
+          "discountRedeemedPaise": 63000,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 3486300
+        },
+        "netRevenueLiftPaise": 108500
       }
     },
     {
       "scenario": "noise",
       "customers": 15,
       "events": 26,
-      "baselineDiscountPaise": 82500,
-      "memoryDiscountPaise": 151000,
+      "baselineDiscountPaise": 0,
+      "memoryDiscountPaise": 23000,
       "discountReducedPaise": 0,
-      "discountIncreasedPaise": 68500,
-      "netDiscountChangePaise": 68500,
-      "baselineEscalations": 2,
+      "discountIncreasedPaise": 23000,
+      "netDiscountChangePaise": 23000,
+      "baselineEscalations": 3,
       "memoryEscalations": 0,
       "revenue": {
         "baseline": {
           "scoredEvents": 26,
-          "paidCount": 6,
+          "paidCount": 4,
           "disputedCount": 0,
-          "escalatedCount": 2,
-          "moneyCollectedPaise": 739800,
-          "discountRedeemedPaise": 19000,
+          "escalatedCount": 3,
+          "moneyCollectedPaise": 419800,
+          "discountRedeemedPaise": 0,
           "disputeCostPaise": 0,
           "recurrenceCostPaise": 0,
-          "escalationCostPaise": 60000,
-          "netRevenuePaise": 660800
+          "escalationCostPaise": 90000,
+          "netRevenuePaise": 329800
         },
         "memory": {
           "scoredEvents": 26,
-          "paidCount": 5,
+          "paidCount": 3,
           "disputedCount": 0,
           "escalatedCount": 0,
-          "moneyCollectedPaise": 739800,
-          "discountRedeemedPaise": 31000,
+          "moneyCollectedPaise": 419800,
+          "discountRedeemedPaise": 0,
           "disputeCostPaise": 0,
           "recurrenceCostPaise": 0,
           "escalationCostPaise": 0,
-          "netRevenuePaise": 708800
+          "netRevenuePaise": 419800
         },
-        "netRevenueLiftPaise": 48000
+        "netRevenueLiftPaise": 90000
+      }
+    },
+    {
+      "scenario": "cross_domain_risk",
+      "customers": 120,
+      "events": 164,
+      "baselineDiscountPaise": 301800,
+      "memoryDiscountPaise": 246500,
+      "discountReducedPaise": 258300,
+      "discountIncreasedPaise": 203000,
+      "netDiscountChangePaise": -55300,
+      "baselineEscalations": 2,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 123,
+          "paidCount": 36,
+          "disputedCount": 11,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 9560000,
+          "discountRedeemedPaise": 129800,
+          "disputeCostPaise": 4836500,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 4593700
+        },
+        "memory": {
+          "scoredEvents": 123,
+          "paidCount": 34,
+          "disputedCount": 10,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 8930000,
+          "discountRedeemedPaise": 95000,
+          "disputeCostPaise": 4188000,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 4647000
+        },
+        "netRevenueLiftPaise": 53300
+      }
+    },
+    {
+      "scenario": "normal",
+      "customers": 168,
+      "events": 168,
+      "baselineDiscountPaise": 384000,
+      "memoryDiscountPaise": 194000,
+      "discountReducedPaise": 384000,
+      "discountIncreasedPaise": 194000,
+      "netDiscountChangePaise": -190000,
+      "baselineEscalations": 0,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 168,
+          "paidCount": 62,
+          "disputedCount": 2,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 10826700,
+          "discountRedeemedPaise": 171000,
+          "disputeCostPaise": 489900,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 10165800
+        },
+        "memory": {
+          "scoredEvents": 168,
+          "paidCount": 61,
+          "disputedCount": 2,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 10626700,
+          "discountRedeemedPaise": 194000,
+          "disputeCostPaise": 489900,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 9942800
+        },
+        "netRevenueLiftPaise": -223000
       }
     },
     {
       "scenario": "loyal_payer",
       "customers": 56,
       "events": 56,
-      "baselineDiscountPaise": 23500,
-      "memoryDiscountPaise": 35000,
-      "discountReducedPaise": 0,
-      "discountIncreasedPaise": 11500,
-      "netDiscountChangePaise": 11500,
+      "baselineDiscountPaise": 268800,
+      "memoryDiscountPaise": 78000,
+      "discountReducedPaise": 268800,
+      "discountIncreasedPaise": 78000,
+      "netDiscountChangePaise": -190800,
       "baselineEscalations": 0,
       "memoryEscalations": 0,
       "revenue": {
         "baseline": {
           "scoredEvents": 56,
-          "paidCount": 28,
+          "paidCount": 30,
           "disputedCount": 0,
           "escalatedCount": 0,
-          "moneyCollectedPaise": 7060000,
-          "discountRedeemedPaise": 0,
+          "moneyCollectedPaise": 7430000,
+          "discountRedeemedPaise": 165300,
           "disputeCostPaise": 0,
           "recurrenceCostPaise": 0,
           "escalationCostPaise": 0,
-          "netRevenuePaise": 7060000
+          "netRevenuePaise": 7264700
         },
         "memory": {
           "scoredEvents": 56,
@@ -339,13 +378,13 @@
           "disputedCount": 0,
           "escalatedCount": 0,
           "moneyCollectedPaise": 7060000,
-          "discountRedeemedPaise": 0,
+          "discountRedeemedPaise": 59000,
           "disputeCostPaise": 0,
           "recurrenceCostPaise": 0,
           "escalationCostPaise": 0,
-          "netRevenuePaise": 7060000
+          "netRevenuePaise": 7001000
         },
-        "netRevenueLiftPaise": 0
+        "netRevenueLiftPaise": -263700
       }
     },
     {
@@ -357,73 +396,34 @@
       "discountReducedPaise": 0,
       "discountIncreasedPaise": 0,
       "netDiscountChangePaise": 0,
-      "baselineEscalations": 8,
-      "memoryEscalations": 10,
+      "baselineEscalations": 6,
+      "memoryEscalations": 15,
       "revenue": {
         "baseline": {
           "scoredEvents": 27,
           "paidCount": 0,
           "disputedCount": 27,
-          "escalatedCount": 5,
+          "escalatedCount": 3,
           "moneyCollectedPaise": 0,
           "discountRedeemedPaise": 0,
           "disputeCostPaise": 0,
           "recurrenceCostPaise": 0,
-          "escalationCostPaise": 150000,
-          "netRevenuePaise": -150000
+          "escalationCostPaise": 90000,
+          "netRevenuePaise": -90000
         },
         "memory": {
           "scoredEvents": 27,
           "paidCount": 0,
           "disputedCount": 27,
-          "escalatedCount": 9,
+          "escalatedCount": 14,
           "moneyCollectedPaise": 0,
           "discountRedeemedPaise": 0,
           "disputeCostPaise": 0,
           "recurrenceCostPaise": 0,
-          "escalationCostPaise": 270000,
-          "netRevenuePaise": -270000
+          "escalationCostPaise": 420000,
+          "netRevenuePaise": -420000
         },
-        "netRevenueLiftPaise": -120000
-      }
-    },
-    {
-      "scenario": "cross_domain_risk",
-      "customers": 120,
-      "events": 164,
-      "baselineDiscountPaise": 84000,
-      "memoryDiscountPaise": 198000,
-      "discountReducedPaise": 10000,
-      "discountIncreasedPaise": 124000,
-      "netDiscountChangePaise": 114000,
-      "baselineEscalations": 4,
-      "memoryEscalations": 45,
-      "revenue": {
-        "baseline": {
-          "scoredEvents": 123,
-          "paidCount": 34,
-          "disputedCount": 10,
-          "escalatedCount": 0,
-          "moneyCollectedPaise": 8710000,
-          "discountRedeemedPaise": 31000,
-          "disputeCostPaise": 4240000,
-          "recurrenceCostPaise": 0,
-          "escalationCostPaise": 0,
-          "netRevenuePaise": 4439000
-        },
-        "memory": {
-          "scoredEvents": 123,
-          "paidCount": 45,
-          "disputedCount": 14,
-          "escalatedCount": 45,
-          "moneyCollectedPaise": 11260000,
-          "discountRedeemedPaise": 30000,
-          "disputeCostPaise": 5796000,
-          "recurrenceCostPaise": 0,
-          "escalationCostPaise": 1350000,
-          "netRevenuePaise": 4084000
-        },
-        "netRevenueLiftPaise": -355000
+        "netRevenueLiftPaise": -330000
       }
     }
   ],
@@ -434,12 +434,12 @@
     },
     "adverse": {
       "customersChecked": 80,
-      "suppressed": 1,
-      "unchanged": 79,
-      "baselineDiscountCount": 2,
-      "memoryDiscountCount": 1,
-      "baselineSpendPaise": 20000,
-      "memorySpendPaise": 20000,
+      "suppressed": 8,
+      "unchanged": 72,
+      "baselineDiscountCount": 8,
+      "memoryDiscountCount": 2,
+      "baselineSpendPaise": 172800,
+      "memorySpendPaise": 46000,
       "details": [
         {
           "customer_id": "cust_mig08KAzwgFQOy",
@@ -533,9 +533,9 @@
           "customer_id": "cust_iU6QZXhFuepLaL",
           "event_id": "order_teLre2z09E68fi",
           "dispute_outcome": "under_review",
-          "baselineDiscount": null,
+          "baselineDiscount": 21000,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_rOCBAs7V7JjkT4",
@@ -565,9 +565,9 @@
           "customer_id": "cust_E5KPGJv7SClA0C",
           "event_id": "order_axQsPVM5CvFmWi",
           "dispute_outcome": "under_review",
-          "baselineDiscount": null,
+          "baselineDiscount": 17500,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_5uvh9qo36cZiCd",
@@ -605,9 +605,9 @@
           "customer_id": "cust_ZQuNGzGaI0VyIQ",
           "event_id": "order_RvzLu3eddDB3Lx",
           "dispute_outcome": "under_review",
-          "baselineDiscount": 10000,
+          "baselineDiscount": null,
           "memoryDiscount": null,
-          "suppressed": true
+          "suppressed": false
         },
         {
           "customer_id": "cust_YTpqh4AMrxiGoJ",
@@ -677,9 +677,9 @@
           "customer_id": "cust_3Kl7boPw4W89tR",
           "event_id": "order_r3YwCyeOGOTAd9",
           "dispute_outcome": "under_review",
-          "baselineDiscount": null,
+          "baselineDiscount": 23500,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_Pzbb6TWHSDlp38",
@@ -693,9 +693,9 @@
           "customer_id": "cust_xW1t9zvkPBPJyS",
           "event_id": "order_8EaGToBp302tOg",
           "dispute_outcome": "won",
-          "baselineDiscount": null,
+          "baselineDiscount": 17500,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_VOH0iHi4sKCNSM",
@@ -741,9 +741,9 @@
           "customer_id": "cust_9RNxGcgn9MMKQS",
           "event_id": "order_LOuVV2urt8uhqi",
           "dispute_outcome": "won",
-          "baselineDiscount": null,
+          "baselineDiscount": 23500,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_OAkUTvufBKD460",
@@ -773,9 +773,9 @@
           "customer_id": "cust_sSUKgSaounYgxi",
           "event_id": "order_ssrcTTGiiIWG20",
           "dispute_outcome": "won",
-          "baselineDiscount": null,
+          "baselineDiscount": 20300,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_bj9J5mOF4SuY9A",
@@ -877,9 +877,9 @@
           "customer_id": "cust_Ha4wlYzjkHRMPN",
           "event_id": "order_aUgedYC4HxukJ9",
           "dispute_outcome": "under_review",
-          "baselineDiscount": null,
+          "baselineDiscount": 25000,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_xjdMzSKb4nHfmY",
@@ -893,7 +893,7 @@
           "customer_id": "cust_LpO6GK8i0QTwOP",
           "event_id": "order_f3vyDhanTuLaKG",
           "dispute_outcome": "under_review",
-          "baselineDiscount": 10000,
+          "baselineDiscount": null,
           "memoryDiscount": 20000,
           "suppressed": false
         },
@@ -1030,16 +1030,16 @@
           "event_id": "order_IVkUhfvumV1YlM",
           "dispute_outcome": "under_review",
           "baselineDiscount": null,
-          "memoryDiscount": null,
+          "memoryDiscount": 26000,
           "suppressed": false
         },
         {
           "customer_id": "cust_0Daj7vXnRDQcvS",
           "event_id": "order_LiPstDsKRJgPzg",
           "dispute_outcome": "won",
-          "baselineDiscount": null,
+          "baselineDiscount": 24500,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_z42nC8YfakjhIs",
@@ -1085,19 +1085,19 @@
     },
     "merchant_conceded": {
       "customersChecked": 40,
-      "suppressed": 0,
-      "unchanged": 40,
-      "baselineDiscountCount": 4,
-      "memoryDiscountCount": 6,
-      "baselineSpendPaise": 64000,
-      "memorySpendPaise": 178000,
+      "suppressed": 6,
+      "unchanged": 34,
+      "baselineDiscountCount": 8,
+      "memoryDiscountCount": 7,
+      "baselineSpendPaise": 124000,
+      "memorySpendPaise": 200500,
       "details": [
         {
           "customer_id": "cust_ShfxFS12qfF0lC",
           "event_id": "order_v8dT9h7pxqlKVg",
           "dispute_outcome": "lost",
           "baselineDiscount": null,
-          "memoryDiscount": null,
+          "memoryDiscount": 26000,
           "suppressed": false
         },
         {
@@ -1145,7 +1145,7 @@
           "event_id": "order_xPcU9d6gsUQKrS",
           "dispute_outcome": "lost",
           "baselineDiscount": null,
-          "memoryDiscount": null,
+          "memoryDiscount": 13000,
           "suppressed": false
         },
         {
@@ -1160,25 +1160,25 @@
           "customer_id": "cust_Tj22qtq0zi0TsS",
           "event_id": "order_IJVxRFottBY6Od",
           "dispute_outcome": "lost",
-          "baselineDiscount": 15000,
-          "memoryDiscount": 15000,
+          "baselineDiscount": null,
+          "memoryDiscount": null,
           "suppressed": false
         },
         {
           "customer_id": "cust_uaBYp0EkLxce2U",
           "event_id": "order_5NS1cD1S9yKER3",
           "dispute_outcome": "lost",
-          "baselineDiscount": null,
+          "baselineDiscount": 8000,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_IiXvq8DrrUsXKT",
           "event_id": "order_5gIkwnOaMFtfgE",
           "dispute_outcome": "lost",
-          "baselineDiscount": null,
+          "baselineDiscount": 13000,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_2U29hkWr7PFN1w",
@@ -1192,7 +1192,7 @@
           "customer_id": "cust_y1LpNxTaEOavHm",
           "event_id": "order_dCHdMnaynAtdCe",
           "dispute_outcome": "lost",
-          "baselineDiscount": null,
+          "baselineDiscount": 23500,
           "memoryDiscount": 47000,
           "suppressed": false
         },
@@ -1200,16 +1200,16 @@
           "customer_id": "cust_kGeKo31xujAAYy",
           "event_id": "order_mjMsTHT6Qwc8pV",
           "dispute_outcome": "lost",
-          "baselineDiscount": null,
+          "baselineDiscount": 12000,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_VuinZWyJpraA5m",
           "event_id": "order_9uultEZ1a7xjj9",
           "dispute_outcome": "lost",
-          "baselineDiscount": null,
-          "memoryDiscount": null,
+          "baselineDiscount": 20000,
+          "memoryDiscount": 30000,
           "suppressed": false
         },
         {
@@ -1240,9 +1240,9 @@
           "customer_id": "cust_VcUF7VB7xnbvdD",
           "event_id": "order_tSE4FMzayIZJbX",
           "dispute_outcome": "lost",
-          "baselineDiscount": null,
+          "baselineDiscount": 19000,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_yiTAel8vx232f6",
@@ -1273,7 +1273,7 @@
           "event_id": "order_lfMdPnIQKKwMMp",
           "dispute_outcome": "lost",
           "baselineDiscount": null,
-          "memoryDiscount": null,
+          "memoryDiscount": 16000,
           "suppressed": false
         },
         {
@@ -1304,17 +1304,17 @@
           "customer_id": "cust_Gfju3zjPh19oxf",
           "event_id": "order_hq2oTcgCWEmhrb",
           "dispute_outcome": "lost",
-          "baselineDiscount": 18500,
-          "memoryDiscount": 37000,
+          "baselineDiscount": null,
+          "memoryDiscount": null,
           "suppressed": false
         },
         {
           "customer_id": "cust_wHY5lrzRyCt58P",
           "event_id": "order_8GQGJjTIPbNDuX",
           "dispute_outcome": "lost",
-          "baselineDiscount": null,
+          "baselineDiscount": 8000,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_O1jRjh7d6QWOma",
@@ -1328,24 +1328,24 @@
           "customer_id": "cust_rF61HxjpMGPn9x",
           "event_id": "order_A8xGeUl33T4CUG",
           "dispute_outcome": "lost",
-          "baselineDiscount": 24500,
-          "memoryDiscount": 49000,
+          "baselineDiscount": null,
+          "memoryDiscount": 24500,
           "suppressed": false
         },
         {
           "customer_id": "cust_jrjyVeVWc6mRiJ",
           "event_id": "order_FmkI3BmsFxHef3",
           "dispute_outcome": "lost",
-          "baselineDiscount": null,
+          "baselineDiscount": 20500,
           "memoryDiscount": null,
-          "suppressed": false
+          "suppressed": true
         },
         {
           "customer_id": "cust_GpEwBSaK4tYJYj",
           "event_id": "order_VhaHDK07rZ1Zua",
           "dispute_outcome": "lost",
           "baselineDiscount": null,
-          "memoryDiscount": 24000,
+          "memoryDiscount": null,
           "suppressed": false
         },
         {
@@ -1377,15 +1377,15 @@
           "event_id": "order_5GklQTPgwTJYKA",
           "dispute_outcome": "lost",
           "baselineDiscount": null,
-          "memoryDiscount": null,
+          "memoryDiscount": 44000,
           "suppressed": false
         },
         {
           "customer_id": "cust_9CwwJCYxMQwKYn",
           "event_id": "order_62Jet0hL2xKPrK",
           "dispute_outcome": "lost",
-          "baselineDiscount": 6000,
-          "memoryDiscount": 6000,
+          "baselineDiscount": null,
+          "memoryDiscount": null,
           "suppressed": false
         },
         {
@@ -1415,12 +1415,12 @@
       ]
     },
     "summary": {
-      "correctSuppressions": 1,
-      "falsePositiveSuppressions": 0,
-      "totalSuppressions": 1,
-      "correctSuppressionRatePct": 100,
-      "adverseSuppressionRatePct": 1,
-      "merchantConcededSuppressionRatePct": 0
+      "correctSuppressions": 8,
+      "falsePositiveSuppressions": 6,
+      "totalSuppressions": 14,
+      "correctSuppressionRatePct": 57,
+      "adverseSuppressionRatePct": 10,
+      "merchantConcededSuppressionRatePct": 15
     }
   },
   "methodology": {

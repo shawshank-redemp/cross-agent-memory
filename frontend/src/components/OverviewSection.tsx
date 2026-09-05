@@ -61,10 +61,10 @@ export function OverviewSection({ report }: { report: ComparisonReport }) {
           }${formatPaise(netChange)} overall`}
         />
         <KpiCard
-          label="Baseline discount spend"
+          label="Memory informed spend"
           value={formatPaise(overall.baselineDiscountPaise)}
         />
-        <KpiCard label="Memory-informed spend" value={formatPaise(overall.memoryDiscountPaise)} />
+        <KpiCard label="Baseline discount spend" value={formatPaise(overall.memoryDiscountPaise)} />
         <KpiCard
           label="Suppressed after an adverse dispute"
           value={`${adverse.suppressed}/${adverse.customersChecked}`}
