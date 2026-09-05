@@ -523,3 +523,29 @@ test("absolute caps bound what a percentage cannot", () => {
   // A signal declaring 60% cannot widen past MAX_DISCOUNT_CAP_PERCENT.
   assert.equal(spendCeilingPaise(1_000, 60), spendCeilingPaise(1_000, MAX_DISCOUNT_CAP_PERCENT));
 });
+
+// disputeCautionLevel is customer-scoped, so an adverse ruling reaches the
+// Dispute Responder too — but that agent is not contacting anybody. It files a
+// defence with a bank, and its actions are accept_dispute and contest_dispute.
+//
+// Ungated, the guardrail forced no_action there: 11 dispute decisions in the
+// 2026-09-05 run came back with an action the agent cannot take. Worse than
+// invalid, it is backwards — declining to contest is how a merchant loses a
+// chargeback by default, so suppression would forfeit the disputed amount on
+// exactly the customers already ruled against us.
+test("outreach suppression does not reach an agent with no way to send nothing", () => {
+  const out = run(
+    decision({ action: "contest_dispute", committed_spend_paise: null }),
+    signals({ disputeCautionLevel: "adverse" }),
+    facts("dispute_responder", 300_000),
+  );
+  assert.equal(out.action, "contest_dispute", "the dispute defence still gets filed");
+  assert.notEqual(out.action, "no_action", "which is not in this agent's enum at all");
+});
+
+test("outreach suppression still applies to agents that can send nothing", () => {
+  for (const agent of ["cart_abandonment", "subscription_recovery"] as const) {
+    const out = run(decision({ committed_spend_paise: 5_000 }), signals({ disputeCautionLevel: "adverse" }), facts(agent, 300_000));
+    assert.equal(out.action, "no_action", `${agent} stops contacting`);
+  }
+});

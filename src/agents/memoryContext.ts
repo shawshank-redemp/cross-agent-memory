@@ -489,7 +489,22 @@ export function enforcePolicy<D extends MemoryDecisionShape>(
   const mustBlockDiscount = resolved.blocksDiscount && afterUniversal.committed_spend_paise != null;
   // Suppression outranks the block's reminder fallback: there is no point
   // swapping a discount for a message we have also decided not to send.
-  const mustSuppressOutreach = resolved.suppressesOutreach && afterUniversal.action !== "no_action";
+  //
+  // GATED ON THE AGENT HAVING A "SEND NOTHING" OPTION AT ALL. disputeCautionLevel
+  // is customer-scoped, so it fires for the Dispute Responder too — but that
+  // agent is not reaching out to anybody. It is filing a defence with a bank,
+  // and its actions are accept_dispute and contest_dispute. There is no
+  // no_action in its enum, and "stop contacting this customer" is not a
+  // coherent instruction for it.
+  //
+  // Without this gate the guardrail forced an action the agent cannot take: 11
+  // dispute decisions in the 2026-09-05 run came back as no_action. Worse than
+  // invalid, it is backwards — declining to contest a chargeback is how a
+  // merchant loses one by default, so suppression there would forfeit the
+  // disputed amount on exactly the customers already ruled against us.
+  const canSendNothing = (AGENT_ACTION_POLICY[event.agent].actions as readonly string[]).includes("no_action");
+  const mustSuppressOutreach =
+    resolved.suppressesOutreach && canSendNothing && afterUniversal.action !== "no_action";
   // claimForcedEscalation() consumes one unit of the run's escalation budget, so
   // it must only be called when an escalation would actually be forced —
   // short-circuit order matters here. The breaker counts POLICY-forced

@@ -131,6 +131,13 @@ export type DisputeResponderDecision = z.infer<typeof DisputeResponderDecisionSc
 // and be scored by the outcome model as a discount that was never
 // conceptually offered.
 export interface AgentActionPolicy {
+  // Every action this agent may take. Enforcement needs it to answer questions
+  // like "does this agent even have a way to send nothing?" — the Dispute
+  // Responder does not, because it is filing a defence with a bank rather than
+  // contacting a customer, so a rule about suppressing outreach is meaningless
+  // for it. Read from the same enum the schema is built from, so the two cannot
+  // describe different agents.
+  actions: readonly string[];
   spendableActions: readonly string[];
   // Where a decision lands when policy removes its spend. Chosen so the
   // fallback is never MORE interventionist than what the model asked for.
@@ -138,11 +145,23 @@ export interface AgentActionPolicy {
 }
 
 export const AGENT_ACTION_POLICY: Record<AgentType, AgentActionPolicy> = {
-  cart_abandonment: { spendableActions: ["send_discount"], nonSpendFallbackAction: "send_reminder" },
-  subscription_recovery: { spendableActions: ["send_discount"], nonSpendFallbackAction: "retry_payment" },
+  cart_abandonment: {
+    actions: CART_ABANDONMENT_ACTIONS,
+    spendableActions: ["send_discount"],
+    nonSpendFallbackAction: "send_reminder",
+  },
+  subscription_recovery: {
+    actions: SUBSCRIPTION_RECOVERY_ACTIONS,
+    spendableActions: ["send_discount"],
+    nonSpendFallbackAction: "retry_payment",
+  },
   // No dispute action commits margin, so any spend on this agent is incoherent
   // by construction. contest_dispute exists only to typecheck the fallback.
-  dispute_responder: { spendableActions: [], nonSpendFallbackAction: "contest_dispute" },
+  dispute_responder: {
+    actions: DISPUTE_RESPONDER_ACTIONS,
+    spendableActions: [],
+    nonSpendFallbackAction: "contest_dispute",
+  },
 };
 
 export type AgentDecision =

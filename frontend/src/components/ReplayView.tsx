@@ -909,8 +909,8 @@ function MemoryStep({ memory, profile }: { memory: TraceArm; profile: Record<str
             needs.
           </p>
           <p>
-            <b>Why it matters:</b> summed across agents it catches gaming spread thin across domains,
-            which no single agent looking at its own history could see.
+            <b>Why it matters:</b> summed across agents it catches a pattern spread thin across domains,
+            where no single agent's own count is high enough to notice.
           </p>
         </ExpandableRow>
         <ExpandableRow label="successful_payment_count" value={String(profile.successful_payment_count)}>
@@ -1126,9 +1126,9 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
                   (threshold 5)&rdquo; rather than <code>true</code>.
                 </p>
                 <p>
-                  The number matters. A customer who came back three times and one who came back seven
-                  both clear the same threshold, and the agent should be able to tell them apart when it
-                  decides how much to spend.
+                  The number matters. A customer who has landed in this flow three times and one who has
+                  landed in it seven both clear the same threshold, and the agent should be able to tell
+                  them apart when it decides how much to spend.
                 </p>
               </ExpandableRow>
               </Accordion>
@@ -1349,7 +1349,8 @@ function GuardrailStep({
           <p>
             <code>enforceUniversalPolicy</code> runs on both arms identically — spend bounds,
             action/spend coherence, the default ceiling. <code>resolveSignalEffects</code> runs on the
-            memory arm only and moves that ceiling, blocks it, or forces escalation.
+            memory arm only: it moves that ceiling, blocks spend, forces a human review, or stops the
+            outreach altogether.
           </p>
           <p>
             Sharing the universal layer is what stops "memory saved money" from merely measuring the
