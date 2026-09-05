@@ -1016,15 +1016,15 @@ const SIGNAL_MEANING: Record<string, string> = {
   disputeCautionLevel:
     "How far this customer's chargeback history should hold back spending. Five levels, from no disputes at all through to one the bank ruled against them — and a dispute the merchant conceded counts for nothing, because that says more about our delivery than about the customer.",
   repeatRecoveryWithThisAgent:
-    "How many times this customer has come back through this agent's recovery flow. Someone abandoning their fifth cart is a different bet from someone abandoning their first.",
+    "How many times this customer has ended up in this agent's recovery flow — abandoned carts for Cart Abandonment, failed charges for Subscription Recovery. It counts the times we had to try, not whether the customer ever responded. Someone on their fifth abandoned cart is a different bet from someone on their first.",
   repeatRecoveryAcrossAgents:
-    "The same pattern seen across all three agents at once. A customer who abandons a cart, misses a subscription payment and files a dispute may not cross any single agent's threshold, while the total across them tells a very different story.",
+    "The same count, totalled across all three agents. A customer who abandons a cart, misses a subscription charge and files a dispute may not cross any single agent's threshold, while the total across them tells a very different story.",
   discountLimitReached:
     "Whether this agent has already used up its allowance of discounts for this customer. Each agent gets a fixed number before it has to stop.",
   crossAgentSpendLimitReached:
     "Whether the total margin given to this customer across every agent has run out. No single agent can work this out alone, because each only knows what it spent itself.",
   pastDiscountsIneffective:
-    "Whether discounts have already been tried on this customer and did not work. If they ignored the last two offers, a third is unlikely to change their mind.",
+    "The one signal that knows whether anything WORKED. Every other signal counts what the customer did; this one records what we spent and whether they took it up. If they ignored the last two offers, a third is unlikely to change their mind.",
   recentMultiDomainTrouble:
     "Whether things went wrong in more than one place at once — a failed subscription charge and an abandoned cart within the same fortnight, say. That shape usually means the customer is leaving, and another automated nudge is not what fixes it.",
   provenPayer:
