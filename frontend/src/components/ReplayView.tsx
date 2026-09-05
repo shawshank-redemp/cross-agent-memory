@@ -1147,7 +1147,7 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
         <div className="rp-io-col output">
           <div className="rp-io-header">
             <span className="rp-io-title">Output</span>
-            <span className="rp-io-sub">two separate decisions, before guardrails</span>
+            <span className="rp-io-sub">two arms, two decisions</span>
           </div>
           <div className="rp-io-body">
             <div className="rp-arms-compare">
@@ -1157,7 +1157,6 @@ function DecisionStep({ memory, baseline }: { memory: TraceArm; baseline: TraceA
                   <ArmOutput label="decision" proposal={memProposal} arm={memory} hideLabel />
                 </Accordion>
               </div>
-              <div className="rp-arm-divider">vs</div>
               <div className="rp-arm-column baseline">
                 <h4 className="rp-arm-title">Baseline arm</h4>
                 <Accordion>
