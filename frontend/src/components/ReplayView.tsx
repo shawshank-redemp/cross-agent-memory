@@ -991,10 +991,7 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
               <b>Measured:</b> <code>{JSON.stringify(s.value)}</code>
             </p>
             <p>
-              <b>Applies to:</b>{" "}
-              {s.scope === "customer"
-                ? "the customer. It is true about the person whichever agent asks, so a new agent would inherit it as-is."
-                : "this agent only. Each agent measures its own, so Cart Abandonment and Subscription Recovery can reach different answers."}
+              <b>What it means:</b> {SIGNAL_MEANING[s.id] ?? "No description recorded for this signal."}
             </p>
             <p>
               <b>What it permits:</b> <EffectWords effects={s.effects} />
@@ -1006,6 +1003,35 @@ function SignalsStep({ evaluated }: { evaluated: EvaluatedSignal[] | null }) {
     </>
   );
 }
+
+// PLAIN-ENGLISH DESCRIPTION PER SIGNAL, written for someone who has never seen
+// this system. The rows used to say which SCOPE a signal had — whether it was
+// true about the customer or measured per agent — which answers a question only
+// someone maintaining the registry would ask. A viewer wants to know what the
+// signal IS.
+//
+// Keyed by registry id, so a signal added later shows an honest "no description"
+// rather than silently borrowing another's.
+const SIGNAL_MEANING: Record<string, string> = {
+  disputeCautionLevel:
+    "How far this customer's chargeback history should hold back spending. Five levels, from no disputes at all through to one the bank ruled against them — and a dispute the merchant conceded counts for nothing, because that says more about our delivery than about the customer.",
+  repeatRecoveryWithThisAgent:
+    "How many times this customer has come back through this agent's recovery flow. Someone abandoning their fifth cart is a different bet from someone abandoning their first.",
+  repeatRecoveryAcrossAgents:
+    "The same pattern seen across all three agents at once. A customer who abandons a cart, misses a subscription payment and files a dispute may not cross any single agent's threshold, while the total across them tells a very different story.",
+  discountLimitReached:
+    "Whether this agent has already used up its allowance of discounts for this customer. Each agent gets a fixed number before it has to stop.",
+  crossAgentSpendLimitReached:
+    "Whether the total margin given to this customer across every agent has run out. No single agent can work this out alone, because each only knows what it spent itself.",
+  pastDiscountsIneffective:
+    "Whether discounts have already been tried on this customer and did not work. If they ignored the last two offers, a third is unlikely to change their mind.",
+  recentMultiDomainTrouble:
+    "Whether things went wrong in more than one place at once — a failed subscription charge and an abandoned cart within the same fortnight, say. That shape usually means the customer is leaving, and another automated nudge is not what fixes it.",
+  provenPayer:
+    "Whether this is an established customer who has genuinely paid us, and enough of it to matter. They earn more room than a stranger does.",
+  discountsGrantedByThisAgent:
+    "How much this agent has already given this customer recently. Context for the decision rather than a limit in itself.",
+};
 
 // Effects as a sentence rather than a JSON dump. The raw object is precise and
 // unreadable to anyone who has not seen the registry; this is the same
