@@ -233,10 +233,10 @@ differ.
 
 | | discounts | committed |
 | --- | --- | --- |
-| baseline | 82 | ₹12,603 |
-| memory-informed | 306 | ₹76,582 |
+| baseline | 222 | ₹39,688 |
+| memory-informed | 378 | ₹93,564 |
 
-Modelled net revenue: **₹10,02,437 baseline against ₹11,71,030 with memory.**
+Modelled net revenue: **₹11,73,700 baseline against ₹12,15,339 with memory** — lift **₹41,639** (+3.5%).
 
 That number alone would be a weak claim — an agent that simply discounts more
 would produce it. The cohort that makes it falsifiable is `cross_domain_risk`,
@@ -245,9 +245,9 @@ behaviour is:
 
 | dispute outcome | baseline | memory | expectation |
 | --- | --- | --- | --- |
-| `won` — bank ruled for the merchant | ₹0 | **₹0** | memory should hold back |
-| `under_review` — no ruling yet | ₹200 on 2 | **₹200 on 1** | memory should hold back |
-| `lost` — merchant conceded, customer refunded | ₹640 on 4 | **₹1,780 on 6** | memory should NOT hold back |
+| `won` — bank ruled for the merchant | ₹1,728 on 8 | **₹460 on 2** | memory should hold back |
+| `under_review` — no ruling yet | (included above) | (included above) | memory should hold back |
+| `lost` — merchant conceded, customer refunded | ₹1,240 on 8 | **₹2,005 on 7** | memory should NOT hold back |
 
 The last row is the test. A system reacting to the mere *existence* of a dispute
 would pull back on all three and score identically to one that reads the
