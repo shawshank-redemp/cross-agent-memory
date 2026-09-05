@@ -338,6 +338,16 @@ function loadTaggedEvents(db: Database.Database): { customerById: Map<string, Cu
 }
 
 export interface RunAgentBatchParams {
+  // Optional pre-pass, run AFTER selection and resume filtering and BEFORE the
+  // decision loop, with exactly the events that will be decided. The baseline
+  // arm uses it to resolve every model call in one Batch API submission at half
+  // price; the memory arm does not, because 60% of its decisions read state that
+  // earlier decisions in the same run write.
+  //
+  // Deliberately a hook rather than a second runner: the loop below owns resume,
+  // partial-file writes, per-event failure handling, enforcement ordering and the
+  // run breakers, and none of that should exist twice.
+  prepare?: (toProcess: TaggedEvent[], customerById: Map<string, Customer>) => Promise<void>;
   mode: "baseline" | "memory";
   outputFile: string;
   decide: (item: TaggedEvent, customer: Customer, db: Database.Database) => Promise<DecisionLike>;
@@ -434,6 +444,8 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   } else if (existsSync(partialPath)) {
     rmSync(partialPath);
   }
+
+  if (params.prepare) await params.prepare(toProcess, customerById);
 
   const customerCount = new Set(toProcess.map((item) => item.event.customer_id)).size;
   console.log(

@@ -54,7 +54,7 @@ with opposite expectations.
 
 | # | Piece | What it is |
 | --- | --- | --- |
-| 1 | **Synthetic batch** | 1,200 customers with deliberately planted cross-domain patterns |
+| 1 | **Synthetic batch** | 701 customers with deliberately planted cross-domain patterns |
 | 2 | **Data model** | A read model over reports Razorpay already exports |
 | 3 | **Shared memory** | Per-customer profile, computed on read, scoped as-of the decision |
 | 4 | **Signal registry** | What the profile *means* and what it permits |
@@ -219,6 +219,51 @@ and that the control cohort fires none — needs `load:data` first, since it run
 the real signal code), `npm run verify:schema` (data-model and as-of invariants against the
 loaded DB), `npm run verify:prompts` (both arms carry an identical, arm-neutral
 objective). None call the API.
+
+---
+
+## What the run measured
+
+One batch, 701 customers, 1,724 recovery-eligible events, decided twice — once by
+agents that see only the triggering event, once by agents that also read the
+shared profile. Same events, same seeded outcome dice, so only the decisions
+differ.
+
+**Memory does not spend less. It spends differently.**
+
+| | discounts | committed |
+| --- | --- | --- |
+| baseline | 82 | ₹12,603 |
+| memory-informed | 306 | ₹76,582 |
+
+Modelled net revenue: **₹10,02,437 baseline against ₹11,71,030 with memory.**
+
+That number alone would be a weak claim — an agent that simply discounts more
+would produce it. The cohort that makes it falsifiable is `cross_domain_risk`,
+where a dispute's outcome is planted at equal weight and decides what correct
+behaviour is:
+
+| dispute outcome | baseline | memory | expectation |
+| --- | --- | --- | --- |
+| `won` — bank ruled for the merchant | ₹0 | **₹0** | memory should hold back |
+| `under_review` — no ruling yet | ₹200 on 2 | **₹200 on 1** | memory should hold back |
+| `lost` — merchant conceded, customer refunded | ₹640 on 4 | **₹1,780 on 6** | memory should NOT hold back |
+
+The last row is the test. A system reacting to the mere *existence* of a dispute
+would pull back on all three and score identically to one that reads the
+outcome. Memory spends nearly three times as much where the merchant conceded —
+because that outcome is evidence about our delivery, not about the customer.
+
+**52 decisions had outreach suppressed outright** — customers with a chargeback
+ruled against them, contacted by the baseline, left alone by the memory arm.
+That is a call no single agent can make: Cart Abandonment cannot see a dispute
+ruling, and the Dispute Responder cannot see an abandoned cart.
+
+Honest limits on these numbers: outcomes come from a hand-authored probability
+table the agents never read, cell counts at this size support directional
+claims rather than statistical ones, and the escalation model is the most
+load-bearing assumption in the scoring — `npm run analyze:escalation` re-scores
+the same decisions under alternatives.
 
 ---
 

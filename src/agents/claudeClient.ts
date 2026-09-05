@@ -167,3 +167,96 @@ export async function decideRaw<Schema extends z.ZodType>(
 }
 
 export { MODEL };
+
+
+// ---------------------------------------------------------------------------
+// BATCH DECODING — the same decision, at half price, for calls that do not
+// depend on each other.
+// ---------------------------------------------------------------------------
+//
+// ONLY SAFE WHERE REQUESTS ARE INDEPENDENT, and in this system that is exactly
+// one arm. A baseline request is built from {customer, event} and nothing else:
+// it reads no profile, no signals, no prior decisions. Every baseline call could
+// be made in any order, or all at once, and produce the same answer.
+//
+// The memory arm is NOT batchable as a single batch. Measured on the committed
+// batch, 1,042 of its 1,724 decisions (60.4%) are a customer's second or later
+// event, so they read recent_decisions and the spend signals — state written by
+// earlier decisions in the same run. Submitting them together would blank that
+// for most of the arm. (Batching by ROUND — every customer's first event, then
+// every second — would preserve it and is a genuine option; it is not built
+// because the Batch API carries no latency guarantee, and a run that must
+// finish today should not gamble on that.)
+//
+// Enforcement is unaffected either way: enforceUniversalPolicy runs locally on
+// each response as the runner walks events in order, so spend bounds, the run
+// breaker and the trace rows all behave exactly as they do on the live path.
+export interface BatchRequest {
+  customId: string;
+  system: string;
+  userContent: string;
+}
+
+export async function decideBatch<Schema extends z.ZodType>(
+  requests: BatchRequest[],
+  schema: Schema,
+  onProgress?: (done: number, total: number) => void,
+): Promise<Map<string, z.infer<Schema>>> {
+  const out = new Map<string, z.infer<Schema>>();
+  if (requests.length === 0) return out;
+
+  const client = getClient();
+  const format = zodOutputFormat(schema);
+  const batch = await client.messages.batches.create({
+    requests: requests.map((r) => ({
+      custom_id: r.customId,
+      params: {
+        model: MODEL,
+        max_tokens: 2048,
+        // Same cache_control as the live path: one system prompt per agent,
+        // reused across every request in the batch.
+        system: [{ type: "text" as const, text: r.system, cache_control: { type: "ephemeral" as const } }],
+        messages: [{ role: "user" as const, content: r.userContent }],
+        output_config: { format },
+      },
+    })),
+  });
+
+  // Most batches finish well inside an hour; the cap is 24. Polling every 20s
+  // rather than every 60 so a small batch is not left sitting once it is done.
+  for (;;) {
+    const status = await client.messages.batches.retrieve(batch.id);
+    if (status.processing_status === "ended") break;
+    onProgress?.(status.request_counts.succeeded + status.request_counts.errored, requests.length);
+    await new Promise((r) => setTimeout(r, 20_000));
+  }
+
+  const failures: string[] = [];
+  for await (const result of await client.messages.batches.results(batch.id)) {
+    if (result.result.type !== "succeeded") {
+      failures.push(`${result.custom_id}: ${result.result.type}`);
+      continue;
+    }
+    const message = result.result.message;
+    recordUsage(message.usage);
+    const text = message.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text;
+    if (!text) {
+      failures.push(`${result.custom_id}: no text block`);
+      continue;
+    }
+    // The batch surface returns the raw message, so the structured output is
+    // parsed and validated here rather than by messages.parse().
+    try {
+      out.set(result.custom_id, schema.parse(JSON.parse(text)) as z.infer<Schema>);
+    } catch (err) {
+      failures.push(`${result.custom_id}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  if (failures.length > 0) {
+    console.error(`  !! ${failures.length} batch request(s) did not yield a decision:`);
+    for (const f of failures.slice(0, 10)) console.error(`     ${f}`);
+    if (failures.length > 10) console.error(`     ... and ${failures.length - 10} more`);
+  }
+  return out;
+}

@@ -313,16 +313,35 @@ function main(): void {
 function printCrossDomainSummary(result: CrossDomainSuppressionResult): void {
   const { adverse, merchant_conceded: merchantConceded, summary } = result;
   const rate = (n: number | null): string => (n == null ? "n/a" : `${n}%`);
-  console.log("\n=== Cross-domain suppression, split by dispute outcome ===");
+  // SPEND PER COHORT LEADS, because that is the question the design asks.
+  // The suppression counts stay underneath it: they are only meaningful when
+  // the baseline actually spent on the cohort, and they read as failure when it
+  // did not.
+  const rupees = (paise: number): string => `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+  const line = (label: string, c: typeof adverse, expectation: string): void =>
+    console.log(
+      `  ${label.padEnd(34)} baseline ${String(c.baselineDiscountCount).padStart(3)} discount(s) ` +
+        `${rupees(c.baselineSpendPaise).padStart(9)}  |  memory ${String(c.memoryDiscountCount).padStart(3)} ` +
+        `${rupees(c.memorySpendPaise).padStart(9)}   ${expectation}`,
+    );
+
+  console.log("\n=== Cross-domain risk: where each arm put its margin ===");
+  line("adverse (rzp won/under_review)", adverse, "memory SHOULD spend less");
+  line("merchant_conceded (rzp lost)", merchantConceded, "memory should NOT hold back");
   console.log(
-    `adverse (rzp won/under_review):  suppressed ${adverse.suppressed}/${adverse.customersChecked} (${rate(
-      summary.adverseSuppressionRatePct,
-    )}) — suppression is CORRECT here`,
+    "\n  The second row is the falsifiable half: a system reacting to the mere EXISTENCE of a\n" +
+      "  dispute would pull back on both. Reading the OUTCOME means holding back only where the\n" +
+      "  ruling went against the customer, and spending freely where the merchant conceded.",
+  );
+
+  console.log(
+    `\n  suppression counts (memory undercut baseline on the same event): ` +
+      `adverse ${adverse.suppressed}/${adverse.customersChecked}, ` +
+      `merchant_conceded ${merchantConceded.suppressed}/${merchantConceded.customersChecked}`,
   );
   console.log(
-    `merchant_conceded (rzp lost):    suppressed ${merchantConceded.suppressed}/${merchantConceded.customersChecked} (${rate(
-      summary.merchantConcededSuppressionRatePct,
-    )}) — suppression is a FALSE POSITIVE here`,
+    "  These only register when the BASELINE spent first, so a low number can mean either arm\n" +
+      "  spent nothing rather than that memory failed to act. Read the spend rows above them.",
   );
   console.log(
     `of ${summary.totalSuppressions} suppressions overall, ${summary.correctSuppressions} landed on the right cohort (${rate(
@@ -399,6 +418,22 @@ interface CohortResult {
   // memory discount strictly less than baseline on the later cart
   suppressed: number;
   unchanged: number;
+  // WHAT EACH ARM ACTUALLY SPENT ON THIS COHORT.
+  //
+  // `suppressed` alone cannot see the result. It only counts events where the
+  // BASELINE discounted and memory then did not — so when the baseline spends
+  // nothing on a cohort, the metric reports 0 suppressions and looks like a
+  // failure, when in fact neither arm spent and there was nothing to suppress.
+  // Measured on the 2026-09-05 run that is exactly what happened: the `won`
+  // cohort drew ₹0 from both arms and the headline read 1/80.
+  //
+  // Spend per cohort is the question the design actually asks — not "did memory
+  // undercut the baseline on this event", but "where did each arm put its
+  // margin". That is what makes the three planted outcomes falsifiable.
+  baselineDiscountCount: number;
+  memoryDiscountCount: number;
+  baselineSpendPaise: number;
+  memorySpendPaise: number;
   details: SuppressionDetail[];
 }
 
@@ -476,7 +511,20 @@ function checkCrossDomainSuppression(
 
   const toCohortResult = (details: SuppressionDetail[]): CohortResult => {
     const suppressed = details.filter((d) => d.suppressed).length;
-    return { customersChecked: details.length, suppressed, unchanged: details.length - suppressed, details };
+    const sum = (pick: (d: SuppressionDetail) => number | null): number =>
+      details.reduce((t, d) => t + (pick(d) ?? 0), 0);
+    const count = (pick: (d: SuppressionDetail) => number | null): number =>
+      details.filter((d) => (pick(d) ?? 0) > 0).length;
+    return {
+      customersChecked: details.length,
+      suppressed,
+      unchanged: details.length - suppressed,
+      baselineDiscountCount: count((d) => d.baselineDiscount),
+      memoryDiscountCount: count((d) => d.memoryDiscount),
+      baselineSpendPaise: sum((d) => d.baselineDiscount),
+      memorySpendPaise: sum((d) => d.memoryDiscount),
+      details,
+    };
   };
 
   const adverse = toCohortResult(byCohort.adverse);
