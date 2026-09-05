@@ -274,7 +274,12 @@ function buildUserContent(
   // The dispute_breakdown / unresolved_dispute_reasons condition above is
   // unchanged: they are what the caution level is DERIVED from, so once the
   // signals block states the level they would only restate it.
-  const payload = JSON.stringify({ customer, event, memory_profile: memoryProfile }, null, 2);
+  //
+  // Strip error codes from event: neither arm should know why a past payment
+  // attempt failed. Memory gets customer history (disputes, patterns) to inform
+  // its decisions, not details about this event's error codes.
+  const { last_error_code, last_error_description, last_method, ...eventWithoutErrors } = event as Record<string, unknown>;
+  const payload = JSON.stringify({ customer, event: eventWithoutErrors, memory_profile: memoryProfile }, null, 2);
 
   // EVERYTHING ABOUT THIS CASE NOW LIVES HERE, in the user message — the facts
   // and the signals block together. The signals block used to be split: prose in

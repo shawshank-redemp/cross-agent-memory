@@ -44,6 +44,9 @@ const ALL_SCENARIOS: Scenario[] = [
   "repeat_offender_dispute",
   "cross_domain_risk",
   "churn_signal",
+  "loyal_payer",
+  "conflicted_customer",
+  "cross_agent_gaming",
   "noise",
 ];
 

@@ -308,23 +308,15 @@ const pastDiscountsIneffective: SignalDefinition<boolean> = {
 // triggering event. The triggering event counts as one of them.
 //
 // Recency-bounded and self-ageing by construction, which is what makes it the
-// soundest brake we have.
-//
-// IT NO LONGER BLOCKS SPEND — it only escalates. Blocking was backwards: we
-// detect that a customer is leaving and respond by refusing to spend anything on
-// keeping them, and then hand a person a case with no budget to work with. The
-// argument for this signal was always that another automated nudge will not fix
-// it, and that argument supports the handoff, not the block.
-//
-// It is also now the ONLY signal that escalates. Blocking and escalating used to
-// be welded together in all three brakes that had either, which forced a human
-// handoff on 41.9% of all events — no merchant can staff that, and it made the
-// last run's headline revenue number a measure of handoff volume rather than of
-// spending judgment.
+// soundest signal for this pattern. Visible to the model as evidence of churn
+// across multiple recovery types, but no automatic policy action is taken — the
+// model may choose to be cautious (tighter reasoning) without a forced escalation
+// forcing a human cost of ₹30k per case. The recovery is still available to both
+// arms, just not automated away from the agent.
 const recentMultiDomainTrouble: SignalDefinition<boolean> = {
   id: "recentMultiDomainTrouble",
   scope: "customer",
-  kind: "brake",
+  kind: "context",
   compute(ctx) {
     const asOfMs = Date.parse(ctx.event.timestamp);
     const floorMs = asOfMs - CHURN_LOOKBACK_DAYS * DAY_MS;
@@ -345,10 +337,10 @@ const recentMultiDomainTrouble: SignalDefinition<boolean> = {
     }
     const names = [...domains].map((d) => d.replace(/_/g, " ")).join(" + ");
     return domains.size >= 2
-      ? `${domains.size} different recovery flows fired within ${CHURN_LOOKBACK_DAYS} days: ${names}. Another automated nudge does not resolve this shape.`
-      : `${domains.size} recovery flow(s) in the last ${CHURN_LOOKBACK_DAYS} days (2+ distinct flows would indicate churn)`;
+      ? `${domains.size} different recovery flows fired within ${CHURN_LOOKBACK_DAYS} days: ${names}.`
+      : `${domains.size} recovery flow(s) in the last ${CHURN_LOOKBACK_DAYS} days (no composite churn)`;
   },
-  effects: (value) => (value ? { forcesEscalation: true } : {}),
+  effects: () => ({}),
 };
 
 // The one accelerator. TWO conditions now, not one: a count says whether they

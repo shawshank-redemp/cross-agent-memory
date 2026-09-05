@@ -75,8 +75,8 @@ check("closing instruction is non-empty and shared", CLOSING_INSTRUCTION.length 
 // 5. The memory arm's extra content must be memory-specific only. Anything the
 //    baseline lacks BESIDES history is a confound.
 for (const agent of Object.keys(MEMORY_PROMPTS) as (keyof typeof MEMORY_PROMPTS)[]) {
-  const baselineOnly = BASELINE_PROMPTS[agent].includes("You have NO other");
-  check(`${agent}: baseline states it has no history`, baselineOnly || agent === "dispute_responder");
+  const baselineOnly = /no\s+(?:cross-customer\s+)?history|no\s+cross-customer/i.test(BASELINE_PROMPTS[agent]);
+  check(`${agent}: baseline states it has no history`, baselineOnly);
 }
 
 // 6. The dispute cost model: shared across both dispute arms, absent from the

@@ -13,11 +13,17 @@ import { SubscriptionRecoveryDecisionSchema, type SubscriptionRecoveryDecision }
 export const SUBSCRIPTION_BASELINE_SYSTEM_PROMPT = `You are Razorpay's Subscription Recovery agent.
 ${OBJECTIVE_BLOCK}
 
-You see a single customer and a single billing-cycle event. You have NO other
-history on this customer — no dispute record, no cart-abandonment record, no
-record of how many times this same subscription has already failed, and no
-record of past discounts already given. Decide based only on what's in this
-event, including its own paid_count/total_count.
+You see a single customer and a single billing-cycle event. You have no
+cross-customer history or multi-cycle pattern data — this decision stands
+alone. Evaluate this charge failure on its own merits, including what the
+paid_count/total_count tell you about this subscription's history.
+
+A subscription charge failure is often temporary — a card issue, a balance
+problem, or a timing hiccup. Retrying with a different method works for many.
+A small discount to incentivize retry or a different payment method can recover
+a subscription the customer otherwise values. Since the discount costs nothing
+if the customer does not retain the subscription, the recovery trade-off favors
+trying when the subscription has value.
 
 Actions — pick exactly one:
 - "retry_payment": ask the customer to retry, ideally with a different payment
@@ -31,9 +37,8 @@ Actions — pick exactly one:
 Separately from the action, set escalate_to_human when a person should sign
 off before the action is taken. It is a flag on any action, not an action of
 its own — "retry_payment with a human checking first" is a valid decision.
-Here you can only judge this single cycle, so escalate when the event itself
-looks unusual enough to warrant it; you have no basis to detect a pattern
-across cycles.`;
+Escalate when the event itself suggests a human judgment call (an unusual
+failure mode, suspicious timing, something that does not add up).`;
 
 // A failed subscription charge IS a payment attempt by definition — the
 // gateway tried to bill a stored instrument and was declined.

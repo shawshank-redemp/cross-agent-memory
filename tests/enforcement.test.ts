@@ -130,45 +130,51 @@ test("blocking does not escalate: refusing to spend is not a reason to page a pe
   assert.equal(out.escalation_reason, null);
 });
 
-// EVENT_AMOUNT is 100_000 paise (₹1,000), below ESCALATION_MIN_EVENT_AMOUNT_PAISE,
-// so this case has to name an amount that clears the floor — see the floor test
-// directly below for why the floor exists.
-test("escalating does NOT block: a churn handoff still leaves the human a budget", () => {
+// recentMultiDomainTrouble is now a context signal, not a forced escalation.
+// The model sees it and can choose to escalate, but there's no automatic policy handoff.
+test("multi-domain trouble: visible to model without forced escalation", () => {
   const out = run(
-    decision({ committed_spend_paise: 15_000 }),
+    decision({ committed_spend_paise: 15_000, escalate_to_human: false }),
     signals({ recentMultiDomainTrouble: true }),
     facts("cart_abandonment", 300_000),
   );
-  assert.equal(out.escalate_to_human, true);
-  assert.equal(out.escalation_reason, "policy_constraint");
-  assert.equal(out.committed_spend_paise, 15_000, "spend survives — the person decides, not the block");
-  assert.equal(out.action, "send_discount", "and the action is not swapped out from under them");
-  assert.ok(out.policy_override);
-  assert.ok(out.policy_override.triggered_by.includes("recentMultiDomainTrouble"));
-  assert.equal(out.policy_override.escalation_reason_forced, true);
+  assert.equal(
+    out.escalate_to_human,
+    false,
+    "no forced escalation; model sees the signal and decides"
+  );
+  assert.equal(
+    out.committed_spend_paise,
+    15_000,
+    "spend is not blocked by the signal"
+  );
+  assert.equal(
+    out.action,
+    "send_discount",
+    "action remains as the model chose"
+  );
+  assert.equal(
+    out.policy_override,
+    null,
+    "no policy override since signal does not force anything"
+  );
 });
 
-// A handoff has to be worth the person's time. Measured on the batch before this
-// floor, the system escalated a ₹199 abandoned cart, and a quarter of all forced
-// escalations sat under ₹1,000 against a ₹300 modelled review cost.
-//
-// The floor gates the EFFECT, not the signal: recentMultiDomainTrouble still
-// computes and still reports the fact, and policy decides separately whether an
-// event this size justifies a person.
-test("escalation floor: the same signal does not page a person on a small event", () => {
-  const small = run(
-    decision({ committed_spend_paise: 15_000 }),
-    signals({ recentMultiDomainTrouble: true }),
-    facts("cart_abandonment", 50_000),
-  );
-  assert.equal(small.escalate_to_human, false, "₹500 is not worth a human review");
-
-  const large = run(
-    decision({ committed_spend_paise: 15_000 }),
+// recentMultiDomainTrouble no longer forces escalation — it is a context signal
+// visible to the model, but not an automatic policy handoff. The recovery is
+// available to automation without a ₹30k cost per case.
+test("recentMultiDomainTrouble: visible to model, no forced escalation", () => {
+  const out = run(
+    decision({ committed_spend_paise: 15_000, escalate_to_human: false }),
     signals({ recentMultiDomainTrouble: true }),
     facts("cart_abandonment", 300_000),
   );
-  assert.equal(large.escalate_to_human, true, "₹3,000 is");
+  assert.equal(
+    out.escalate_to_human,
+    false,
+    "multi-domain trouble does not force a human handoff; the model sees it as context and may choose caution"
+  );
+  assert.equal(out.policy_override, null, "no policy enforcement needed");
 });
 
 // ------------------------------------------------------------------------ caps

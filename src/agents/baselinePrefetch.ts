@@ -21,8 +21,18 @@ import type { Customer } from "../types/index.js";
 // each agent's live path. Two copies of this would let the batched and live
 // arms quietly describe the same event differently, which is the one thing that
 // would invalidate the comparison.
+//
+// Strip error code fields from event: baseline knows "payment was attempted" but
+// not why it failed. The error code is information about a past attempt, which is
+// history baseline should not have. Memory gets the full event.
+function stripErrorHistory(event: unknown): unknown {
+  if (typeof event !== "object" || event === null) return event;
+  const { last_error_code, last_error_description, last_method, ...rest } = event as Record<string, unknown>;
+  return rest;
+}
+
 export function baselineUserContent(customer: Customer, event: unknown): string {
-  return withClosingInstruction(JSON.stringify({ customer, event }, null, 2));
+  return withClosingInstruction(JSON.stringify({ customer, event: stripErrorHistory(event) }, null, 2));
 }
 
 let prefetched: Map<string, unknown> | null = null;
