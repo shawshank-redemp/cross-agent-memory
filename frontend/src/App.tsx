@@ -45,7 +45,7 @@ function LandingPage() {
         <span className="landing-nav-brand">Cross-Agent Memory</span>
         <a
           className="landing-nav-github"
-          href="https://github.com/shawshank-redemp/cross-agent-memory"
+          href="https://github.com/shawshank-redemp/cross.agent-memory"
           target="_blank"
           rel="noopener noreferrer"
         >
