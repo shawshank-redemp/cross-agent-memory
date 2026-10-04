@@ -104,15 +104,29 @@ function LandingPage() {
               <p>Before deciding, the agent reads the customer's full cross-agent profile — disputes, recoveries, discount history, trust signals.</p>
             </div>
           </div>
-          <div className="landing-step">
+                   <div className="landing-step">
             <div className="landing-step-num">3</div>
             <div>
-              <strong>Decision adjusts</strong>
-              <p>A customer with zero disputes and three paid carts gets a smaller discount. A first-timer with a recent failure gets a more generous offer.</p>
+              <strong>Signals computed</strong>
+              <p>The memory profile is translated into signals: gaming flags, dispute caution levels, proven-payer status, composite churn risk.</p>
             </div>
           </div>
           <div className="landing-step">
             <div className="landing-step-num">4</div>
+            <div>
+              <strong>Decision made</strong>
+              <p>A customer with zero disputes and three paid carts gets a smaller discount. A first-timer with a recent failure gets a more generous offer.</p>
+            </div>
+          </div>
+          <div className="landing-step">
+            <div className="landing-step-num">5</div>
+            <div>
+              <strong>Action executed</strong>
+              <p>The chosen intervention — reminder, discount, retry, or escalate — is applied. Guardrails enforce caps and blocks before anything reaches the customer.</p>
+            </div>
+          </div>
+          <div className="landing-step">
+            <div className="landing-step-num">6</div>
             <div>
               <strong>Memory updates</strong>
               <p>The agent writes back what it did and what it observed, so the next agent starts smarter.</p>
