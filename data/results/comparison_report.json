@@ -1,0 +1,1492 @@
+{
+  "overall": {
+    "matchedEvents": 1724,
+    "customers": 682,
+    "baselineDiscountPaise": 3968800,
+    "memoryDiscountPaise": 9356350,
+    "baselineEscalations": 27,
+    "memoryEscalations": 35,
+    "baselineRevenue": {
+      "scoredEvents": 1557,
+      "paidCount": 580,
+      "disputedCount": 63,
+      "escalatedCount": 6,
+      "moneyCollectedPaise": 135437100,
+      "discountRedeemedPaise": 2728800,
+      "disputeCostPaise": 13157800,
+      "recurrenceCostPaise": 2000550,
+      "escalationCostPaise": 180000,
+      "netRevenuePaise": 117369950
+    },
+    "memoryRevenue": {
+      "scoredEvents": 1557,
+      "paidCount": 656,
+      "disputedCount": 66,
+      "escalatedCount": 34,
+      "moneyCollectedPaise": 149506600,
+      "discountRedeemedPaise": 7428300,
+      "disputeCostPaise": 13246300,
+      "recurrenceCostPaise": 6278102,
+      "escalationCostPaise": 1020000,
+      "netRevenuePaise": 121533898
+    },
+    "discountReducedPaise": 1574800,
+    "discountIncreasedPaise": 6962350,
+    "netDiscountChangePaise": 5387550,
+    "netRevenueLiftPaise": 4163948
+  },
+  "byScenario": [
+    {
+      "scenario": "conflicted_customer",
+      "customers": 49,
+      "events": 249,
+      "baselineDiscountPaise": 863000,
+      "memoryDiscountPaise": 3000500,
+      "discountReducedPaise": 42500,
+      "discountIncreasedPaise": 2180000,
+      "netDiscountChangePaise": 2137500,
+      "baselineEscalations": 0,
+      "memoryEscalations": 4,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 249,
+          "paidCount": 101,
+          "disputedCount": 1,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 30020000,
+          "discountRedeemedPaise": 663500,
+          "disputeCostPaise": 587000,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 28769500
+        },
+        "memory": {
+          "scoredEvents": 249,
+          "paidCount": 122,
+          "disputedCount": 4,
+          "escalatedCount": 4,
+          "moneyCollectedPaise": 35770000,
+          "discountRedeemedPaise": 2267900,
+          "disputeCostPaise": 1917500,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 120000,
+          "netRevenuePaise": 31464600
+        },
+        "netRevenueLiftPaise": 2695100
+      }
+    },
+    {
+      "scenario": "repeat_offender_cart",
+      "customers": 105,
+      "events": 488,
+      "baselineDiscountPaise": 1601200,
+      "memoryDiscountPaise": 4899000,
+      "discountReducedPaise": 212200,
+      "discountIncreasedPaise": 3510000,
+      "netDiscountChangePaise": 3297800,
+      "baselineEscalations": 0,
+      "memoryEscalations": 16,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 488,
+          "paidCount": 212,
+          "disputedCount": 9,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 59800000,
+          "discountRedeemedPaise": 1333700,
+          "disputeCostPaise": 4006500,
+          "recurrenceCostPaise": 2000550,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 52459250
+        },
+        "memory": {
+          "scoredEvents": 488,
+          "paidCount": 266,
+          "disputedCount": 12,
+          "escalatedCount": 16,
+          "moneyCollectedPaise": 69270000,
+          "discountRedeemedPaise": 4124500,
+          "disputeCostPaise": 4492000,
+          "recurrenceCostPaise": 6186750,
+          "escalationCostPaise": 480000,
+          "netRevenuePaise": 53986750
+        },
+        "netRevenueLiftPaise": 1527500
+      }
+    },
+    {
+      "scenario": "cross_agent_gaming",
+      "customers": 42,
+      "events": 210,
+      "baselineDiscountPaise": 308500,
+      "memoryDiscountPaise": 735000,
+      "discountReducedPaise": 167500,
+      "discountIncreasedPaise": 594000,
+      "netDiscountChangePaise": 426500,
+      "baselineEscalations": 7,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 168,
+          "paidCount": 57,
+          "disputedCount": 5,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 10837400,
+          "discountRedeemedPaise": 204000,
+          "disputeCostPaise": 1678700,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 8954700
+        },
+        "memory": {
+          "scoredEvents": 168,
+          "paidCount": 59,
+          "disputedCount": 3,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 10487400,
+          "discountRedeemedPaise": 564000,
+          "disputeCostPaise": 599700,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 9323700
+        },
+        "netRevenueLiftPaise": 369000
+      }
+    },
+    {
+      "scenario": "repeat_offender_subscription",
+      "customers": 32,
+      "events": 154,
+      "baselineDiscountPaise": 0,
+      "memoryDiscountPaise": 98350,
+      "discountReducedPaise": 0,
+      "discountIncreasedPaise": 98350,
+      "netDiscountChangePaise": 98350,
+      "baselineEscalations": 0,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 154,
+          "paidCount": 61,
+          "disputedCount": 8,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 3103900,
+          "discountRedeemedPaise": 0,
+          "disputeCostPaise": 1559200,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 1544700
+        },
+        "memory": {
+          "scoredEvents": 154,
+          "paidCount": 66,
+          "disputedCount": 8,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 3393400,
+          "discountRedeemedPaise": 60900,
+          "disputeCostPaise": 1559200,
+          "recurrenceCostPaise": 91352,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 1681948
+        },
+        "netRevenueLiftPaise": 137248
+      }
+    },
+    {
+      "scenario": "churn_signal",
+      "customers": 63,
+      "events": 145,
+      "baselineDiscountPaise": 241500,
+      "memoryDiscountPaise": 82000,
+      "discountReducedPaise": 241500,
+      "discountIncreasedPaise": 82000,
+      "netDiscountChangePaise": -159500,
+      "baselineEscalations": 9,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 98,
+          "paidCount": 17,
+          "disputedCount": 0,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 3439300,
+          "discountRedeemedPaise": 61500,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 3377800
+        },
+        "memory": {
+          "scoredEvents": 98,
+          "paidCount": 17,
+          "disputedCount": 0,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 3549300,
+          "discountRedeemedPaise": 63000,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 3486300
+        },
+        "netRevenueLiftPaise": 108500
+      }
+    },
+    {
+      "scenario": "noise",
+      "customers": 15,
+      "events": 26,
+      "baselineDiscountPaise": 0,
+      "memoryDiscountPaise": 23000,
+      "discountReducedPaise": 0,
+      "discountIncreasedPaise": 23000,
+      "netDiscountChangePaise": 23000,
+      "baselineEscalations": 3,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 26,
+          "paidCount": 4,
+          "disputedCount": 0,
+          "escalatedCount": 3,
+          "moneyCollectedPaise": 419800,
+          "discountRedeemedPaise": 0,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 90000,
+          "netRevenuePaise": 329800
+        },
+        "memory": {
+          "scoredEvents": 26,
+          "paidCount": 3,
+          "disputedCount": 0,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 419800,
+          "discountRedeemedPaise": 0,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 419800
+        },
+        "netRevenueLiftPaise": 90000
+      }
+    },
+    {
+      "scenario": "cross_domain_risk",
+      "customers": 120,
+      "events": 164,
+      "baselineDiscountPaise": 301800,
+      "memoryDiscountPaise": 246500,
+      "discountReducedPaise": 258300,
+      "discountIncreasedPaise": 203000,
+      "netDiscountChangePaise": -55300,
+      "baselineEscalations": 2,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 123,
+          "paidCount": 36,
+          "disputedCount": 11,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 9560000,
+          "discountRedeemedPaise": 129800,
+          "disputeCostPaise": 4836500,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 4593700
+        },
+        "memory": {
+          "scoredEvents": 123,
+          "paidCount": 34,
+          "disputedCount": 10,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 8930000,
+          "discountRedeemedPaise": 95000,
+          "disputeCostPaise": 4188000,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 4647000
+        },
+        "netRevenueLiftPaise": 53300
+      }
+    },
+    {
+      "scenario": "normal",
+      "customers": 168,
+      "events": 168,
+      "baselineDiscountPaise": 384000,
+      "memoryDiscountPaise": 194000,
+      "discountReducedPaise": 384000,
+      "discountIncreasedPaise": 194000,
+      "netDiscountChangePaise": -190000,
+      "baselineEscalations": 0,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 168,
+          "paidCount": 62,
+          "disputedCount": 2,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 10826700,
+          "discountRedeemedPaise": 171000,
+          "disputeCostPaise": 489900,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 10165800
+        },
+        "memory": {
+          "scoredEvents": 168,
+          "paidCount": 61,
+          "disputedCount": 2,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 10626700,
+          "discountRedeemedPaise": 194000,
+          "disputeCostPaise": 489900,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 9942800
+        },
+        "netRevenueLiftPaise": -223000
+      }
+    },
+    {
+      "scenario": "loyal_payer",
+      "customers": 56,
+      "events": 56,
+      "baselineDiscountPaise": 268800,
+      "memoryDiscountPaise": 78000,
+      "discountReducedPaise": 268800,
+      "discountIncreasedPaise": 78000,
+      "netDiscountChangePaise": -190800,
+      "baselineEscalations": 0,
+      "memoryEscalations": 0,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 56,
+          "paidCount": 30,
+          "disputedCount": 0,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 7430000,
+          "discountRedeemedPaise": 165300,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 7264700
+        },
+        "memory": {
+          "scoredEvents": 56,
+          "paidCount": 28,
+          "disputedCount": 0,
+          "escalatedCount": 0,
+          "moneyCollectedPaise": 7060000,
+          "discountRedeemedPaise": 59000,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 0,
+          "netRevenuePaise": 7001000
+        },
+        "netRevenueLiftPaise": -263700
+      }
+    },
+    {
+      "scenario": "repeat_offender_dispute",
+      "customers": 32,
+      "events": 64,
+      "baselineDiscountPaise": 0,
+      "memoryDiscountPaise": 0,
+      "discountReducedPaise": 0,
+      "discountIncreasedPaise": 0,
+      "netDiscountChangePaise": 0,
+      "baselineEscalations": 6,
+      "memoryEscalations": 15,
+      "revenue": {
+        "baseline": {
+          "scoredEvents": 27,
+          "paidCount": 0,
+          "disputedCount": 27,
+          "escalatedCount": 3,
+          "moneyCollectedPaise": 0,
+          "discountRedeemedPaise": 0,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 90000,
+          "netRevenuePaise": -90000
+        },
+        "memory": {
+          "scoredEvents": 27,
+          "paidCount": 0,
+          "disputedCount": 27,
+          "escalatedCount": 14,
+          "moneyCollectedPaise": 0,
+          "discountRedeemedPaise": 0,
+          "disputeCostPaise": 0,
+          "recurrenceCostPaise": 0,
+          "escalationCostPaise": 420000,
+          "netRevenuePaise": -420000
+        },
+        "netRevenueLiftPaise": -330000
+      }
+    }
+  ],
+  "crossDomainSuppression": {
+    "expectation": {
+      "adverse": "Razorpay status 'won' (merchant contested successfully — the complaint did not hold up) or 'under_review' (no ruling yet as of the later cart). Evidence about the customer. Memory SHOULD suppress; a suppression here is correct.",
+      "merchant_conceded": "Razorpay status 'lost' — the merchant lost or accepted the chargeback and the customer was refunded. Evidence about the merchant's delivery, not the customer. Memory should NOT suppress; a suppression here is a false positive."
+    },
+    "adverse": {
+      "customersChecked": 80,
+      "suppressed": 8,
+      "unchanged": 72,
+      "baselineDiscountCount": 8,
+      "memoryDiscountCount": 2,
+      "baselineSpendPaise": 172800,
+      "memorySpendPaise": 46000,
+      "details": [
+        {
+          "customer_id": "cust_mig08KAzwgFQOy",
+          "event_id": "order_7JiyU46sLMf3Yz",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_nYexVOLlrbfYfB",
+          "event_id": "order_OJqpEMM5T0pSXL",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_68e5N4DAdxT3oh",
+          "event_id": "order_TxL0slNfw3nRT7",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_O4aA3EVmGKxvl5",
+          "event_id": "order_yJkkPMesOB9p9V",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_ImRjGEaV4Vvi2d",
+          "event_id": "order_hxH9JQzuZTVSNQ",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_7iPj0zHMBO4uBq",
+          "event_id": "order_e3U8pTdSWMjWYP",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_d92QWfSXWdlpV8",
+          "event_id": "order_nEysnpe8Zle860",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_YJVgBhUgRFGh67",
+          "event_id": "order_saXJdFVyUfvbH6",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_kfoZOOFgQ7aR35",
+          "event_id": "order_sqXa1n6ndcC6Ai",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_3gfSKwQZzDkaSu",
+          "event_id": "order_3d9aH6nBinz6aX",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_14XKi3LbeOOPcJ",
+          "event_id": "order_Lq7PgNdghHr7v9",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_iU6QZXhFuepLaL",
+          "event_id": "order_teLre2z09E68fi",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": 21000,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_rOCBAs7V7JjkT4",
+          "event_id": "order_Ez44nfXdxJmCY1",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_Qekz0wSC4nfs7Z",
+          "event_id": "order_VhIL57TgA99b2N",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_9xuPLb2xpARspW",
+          "event_id": "order_kkileacKG1RRT1",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_E5KPGJv7SClA0C",
+          "event_id": "order_axQsPVM5CvFmWi",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": 17500,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_5uvh9qo36cZiCd",
+          "event_id": "order_MgmzmCcZHoR8fd",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_Pb9MRYp73HYmgL",
+          "event_id": "order_oMzTmABiK3QtcY",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_7nkTTDRZCicpVm",
+          "event_id": "order_qL1HIVnHnt6Uni",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_6gwc9AFfyR8d0o",
+          "event_id": "order_1NllZA1qAHFiPw",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_ZQuNGzGaI0VyIQ",
+          "event_id": "order_RvzLu3eddDB3Lx",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_YTpqh4AMrxiGoJ",
+          "event_id": "order_yET1NJ7Q21whjb",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_8WMrSFs3oLuEFO",
+          "event_id": "order_GvYhMETNDio5kT",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_rpP05Zc2KovwVN",
+          "event_id": "order_APJxBAts6m4oYQ",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_CYdgXt4iUa3LbV",
+          "event_id": "order_IdOeqNE3hgoInv",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_GZUxXqv0xzpdNl",
+          "event_id": "order_0nXYNdePPCuTl2",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_qYyNJjGDvRL8iM",
+          "event_id": "order_emGsXfgathSfkx",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_JCYSYeq9M5UdvN",
+          "event_id": "order_7tHFnbBHIRWdr6",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_Hgc0eKph2H61sf",
+          "event_id": "order_qhmT3rwBjLV9k1",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_3Kl7boPw4W89tR",
+          "event_id": "order_r3YwCyeOGOTAd9",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": 23500,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_Pzbb6TWHSDlp38",
+          "event_id": "order_YOwMm4gWz9N4xs",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_xW1t9zvkPBPJyS",
+          "event_id": "order_8EaGToBp302tOg",
+          "dispute_outcome": "won",
+          "baselineDiscount": 17500,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_VOH0iHi4sKCNSM",
+          "event_id": "order_SGbuU2KaFHUDmW",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_rmFp95KaxJBnbs",
+          "event_id": "order_ngYNyXaInSmVuk",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_begipqr7pwOAuG",
+          "event_id": "order_kn2C4xHpEEKWST",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_29KZmeg5qkaDbJ",
+          "event_id": "order_RYaAevZZiN1Fii",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_lZN2r6ujSq0PxM",
+          "event_id": "order_z8z5U30ZimmbUO",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_9RNxGcgn9MMKQS",
+          "event_id": "order_LOuVV2urt8uhqi",
+          "dispute_outcome": "won",
+          "baselineDiscount": 23500,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_OAkUTvufBKD460",
+          "event_id": "order_pQX0lLvU5fmsKw",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_LJ0D4LqckiVbie",
+          "event_id": "order_8MWgpGQKe7WPWB",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_RWt59puKJ2SjIZ",
+          "event_id": "order_Yui5J9w4T8zwA1",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_sSUKgSaounYgxi",
+          "event_id": "order_ssrcTTGiiIWG20",
+          "dispute_outcome": "won",
+          "baselineDiscount": 20300,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_bj9J5mOF4SuY9A",
+          "event_id": "order_iNSMxSSnecsZ9e",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_1RqJW5V0BIgCPI",
+          "event_id": "order_yRhDgyV6aqjkAM",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_4bnwZZRDoEMOyF",
+          "event_id": "order_BGBvMWHAyKL6eN",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_ORrNSXrvqvKKHv",
+          "event_id": "order_dBAh2mBjoCFERT",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_WvAqLs9BMX29RO",
+          "event_id": "order_RZW3oZkPyLksqs",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_2hQKREOhbZcZBc",
+          "event_id": "order_L1xus3b6KRMGpc",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_abPtEK5zpb8tbd",
+          "event_id": "order_7Ad5UA7JoUABrI",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_0OEpNtKFiW2OSd",
+          "event_id": "order_1mwgu3Mw40QAeU",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_fNn1hMmUSNj6Qr",
+          "event_id": "order_RujOcXgvBYksUC",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_7ruD61mejtdb9S",
+          "event_id": "order_MplA4oqxqYawht",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_A37oLtDRA4YFy0",
+          "event_id": "order_Zx3CpHALPa0OaN",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_8s38D7CiiWyhW9",
+          "event_id": "order_eXz39mEXHVNsGZ",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_Ha4wlYzjkHRMPN",
+          "event_id": "order_aUgedYC4HxukJ9",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": 25000,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_xjdMzSKb4nHfmY",
+          "event_id": "order_O4KkYQAYV8lJrC",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_LpO6GK8i0QTwOP",
+          "event_id": "order_f3vyDhanTuLaKG",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": 20000,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_FYOJM8vDRQeRNZ",
+          "event_id": "order_u3fFTMVHr2IHEq",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_9KhQH0fgVK5Ynk",
+          "event_id": "order_uczhJ2ml3aOjy5",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_gnTU6CgFmZE8aG",
+          "event_id": "order_lPG6xIYjhR1oRV",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_DipbV8zlCE0LDS",
+          "event_id": "order_StSRK0IFMlzHjI",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_30fkLDGCUQQC4y",
+          "event_id": "order_JOHcYojdiuQezZ",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_l2NuMc4CCwiibq",
+          "event_id": "order_97bVbJLI4O4VqA",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_uFjFRT28O9fnYz",
+          "event_id": "order_oIkRmXT8EMpGBP",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_onH4kkDKcEsvuP",
+          "event_id": "order_y4aSyfnPV50Hzj",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_sLg3pjzHqjESsr",
+          "event_id": "order_HJsyjUs4hQlLW5",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_J6p5CN1yB2ijP2",
+          "event_id": "order_zLXo7mK0L9oS2b",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_C76i8mb2eVbuan",
+          "event_id": "order_b2xRLIkkxHIHmM",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_P3ZAuFUof3UG8g",
+          "event_id": "order_OOtBcsbHcHZ3VQ",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_Q62ujmhjalt1nW",
+          "event_id": "order_t5PbDLQPzA5oK9",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_1y0Ludm4HAdxAa",
+          "event_id": "order_bq5FevnKNFp8BM",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_AKsyL3yV8ApK3i",
+          "event_id": "order_vcDVMFg5tACDx6",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_AMWppT4giooTRm",
+          "event_id": "order_fliMelHeUgHYQf",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_kdhW03qgTfjrPK",
+          "event_id": "order_IVkUhfvumV1YlM",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": 26000,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_0Daj7vXnRDQcvS",
+          "event_id": "order_LiPstDsKRJgPzg",
+          "dispute_outcome": "won",
+          "baselineDiscount": 24500,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_z42nC8YfakjhIs",
+          "event_id": "order_xNvh9QNdElTfEi",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_zLoqCaqsic1h68",
+          "event_id": "order_Yq4VIRDaZGuEqf",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_QFhrfBYeNvnTP4",
+          "event_id": "order_jnNsX0ueUNEmca",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_A4AfQFlEdnbDl2",
+          "event_id": "order_5ipmgrmA7W60sc",
+          "dispute_outcome": "under_review",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_RrQIcZnhGR02BP",
+          "event_id": "order_lWJ4DdOzeTGSMS",
+          "dispute_outcome": "won",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        }
+      ]
+    },
+    "merchant_conceded": {
+      "customersChecked": 40,
+      "suppressed": 6,
+      "unchanged": 34,
+      "baselineDiscountCount": 8,
+      "memoryDiscountCount": 7,
+      "baselineSpendPaise": 124000,
+      "memorySpendPaise": 200500,
+      "details": [
+        {
+          "customer_id": "cust_ShfxFS12qfF0lC",
+          "event_id": "order_v8dT9h7pxqlKVg",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": 26000,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_YeOdfNUraXoeMg",
+          "event_id": "order_6Cv1WsnjRkLEEj",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_z9BHzdeBT5f3TV",
+          "event_id": "order_Ofu195fOOkvqJe",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_NgYYrLA7sljDc0",
+          "event_id": "order_o2swmUunGBxzqV",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_JTTfDyCUKD9DOm",
+          "event_id": "order_N6R6HBYuDhWbXN",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_bdfOThAnkslXoa",
+          "event_id": "order_v6cT0XB5AOzM7d",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_D9matwrXyor49A",
+          "event_id": "order_xPcU9d6gsUQKrS",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": 13000,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_ESRToaCuxJZnzL",
+          "event_id": "order_pqnFWgOQ6kMRiL",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_Tj22qtq0zi0TsS",
+          "event_id": "order_IJVxRFottBY6Od",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_uaBYp0EkLxce2U",
+          "event_id": "order_5NS1cD1S9yKER3",
+          "dispute_outcome": "lost",
+          "baselineDiscount": 8000,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_IiXvq8DrrUsXKT",
+          "event_id": "order_5gIkwnOaMFtfgE",
+          "dispute_outcome": "lost",
+          "baselineDiscount": 13000,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_2U29hkWr7PFN1w",
+          "event_id": "order_CFo4K0mpaNoqdM",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_y1LpNxTaEOavHm",
+          "event_id": "order_dCHdMnaynAtdCe",
+          "dispute_outcome": "lost",
+          "baselineDiscount": 23500,
+          "memoryDiscount": 47000,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_kGeKo31xujAAYy",
+          "event_id": "order_mjMsTHT6Qwc8pV",
+          "dispute_outcome": "lost",
+          "baselineDiscount": 12000,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_VuinZWyJpraA5m",
+          "event_id": "order_9uultEZ1a7xjj9",
+          "dispute_outcome": "lost",
+          "baselineDiscount": 20000,
+          "memoryDiscount": 30000,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_wGZvM3G5HrT8tQ",
+          "event_id": "order_xN8EjAhxkXUUP2",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_LIJxup8hLeBmP7",
+          "event_id": "order_7Yz1yAYyT7lxI8",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_LXfpfAaVHOPdMK",
+          "event_id": "order_Gaum3SJUqoE3Y3",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_VcUF7VB7xnbvdD",
+          "event_id": "order_tSE4FMzayIZJbX",
+          "dispute_outcome": "lost",
+          "baselineDiscount": 19000,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_yiTAel8vx232f6",
+          "event_id": "order_Zjtdc132IAD6dl",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_9MEPuHTR1iGyWa",
+          "event_id": "order_EkhmBYMqJtTe1K",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_8wpguqYEKI7Kbc",
+          "event_id": "order_vNKUPbuFkn27B8",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_9uvp4f4IHgwzTw",
+          "event_id": "order_lfMdPnIQKKwMMp",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": 16000,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_FNuu44akD3r4fu",
+          "event_id": "order_DHgKgiJeXTz4m2",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_3CYOoCpgUvBend",
+          "event_id": "order_XbnnB3x7YAdCeM",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_Egy8FG6JHDPnqd",
+          "event_id": "order_oXxfgXg4XNrgd7",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_Gfju3zjPh19oxf",
+          "event_id": "order_hq2oTcgCWEmhrb",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_wHY5lrzRyCt58P",
+          "event_id": "order_8GQGJjTIPbNDuX",
+          "dispute_outcome": "lost",
+          "baselineDiscount": 8000,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_O1jRjh7d6QWOma",
+          "event_id": "order_pYDr3Fn9qYf99z",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_rF61HxjpMGPn9x",
+          "event_id": "order_A8xGeUl33T4CUG",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": 24500,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_jrjyVeVWc6mRiJ",
+          "event_id": "order_FmkI3BmsFxHef3",
+          "dispute_outcome": "lost",
+          "baselineDiscount": 20500,
+          "memoryDiscount": null,
+          "suppressed": true
+        },
+        {
+          "customer_id": "cust_GpEwBSaK4tYJYj",
+          "event_id": "order_VhaHDK07rZ1Zua",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_vKrxOqpSYwPGoU",
+          "event_id": "order_mXMU8Js7H2WYkJ",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_o7Ax8Xgk2CB0j1",
+          "event_id": "order_45BTPG0tYsLEGv",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_g3Njl1OPk46hhG",
+          "event_id": "order_BUjKfJbVA78DIg",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_w8ZHZdbzLTUlXG",
+          "event_id": "order_5GklQTPgwTJYKA",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": 44000,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_9CwwJCYxMQwKYn",
+          "event_id": "order_62Jet0hL2xKPrK",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_7bZrevjootE3M3",
+          "event_id": "order_NoJ14oEvOr7848",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_ZR7hgbtpx2Vdxj",
+          "event_id": "order_Oeqfg1fdQVJ1ik",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        },
+        {
+          "customer_id": "cust_DP7E8RkOvS5CDR",
+          "event_id": "order_minq4iuplS0IGp",
+          "dispute_outcome": "lost",
+          "baselineDiscount": null,
+          "memoryDiscount": null,
+          "suppressed": false
+        }
+      ]
+    },
+    "summary": {
+      "correctSuppressions": 8,
+      "falsePositiveSuppressions": 6,
+      "totalSuppressions": 14,
+      "correctSuppressionRatePct": 57,
+      "adverseSuppressionRatePct": 10,
+      "merchantConcededSuppressionRatePct": 15
+    }
+  },
+  "methodology": {
+    "scope": "Two outcome models, by agent. cart_abandonment / subscription_recovery decisions solicit a NEW payment, so they resolve through the recovery model: paid/not-paid (probabilistic, per scenario), and if paid, whether it later became a dispute. dispute_responder decisions manage a dispute on a payment that already happened outside this batch, so they resolve through a separate, deterministic dispute-response model instead: conceding (accept_dispute) costs the full disputed amount plus the handling fee, contesting is treated as retaining the revenue (no contest-loss rate was given as a business assumption, so none was invented). The dispute-response model is ALSO scoped to only a customer's 3rd-and-later dispute event — the same REPEAT_RECOVERY_THRESHOLD_PER_AGENT=3 threshold policy.ts already uses for repeatRecoveryWithThisAgent on this agent — so it measures the repeat-offender mechanism the memory system targets, not ordinary one-off dispute judgment calls (which are LLM-reasoning noise unrelated to cross-agent memory and would otherwise swamp the comparison).",
+    "rng": "The recovery model draws from a PRNG seeded deterministically from event_id alone, in a fixed order (paid roll, then dispute roll), computed once per event and reused for both arms. Both arms see identical dice — only the probability compared against (based on that arm's own decision) differs. This is the standard common-random-numbers technique for a paired comparison: it removes luck as a source of measured lift. The dispute-response model is deterministic by action and uses no randomness at all.",
+    "escalation": "Escalation is a REAL, PRICED outcome, not an exclusion — every decision is scored, in both arms, over the identical set of events; nothing is dropped. Escalating hands the case to a human (via the merchant's dashboard) instead of auto-acting, so it costs staff time rather than margin: a human is modeled as at least as effective as an automated discount (an escalated cart/subscription decision converts at that scenario's pays-WITH-discount probability but spends no discount; an escalated dispute decision avoids the concede cost entirely, like a successful contest) and is charged a flat handling cost regardless of outcome. Two earlier versions of this model treated escalation as producing 'no outcome' (excluded per-arm, then excluded in a paired fashion) — both were workarounds for not pricing the thing memory actually does more of. Per-arm exclusion let baseline bank revenue on events where memory's matching decision was silently dropped; paired exclusion fixed that asymmetry but, combined with the dispute model's mandatory-escalate policy on gaming_suspected, ended up excluding 100% of repeat_offender_dispute's scoreable events. Pricing escalation directly removes the need for any exclusion.",
+    "escalationHandlingCostPaise": 30000,
+    "recurrenceCost": "A per-event independent outcome model has no way to charge the cost of an INDUCED future extraction cycle against the event that caused it — so under it, discounting a repeat offender always looks correct, since the higher pays-with-discount probability is scored but the fact that the discount teaches the pattern to repeat is not. To fix that, a redeemed discount (paid, not merely offered, and NOT escalated — escalating spends no discount) in repeat_offender_cart or repeat_offender_subscription is charged an additional induced-recurrence cost of discount_redeemed × RECURRENCE_COST_MULTIPLIER. This does not apply to normal, noise, cross_domain_risk, or churn_signal, where no repeat-extraction pattern is established.",
+    "disputeCost": "A dispute costs back the net-of-discount amount actually collected, plus a flat handling fee.",
+    "disputeHandlingFeePaise": 150000,
+    "recurrenceCostMultiplier": 1.5,
+    "recurrenceCostScenarios": [
+      "repeat_offender_cart",
+      "repeat_offender_subscription"
+    ],
+    "probabilities": {
+      "normal": {
+        "paysWithDiscount": 0.6,
+        "paysWithoutDiscount": 0.35,
+        "disputesGivenPaid": 0.02
+      },
+      "repeat_offender_cart": {
+        "paysWithDiscount": 0.8,
+        "paysWithoutDiscount": 0.3,
+        "disputesGivenPaid": 0.05
+      },
+      "repeat_offender_subscription": {
+        "paysWithDiscount": 0.75,
+        "paysWithoutDiscount": 0.4,
+        "disputesGivenPaid": 0.05
+      },
+      "repeat_offender_dispute": {
+        "paysWithDiscount": 0.55,
+        "paysWithoutDiscount": 0.3,
+        "disputesGivenPaid": 0.4
+      },
+      "cross_domain_risk": {
+        "paysWithDiscount": 0.55,
+        "paysWithoutDiscount": 0.3,
+        "disputesGivenPaid": 0.35
+      },
+      "churn_signal": {
+        "paysWithDiscount": 0.3,
+        "paysWithoutDiscount": 0.15,
+        "disputesGivenPaid": 0.05
+      },
+      "loyal_payer": {
+        "paysWithDiscount": 0.7,
+        "paysWithoutDiscount": 0.55,
+        "disputesGivenPaid": 0.02
+      },
+      "conflicted_customer": {
+        "paysWithDiscount": 0.78,
+        "paysWithoutDiscount": 0.34,
+        "disputesGivenPaid": 0.05
+      },
+      "cross_agent_gaming": {
+        "paysWithDiscount": 0.8,
+        "paysWithoutDiscount": 0.3,
+        "disputesGivenPaid": 0.08
+      },
+      "noise": {
+        "paysWithDiscount": 0.4,
+        "paysWithoutDiscount": 0.25,
+        "disputesGivenPaid": 0.05
+      }
+    }
+  }
+}

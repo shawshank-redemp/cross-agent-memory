@@ -1,0 +1,19 @@
+{
+  "customers": 700,
+  "cartAbandonmentEvents": 1574,
+  "customersWithMultipleCartEvents": 371,
+  "subscriptionFailureEvents": 505,
+  "disputeEvents": 339,
+  "scenarioCounts": {
+    "normal": 168,
+    "churn_signal": 63,
+    "repeat_offender_cart": 105,
+    "cross_domain_risk": 119,
+    "loyal_payer": 56,
+    "repeat_offender_subscription": 32,
+    "repeat_offender_dispute": 32,
+    "conflicted_customer": 49,
+    "cross_agent_gaming": 42,
+    "noise": 34
+  }
+}

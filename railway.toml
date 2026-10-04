@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npx tsx src/server/index.ts"
+healthcheckPath = "/api/customers"
+healthcheckTimeout = 30
+restartPolicyType = "always"

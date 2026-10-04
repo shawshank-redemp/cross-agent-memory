@@ -1,0 +1,5610 @@
+[
+  {
+    "customer_id": "cust_1Fhgl8gpg32FN5",
+    "name": "Isha Reddy",
+    "email": "isha.reddy388@outlook.com",
+    "contact": "+918433368825",
+    "signup_date": "2025-06-28T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_OHLqx803PrfzNA",
+    "name": "Aarav Trivedi",
+    "email": "aarav.trivedi841@rediffmail.com",
+    "contact": "+919210966066",
+    "signup_date": "2024-12-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_tpdWl8SZZSqVLn",
+    "name": "Rohan Agarwal",
+    "email": "rohan.agarwal790@outlook.com",
+    "contact": "+919895538206",
+    "signup_date": "2026-04-13T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_mig08KAzwgFQOy",
+    "name": "Neha Mehta",
+    "email": "neha.mehta463@gmail.com",
+    "contact": "+917677948978",
+    "signup_date": "2025-09-15T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_n2MECMP63YeUfO",
+    "name": "Kavya Kumar",
+    "email": "kavya.kumar263@outlook.com",
+    "contact": "+917495085611",
+    "signup_date": "2025-05-24T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ZGxpL46laRrNLp",
+    "name": "Lakshmi Mehta",
+    "email": "lakshmi.mehta927@yahoo.com",
+    "contact": "+919193333597",
+    "signup_date": "2025-07-22T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_TtM3grI3fJxoEF",
+    "name": "Krishna Trivedi",
+    "email": "krishna.trivedi89@rediffmail.com",
+    "contact": "+918371318336",
+    "signup_date": "2025-07-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_2jCMn3QiTmERhG",
+    "name": "Pooja Agarwal",
+    "email": "pooja.agarwal127@gmail.com",
+    "contact": "+919117430667",
+    "signup_date": "2026-01-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_fRpYbIDLbH8UOj",
+    "name": "Kabir Mehta",
+    "email": "kabir.mehta50@outlook.com",
+    "contact": "+916127693341",
+    "signup_date": "2024-12-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_XOvAbSydBndQIy",
+    "name": "Anjali Joshi",
+    "email": "anjali.joshi527@outlook.com",
+    "contact": "+919380709217",
+    "signup_date": "2025-05-21T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_WdJGnHJCGOJtC1",
+    "name": "Vivaan Chatterjee",
+    "email": "vivaan.chatterjee383@rediffmail.com",
+    "contact": "+916054928820",
+    "signup_date": "2025-07-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_TGGr4gVjCpr183",
+    "name": "Aditya Rao",
+    "email": "aditya.rao674@gmail.com",
+    "contact": "+918841834270",
+    "signup_date": "2026-03-10T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_l7DlJ7qaSp1d6H",
+    "name": "Lakshmi Gupta",
+    "email": "lakshmi.gupta402@yahoo.com",
+    "contact": "+919576178691",
+    "signup_date": "2026-01-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_TayCWoD4sXO7HO",
+    "name": "Diya Gupta",
+    "email": "diya.gupta306@gmail.com",
+    "contact": "+918274518789",
+    "signup_date": "2024-11-04T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_gzOqxFe8DRMOq3",
+    "name": "Neha Verma",
+    "email": "neha.verma838@outlook.com",
+    "contact": "+919013287045",
+    "signup_date": "2025-11-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_eOpL2GU7hgJpxI",
+    "name": "Sai Singh",
+    "email": "sai.singh160@outlook.com",
+    "contact": "+917782382992",
+    "signup_date": "2024-08-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_8UNpfsgw9GJm9Y",
+    "name": "Kavya Bose",
+    "email": "kavya.bose115@rediffmail.com",
+    "contact": "+916020623575",
+    "signup_date": "2025-02-01T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_jyA1UEQvPyOa3n",
+    "name": "Ishaan Singh",
+    "email": "ishaan.singh910@yahoo.com",
+    "contact": "+917869110573",
+    "signup_date": "2024-09-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_hTZVTx7HvehllK",
+    "name": "Karan Agarwal",
+    "email": "karan.agarwal270@rediffmail.com",
+    "contact": "+918984479643",
+    "signup_date": "2025-08-19T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_yCJeTo5nenT7Kd",
+    "name": "Aditya Agarwal",
+    "email": "aditya.agarwal53@gmail.com",
+    "contact": "+919849288069",
+    "signup_date": "2026-03-07T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_nYexVOLlrbfYfB",
+    "name": "Isha Mehta",
+    "email": "isha.mehta502@outlook.com",
+    "contact": "+916334046570",
+    "signup_date": "2025-09-10T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_3yPCwdkfo4lyli",
+    "name": "Rohan Iyer",
+    "email": "rohan.iyer762@gmail.com",
+    "contact": "+918824164152",
+    "signup_date": "2025-12-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_yjrUuri41qIxxR",
+    "name": "Rohan Mehta",
+    "email": "rohan.mehta145@outlook.com",
+    "contact": "+918898926509",
+    "signup_date": "2026-03-20T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_tmk82dgustPrzc",
+    "name": "Reyansh Mehta",
+    "email": "reyansh.mehta906@outlook.com",
+    "contact": "+919316407623",
+    "signup_date": "2025-02-28T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_TnFaP2deXXeGXX",
+    "name": "Lakshmi Chatterjee",
+    "email": "lakshmi.chatterjee48@outlook.com",
+    "contact": "+918594341202",
+    "signup_date": "2024-10-01T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_uvro1XM2nepbB9",
+    "name": "Vihaan Bhat",
+    "email": "vihaan.bhat684@rediffmail.com",
+    "contact": "+918890292697",
+    "signup_date": "2024-08-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_68e5N4DAdxT3oh",
+    "name": "Pooja Menon",
+    "email": "pooja.menon948@outlook.com",
+    "contact": "+918144716085",
+    "signup_date": "2025-08-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_9j1xxFCKr1RBzS",
+    "name": "Saanvi Menon",
+    "email": "saanvi.menon338@outlook.com",
+    "contact": "+918256752801",
+    "signup_date": "2024-12-29T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_zMar2cTGgzrclb",
+    "name": "Priya Kumar",
+    "email": "priya.kumar276@outlook.com",
+    "contact": "+917812288683",
+    "signup_date": "2025-04-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_bkCAwR2AOW7B0c",
+    "name": "Vihaan Mehta",
+    "email": "vihaan.mehta422@rediffmail.com",
+    "contact": "+917380677500",
+    "signup_date": "2026-03-08T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_HsHtD641pXJZrX",
+    "name": "Kiran Kapoor",
+    "email": "kiran.kapoor152@rediffmail.com",
+    "contact": "+919993422152",
+    "signup_date": "2025-07-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_cdh1gfRJAw2JJJ",
+    "name": "Aarav Rao",
+    "email": "aarav.rao858@outlook.com",
+    "contact": "+916585985426",
+    "signup_date": "2025-12-03T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_JkELVONgQCMqbM",
+    "name": "Kabir Das",
+    "email": "kabir.das690@gmail.com",
+    "contact": "+918338512290",
+    "signup_date": "2024-10-03T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_U7vITOHl3nsu29",
+    "name": "Isha Kapoor",
+    "email": "isha.kapoor560@outlook.com",
+    "contact": "+919977926961",
+    "signup_date": "2024-11-05T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_AnmSrixx9hB96I",
+    "name": "Ishaan Nair",
+    "email": "ishaan.nair224@gmail.com",
+    "contact": "+916460672511",
+    "signup_date": "2025-11-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_wEu8Ik2vpEEKHM",
+    "name": "Ananya Desai",
+    "email": "ananya.desai233@rediffmail.com",
+    "contact": "+916170429383",
+    "signup_date": "2025-06-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_B83d4kAhSvO7L8",
+    "name": "Aryan Bose",
+    "email": "aryan.bose323@rediffmail.com",
+    "contact": "+918993078159",
+    "signup_date": "2024-12-31T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_O9tqiDAb8OPrmk",
+    "name": "Anjali Verma",
+    "email": "anjali.verma280@outlook.com",
+    "contact": "+919869819582",
+    "signup_date": "2025-01-31T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_HhBTmaQ2TnCvAl",
+    "name": "Tara Kumar",
+    "email": "tara.kumar28@gmail.com",
+    "contact": "+918888728942",
+    "signup_date": "2025-09-09T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_u31wwTmevyY5Qp",
+    "name": "Meera Verma",
+    "email": "meera.verma427@yahoo.com",
+    "contact": "+916463780593",
+    "signup_date": "2025-03-30T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Yf2sxH6FuJNgzU",
+    "name": "Aditya Mehta",
+    "email": "aditya.mehta611@rediffmail.com",
+    "contact": "+917109335492",
+    "signup_date": "2024-08-25T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_yJDBVtgOVXN9nO",
+    "name": "Rahul Trivedi",
+    "email": "rahul.trivedi8@outlook.com",
+    "contact": "+918541850011",
+    "signup_date": "2026-03-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_pe3Mpd5GsVCsol",
+    "name": "Priya Chatterjee",
+    "email": "priya.chatterjee494@yahoo.com",
+    "contact": "+916389046445",
+    "signup_date": "2024-12-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_68eaEU8SInOyFM",
+    "name": "Saanvi Rao",
+    "email": "saanvi.rao774@rediffmail.com",
+    "contact": "+917447098267",
+    "signup_date": "2024-10-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_cMkO0VEtfrZF9F",
+    "name": "Aditya Reddy",
+    "email": "aditya.reddy125@yahoo.com",
+    "contact": "+919655738321",
+    "signup_date": "2025-12-29T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_390MyQGZmA2Ljk",
+    "name": "Rohan Gupta",
+    "email": "rohan.gupta542@rediffmail.com",
+    "contact": "+916326569766",
+    "signup_date": "2024-09-29T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_5ecaV0WIAHR2Oj",
+    "name": "Isha Reddy",
+    "email": "isha.reddy316@yahoo.com",
+    "contact": "+917923084699",
+    "signup_date": "2025-10-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_4C32wCELe6nrKo",
+    "name": "Tara Sharma",
+    "email": "tara.sharma306@outlook.com",
+    "contact": "+918659165581",
+    "signup_date": "2025-10-24T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_bpEEDjnIsV2zDn",
+    "name": "Diya Chopra",
+    "email": "diya.chopra857@gmail.com",
+    "contact": "+916039225444",
+    "signup_date": "2025-11-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_mIthsYzjHtGmJp",
+    "name": "Kavya Patel",
+    "email": "kavya.patel8@gmail.com",
+    "contact": "+916537851734",
+    "signup_date": "2025-11-01T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_EfxgAGCFRGFVig",
+    "name": "Rohan Pandey",
+    "email": "rohan.pandey2@gmail.com",
+    "contact": "+917988056587",
+    "signup_date": "2025-08-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_GKpleIYeFzBlxn",
+    "name": "Diya Singh",
+    "email": "diya.singh717@yahoo.com",
+    "contact": "+919189840039",
+    "signup_date": "2025-09-30T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_OlZnrciC02VB63",
+    "name": "Lakshmi Gupta",
+    "email": "lakshmi.gupta478@yahoo.com",
+    "contact": "+916439880619",
+    "signup_date": "2025-01-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_FqZl8FxFfhRoHS",
+    "name": "Saanvi Chopra",
+    "email": "saanvi.chopra45@outlook.com",
+    "contact": "+919364482702",
+    "signup_date": "2025-10-28T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_mJhtWrAI4Wgh4y",
+    "name": "Ishaan Joshi",
+    "email": "ishaan.joshi795@gmail.com",
+    "contact": "+918299335502",
+    "signup_date": "2025-07-25T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_KJrRWDCpMFXlds",
+    "name": "Aditya Menon",
+    "email": "aditya.menon550@rediffmail.com",
+    "contact": "+917243069620",
+    "signup_date": "2024-11-15T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_O4aA3EVmGKxvl5",
+    "name": "Diya Desai",
+    "email": "diya.desai612@outlook.com",
+    "contact": "+916482648602",
+    "signup_date": "2024-12-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_btLGU8WbAfcyY0",
+    "name": "Divya Chatterjee",
+    "email": "divya.chatterjee933@yahoo.com",
+    "contact": "+916690852497",
+    "signup_date": "2026-03-10T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_akEOqrI7Ex6TXv",
+    "name": "Aditya Pillai",
+    "email": "aditya.pillai447@outlook.com",
+    "contact": "+918807222039",
+    "signup_date": "2024-12-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ShfxFS12qfF0lC",
+    "name": "Kiran Iyer",
+    "email": "kiran.iyer55@outlook.com",
+    "contact": "+917065346810",
+    "signup_date": "2025-05-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_FqrBhGiDPcmDID",
+    "name": "Aditya Kapoor",
+    "email": "aditya.kapoor60@outlook.com",
+    "contact": "+919148241033",
+    "signup_date": "2025-09-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_92b8QE5Jw6hyEF",
+    "name": "Priya Verma",
+    "email": "priya.verma938@yahoo.com",
+    "contact": "+919471818672",
+    "signup_date": "2025-12-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_BVJshIchL94Tmd",
+    "name": "Nikhil Reddy",
+    "email": "nikhil.reddy217@outlook.com",
+    "contact": "+916514603347",
+    "signup_date": "2025-03-14T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_4tMf5pqE56jhSq",
+    "name": "Vivaan Gupta",
+    "email": "vivaan.gupta161@gmail.com",
+    "contact": "+916825253752",
+    "signup_date": "2025-09-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_4CHywIYWDeFy9N",
+    "name": "Anjali Rao",
+    "email": "anjali.rao56@rediffmail.com",
+    "contact": "+918606321407",
+    "signup_date": "2024-12-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ImRjGEaV4Vvi2d",
+    "name": "Krishna Desai",
+    "email": "krishna.desai227@outlook.com",
+    "contact": "+919512666151",
+    "signup_date": "2025-11-15T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_9Irvmf9Ge4d401",
+    "name": "Aryan Agarwal",
+    "email": "aryan.agarwal388@rediffmail.com",
+    "contact": "+919305977331",
+    "signup_date": "2025-12-15T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_4wYTdRnWKfhKfj",
+    "name": "Pooja Nair",
+    "email": "pooja.nair644@gmail.com",
+    "contact": "+917679177896",
+    "signup_date": "2025-06-27T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_riGYkQsuX45osI",
+    "name": "Anjali Agarwal",
+    "email": "anjali.agarwal365@outlook.com",
+    "contact": "+919438771996",
+    "signup_date": "2025-04-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_FymZo1aIgNU2ZD",
+    "name": "Aryan Menon",
+    "email": "aryan.menon957@rediffmail.com",
+    "contact": "+918635216445",
+    "signup_date": "2026-01-24T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_7iPj0zHMBO4uBq",
+    "name": "Dhruv Pillai",
+    "email": "dhruv.pillai14@outlook.com",
+    "contact": "+917295695996",
+    "signup_date": "2025-04-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Cy3UdjlwMpJtRT",
+    "name": "Kavya Trivedi",
+    "email": "kavya.trivedi584@rediffmail.com",
+    "contact": "+918679584374",
+    "signup_date": "2024-11-12T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_FaCJoS9XmN3b9s",
+    "name": "Anjali Das",
+    "email": "anjali.das637@outlook.com",
+    "contact": "+916236964746",
+    "signup_date": "2025-03-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_YeOdfNUraXoeMg",
+    "name": "Vihaan Reddy",
+    "email": "vihaan.reddy890@gmail.com",
+    "contact": "+918117596068",
+    "signup_date": "2025-09-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ahLgXarmfwCyBc",
+    "name": "Nikhil Chatterjee",
+    "email": "nikhil.chatterjee253@yahoo.com",
+    "contact": "+917139100973",
+    "signup_date": "2025-10-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_NeVaYoVIUoIw6J",
+    "name": "Diya Desai",
+    "email": "diya.desai251@outlook.com",
+    "contact": "+918678193064",
+    "signup_date": "2025-07-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_mdKH8ITEzWju20",
+    "name": "Krishna Iyer",
+    "email": "krishna.iyer997@rediffmail.com",
+    "contact": "+917728749032",
+    "signup_date": "2024-09-09T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_sJllEq5g7RNPsx",
+    "name": "Ishaan Bhat",
+    "email": "ishaan.bhat206@outlook.com",
+    "contact": "+918329988547",
+    "signup_date": "2026-01-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_uaLl0UwzYZDJwG",
+    "name": "Pooja Kapoor",
+    "email": "pooja.kapoor711@outlook.com",
+    "contact": "+918744793957",
+    "signup_date": "2025-07-27T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Jh5n8A3DrPn4gj",
+    "name": "Pooja Mehta",
+    "email": "pooja.mehta172@yahoo.com",
+    "contact": "+918219358623",
+    "signup_date": "2026-04-19T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_cHfuPFcQIFYsQc",
+    "name": "Aryan Pandey",
+    "email": "aryan.pandey996@yahoo.com",
+    "contact": "+918141218465",
+    "signup_date": "2024-09-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Jv9Hu6i0MeZdQD",
+    "name": "Priya Singh",
+    "email": "priya.singh351@yahoo.com",
+    "contact": "+916839844490",
+    "signup_date": "2025-10-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_sVo0GI7wjj9pg3",
+    "name": "Vivaan Mehta",
+    "email": "vivaan.mehta899@gmail.com",
+    "contact": "+918229832993",
+    "signup_date": "2025-09-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Q8gyxRXEYHghvM",
+    "name": "Kavya Patel",
+    "email": "kavya.patel938@outlook.com",
+    "contact": "+919618553450",
+    "signup_date": "2026-04-24T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_KMVXOh4C1CZ4Ts",
+    "name": "Kabir Joshi",
+    "email": "kabir.joshi817@yahoo.com",
+    "contact": "+916853224639",
+    "signup_date": "2026-02-02T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_7UF63ZnCpMV69A",
+    "name": "Meera Trivedi",
+    "email": "meera.trivedi223@yahoo.com",
+    "contact": "+919935737836",
+    "signup_date": "2024-08-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_KcmdF1SzQTntr0",
+    "name": "Diya Desai",
+    "email": "diya.desai889@outlook.com",
+    "contact": "+916405173817",
+    "signup_date": "2025-07-13T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_d92QWfSXWdlpV8",
+    "name": "Kabir Kumar",
+    "email": "kabir.kumar192@outlook.com",
+    "contact": "+919978679145",
+    "signup_date": "2024-12-31T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_e5nQ5LmSCZDdad",
+    "name": "Sai Gupta",
+    "email": "sai.gupta165@yahoo.com",
+    "contact": "+919753269552",
+    "signup_date": "2025-12-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_psCDFAu4FLB8pJ",
+    "name": "Kiran Sharma",
+    "email": "kiran.sharma874@outlook.com",
+    "contact": "+919004131046",
+    "signup_date": "2025-05-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_uCDNv5l0BSFo3B",
+    "name": "Divya Nair",
+    "email": "divya.nair549@yahoo.com",
+    "contact": "+916370170161",
+    "signup_date": "2025-05-25T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_0sC5kMmIbskxt2",
+    "name": "Arjun Bhat",
+    "email": "arjun.bhat175@gmail.com",
+    "contact": "+917057098842",
+    "signup_date": "2025-07-27T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_4UPtO2WMN31k6U",
+    "name": "Sai Menon",
+    "email": "sai.menon906@outlook.com",
+    "contact": "+919563820615",
+    "signup_date": "2024-11-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_LV3ajg6JhUJII1",
+    "name": "Diya Nair",
+    "email": "diya.nair176@gmail.com",
+    "contact": "+916073533961",
+    "signup_date": "2025-03-19T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_5BpwD7tZFbljDa",
+    "name": "Arjun Iyer",
+    "email": "arjun.iyer909@gmail.com",
+    "contact": "+918472582804",
+    "signup_date": "2025-05-28T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_6J3k7gGg6MfmLZ",
+    "name": "Krishna Patel",
+    "email": "krishna.patel913@gmail.com",
+    "contact": "+918026116728",
+    "signup_date": "2025-04-25T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ThpuBXORHASHPI",
+    "name": "Kiran Kumar",
+    "email": "kiran.kumar198@rediffmail.com",
+    "contact": "+917710343192",
+    "signup_date": "2025-05-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_hEBHfu1orWad5s",
+    "name": "Sai Chatterjee",
+    "email": "sai.chatterjee982@outlook.com",
+    "contact": "+918148446729",
+    "signup_date": "2026-01-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_BuKXazH13NT6mE",
+    "name": "Rohan Das",
+    "email": "rohan.das516@rediffmail.com",
+    "contact": "+918262380042",
+    "signup_date": "2026-02-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_YJVgBhUgRFGh67",
+    "name": "Rahul Bose",
+    "email": "rahul.bose629@rediffmail.com",
+    "contact": "+917254306799",
+    "signup_date": "2024-10-27T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_z9BHzdeBT5f3TV",
+    "name": "Neha Chatterjee",
+    "email": "neha.chatterjee46@gmail.com",
+    "contact": "+919049850455",
+    "signup_date": "2025-04-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_POpk7R2ykXvbrq",
+    "name": "Rahul Menon",
+    "email": "rahul.menon887@rediffmail.com",
+    "contact": "+919987704574",
+    "signup_date": "2025-10-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_JGtEGl9OzOO0kn",
+    "name": "Nikhil Menon",
+    "email": "nikhil.menon147@yahoo.com",
+    "contact": "+918330032888",
+    "signup_date": "2025-10-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_bQdKphHM2ccPvA",
+    "name": "Anjali Mehta",
+    "email": "anjali.mehta173@gmail.com",
+    "contact": "+916152320542",
+    "signup_date": "2024-12-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_iB7L9ZOX66Drrs",
+    "name": "Diya Reddy",
+    "email": "diya.reddy495@rediffmail.com",
+    "contact": "+917543626256",
+    "signup_date": "2025-01-13T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_jEE4CDiLblLtw9",
+    "name": "Tara Chatterjee",
+    "email": "tara.chatterjee285@gmail.com",
+    "contact": "+919953701230",
+    "signup_date": "2024-09-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_leuX4lmNEfWZyR",
+    "name": "Reyansh Menon",
+    "email": "reyansh.menon422@rediffmail.com",
+    "contact": "+919703384665",
+    "signup_date": "2025-03-03T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_kvRP6QfE6THrKm",
+    "name": "Karan Kumar",
+    "email": "karan.kumar833@rediffmail.com",
+    "contact": "+919606842775",
+    "signup_date": "2026-02-22T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_FHwAyhAROzouhs",
+    "name": "Pooja Pillai",
+    "email": "pooja.pillai134@gmail.com",
+    "contact": "+917260875326",
+    "signup_date": "2025-05-26T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_p89WKbiHm9XaoF",
+    "name": "Neha Pillai",
+    "email": "neha.pillai662@outlook.com",
+    "contact": "+916438535360",
+    "signup_date": "2026-01-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_QRmhTsWU2aw2rI",
+    "name": "Dhruv Agarwal",
+    "email": "dhruv.agarwal451@outlook.com",
+    "contact": "+918550013430",
+    "signup_date": "2026-03-13T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_cOeb8IHATU3PkF",
+    "name": "Kavya Singh",
+    "email": "kavya.singh630@rediffmail.com",
+    "contact": "+919873885099",
+    "signup_date": "2026-04-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Rvc8C37qN232Lg",
+    "name": "Riya Bose",
+    "email": "riya.bose49@yahoo.com",
+    "contact": "+918369946938",
+    "signup_date": "2025-09-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_8yMluhuyPiGTtr",
+    "name": "Reyansh Pandey",
+    "email": "reyansh.pandey930@outlook.com",
+    "contact": "+919696931470",
+    "signup_date": "2024-09-07T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_qZ0WPc84FqvAbH",
+    "name": "Anjali Iyer",
+    "email": "anjali.iyer844@outlook.com",
+    "contact": "+918253842600",
+    "signup_date": "2026-04-19T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Qy4CgMUrB2hhcP",
+    "name": "Kavya Iyer",
+    "email": "kavya.iyer725@yahoo.com",
+    "contact": "+918363055458",
+    "signup_date": "2024-12-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_kfoZOOFgQ7aR35",
+    "name": "Tara Rao",
+    "email": "tara.rao883@gmail.com",
+    "contact": "+917506540501",
+    "signup_date": "2026-01-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_y37qHFOZUoThsv",
+    "name": "Kiran Agarwal",
+    "email": "kiran.agarwal529@outlook.com",
+    "contact": "+916217412708",
+    "signup_date": "2025-02-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Q6GcWnIx3PzM3N",
+    "name": "Vihaan Pandey",
+    "email": "vihaan.pandey876@gmail.com",
+    "contact": "+917800254577",
+    "signup_date": "2025-09-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_UENhgFuC0YgUGf",
+    "name": "Aditya Joshi",
+    "email": "aditya.joshi743@rediffmail.com",
+    "contact": "+918026961299",
+    "signup_date": "2025-03-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_en9pqGufCzPPKM",
+    "name": "Sai Bose",
+    "email": "sai.bose891@yahoo.com",
+    "contact": "+919766536071",
+    "signup_date": "2026-04-19T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Ziiywm4fVvTTbZ",
+    "name": "Divya Agarwal",
+    "email": "divya.agarwal360@yahoo.com",
+    "contact": "+916687617969",
+    "signup_date": "2024-11-05T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ZjbVIhSRu1hmqE",
+    "name": "Kavya Pillai",
+    "email": "kavya.pillai640@outlook.com",
+    "contact": "+917861253428",
+    "signup_date": "2025-11-26T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_WF2qfAeFeZHFqH",
+    "name": "Riya Agarwal",
+    "email": "riya.agarwal756@outlook.com",
+    "contact": "+919894958504",
+    "signup_date": "2025-04-08T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_3gfSKwQZzDkaSu",
+    "name": "Diya Bose",
+    "email": "diya.bose511@outlook.com",
+    "contact": "+916756024907",
+    "signup_date": "2025-12-09T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_DRHFwKfLyM9I4h",
+    "name": "Isha Trivedi",
+    "email": "isha.trivedi907@outlook.com",
+    "contact": "+916129727055",
+    "signup_date": "2025-03-25T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_NgYYrLA7sljDc0",
+    "name": "Lakshmi Desai",
+    "email": "lakshmi.desai382@outlook.com",
+    "contact": "+918781404030",
+    "signup_date": "2025-05-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_14XKi3LbeOOPcJ",
+    "name": "Ishaan Sharma",
+    "email": "ishaan.sharma329@yahoo.com",
+    "contact": "+917561380935",
+    "signup_date": "2025-12-13T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_NfmZ9V7DAFHsPB",
+    "name": "Nikhil Menon",
+    "email": "nikhil.menon370@outlook.com",
+    "contact": "+918733890535",
+    "signup_date": "2025-04-15T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_dsYdqBwMcVu5hd",
+    "name": "Saanvi Menon",
+    "email": "saanvi.menon498@outlook.com",
+    "contact": "+918976283237",
+    "signup_date": "2025-06-05T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_qdEsZlvOJk66JC",
+    "name": "Krishna Bose",
+    "email": "krishna.bose921@gmail.com",
+    "contact": "+917316270815",
+    "signup_date": "2025-10-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Ln8WNbqZgzLmds",
+    "name": "Ananya Chopra",
+    "email": "ananya.chopra492@yahoo.com",
+    "contact": "+919167280114",
+    "signup_date": "2025-09-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_jTUBIYtfC8SKew",
+    "name": "Lakshmi Kapoor",
+    "email": "lakshmi.kapoor424@rediffmail.com",
+    "contact": "+917601423962",
+    "signup_date": "2024-09-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_ylj2OJvM0dzlxj",
+    "name": "Riya Mehta",
+    "email": "riya.mehta988@outlook.com",
+    "contact": "+916437176738",
+    "signup_date": "2026-02-12T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_hQCMh7oFjL0vvW",
+    "name": "Priya Bose",
+    "email": "priya.bose777@yahoo.com",
+    "contact": "+919745215844",
+    "signup_date": "2025-02-03T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_f16qyNBq6qOkNM",
+    "name": "Divya Chopra",
+    "email": "divya.chopra149@yahoo.com",
+    "contact": "+918243425893",
+    "signup_date": "2025-12-09T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Itc68eYuVb51R7",
+    "name": "Isha Patel",
+    "email": "isha.patel155@yahoo.com",
+    "contact": "+919082922664",
+    "signup_date": "2024-11-04T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_iU6QZXhFuepLaL",
+    "name": "Kiran Kapoor",
+    "email": "kiran.kapoor90@rediffmail.com",
+    "contact": "+919373065069",
+    "signup_date": "2026-03-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_RAtbWTnufBGxl7",
+    "name": "Rohan Singh",
+    "email": "rohan.singh705@yahoo.com",
+    "contact": "+917946243583",
+    "signup_date": "2025-01-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_YykAsLxdiRk9xL",
+    "name": "Meera Sharma",
+    "email": "meera.sharma398@yahoo.com",
+    "contact": "+917779905098",
+    "signup_date": "2026-03-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_STdY3Gc25PswaA",
+    "name": "Tara Chopra",
+    "email": "tara.chopra558@rediffmail.com",
+    "contact": "+919375045786",
+    "signup_date": "2025-06-19T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_wFADX6mDsfE1Wf",
+    "name": "Kabir Verma",
+    "email": "kabir.verma589@yahoo.com",
+    "contact": "+916269005318",
+    "signup_date": "2025-09-08T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_wvqzKHruWSBl3j",
+    "name": "Kavya Verma",
+    "email": "kavya.verma217@yahoo.com",
+    "contact": "+916454399742",
+    "signup_date": "2026-02-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_uFb1fWR06ZvtGr",
+    "name": "Divya Singh",
+    "email": "divya.singh78@gmail.com",
+    "contact": "+916586736286",
+    "signup_date": "2025-09-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_rOCBAs7V7JjkT4",
+    "name": "Priya Chopra",
+    "email": "priya.chopra327@rediffmail.com",
+    "contact": "+917526589018",
+    "signup_date": "2025-04-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_BcaN1jdJ2gqXJ1",
+    "name": "Vihaan Reddy",
+    "email": "vihaan.reddy324@gmail.com",
+    "contact": "+917807166214",
+    "signup_date": "2025-05-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_hZDcBctiC6eXQI",
+    "name": "Divya Mehta",
+    "email": "divya.mehta553@yahoo.com",
+    "contact": "+918644407156",
+    "signup_date": "2026-04-12T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_CPC8x3pneE17f4",
+    "name": "Aditya Joshi",
+    "email": "aditya.joshi759@yahoo.com",
+    "contact": "+917498874828",
+    "signup_date": "2025-06-20T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_y0AMg7RwuwYhqd",
+    "name": "Tara Sharma",
+    "email": "tara.sharma133@yahoo.com",
+    "contact": "+918954727855",
+    "signup_date": "2025-01-04T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Dt9MSacxjrnYlI",
+    "name": "Kiran Bhat",
+    "email": "kiran.bhat538@rediffmail.com",
+    "contact": "+919377797137",
+    "signup_date": "2025-10-17T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_3bwDYxkQoDEnKx",
+    "name": "Arjun Mehta",
+    "email": "arjun.mehta386@outlook.com",
+    "contact": "+919868650802",
+    "signup_date": "2025-12-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_0JvXq3Tm7SGrdh",
+    "name": "Diya Chatterjee",
+    "email": "diya.chatterjee331@rediffmail.com",
+    "contact": "+916013319685",
+    "signup_date": "2025-03-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_JTTfDyCUKD9DOm",
+    "name": "Pooja Kumar",
+    "email": "pooja.kumar503@yahoo.com",
+    "contact": "+919300545080",
+    "signup_date": "2024-11-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_vkhg0MvcvyPBhi",
+    "name": "Sai Menon",
+    "email": "sai.menon460@yahoo.com",
+    "contact": "+916764395178",
+    "signup_date": "2025-07-15T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_isGclnHywXumri",
+    "name": "Shreya Rao",
+    "email": "shreya.rao316@yahoo.com",
+    "contact": "+917030493056",
+    "signup_date": "2025-01-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_l0ML9h89OVzaHp",
+    "name": "Ananya Chopra",
+    "email": "ananya.chopra190@rediffmail.com",
+    "contact": "+918567768536",
+    "signup_date": "2025-06-21T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Btep96kfHrIQDW",
+    "name": "Ananya Nair",
+    "email": "ananya.nair503@gmail.com",
+    "contact": "+919356910765",
+    "signup_date": "2025-04-10T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_69wTDTGGKgV40l",
+    "name": "Reyansh Mehta",
+    "email": "reyansh.mehta676@gmail.com",
+    "contact": "+917531890078",
+    "signup_date": "2025-05-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_1TuvefwM8YDryI",
+    "name": "Divya Das",
+    "email": "divya.das137@gmail.com",
+    "contact": "+919537500282",
+    "signup_date": "2024-10-10T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_9OPZxCBr4Y0Zpt",
+    "name": "Sai Singh",
+    "email": "sai.singh763@rediffmail.com",
+    "contact": "+919729041470",
+    "signup_date": "2024-09-29T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_HJsyewIVi8DlWI",
+    "name": "Meera Verma",
+    "email": "meera.verma280@outlook.com",
+    "contact": "+919578893644",
+    "signup_date": "2026-01-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Qekz0wSC4nfs7Z",
+    "name": "Reyansh Iyer",
+    "email": "reyansh.iyer267@yahoo.com",
+    "contact": "+916375408762",
+    "signup_date": "2026-01-31T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_SN9bDabKq7A3Cu",
+    "name": "Ananya Singh",
+    "email": "ananya.singh190@outlook.com",
+    "contact": "+917917450653",
+    "signup_date": "2024-10-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_mMI6v00M90dOWF",
+    "name": "Meera Das",
+    "email": "meera.das637@gmail.com",
+    "contact": "+916591525625",
+    "signup_date": "2026-02-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_bdfOThAnkslXoa",
+    "name": "Karan Mehta",
+    "email": "karan.mehta901@gmail.com",
+    "contact": "+919610399985",
+    "signup_date": "2026-01-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_SbW20fZ2tolw3k",
+    "name": "Shreya Patel",
+    "email": "shreya.patel135@rediffmail.com",
+    "contact": "+919901317371",
+    "signup_date": "2025-10-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_MQK9EC2IZUUpWm",
+    "name": "Ishaan Das",
+    "email": "ishaan.das964@outlook.com",
+    "contact": "+916188369388",
+    "signup_date": "2025-06-02T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_H9wpgA2zvM9ikx",
+    "name": "Riya Rao",
+    "email": "riya.rao654@yahoo.com",
+    "contact": "+919220532485",
+    "signup_date": "2025-09-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_4vQFPtH3c9mrvW",
+    "name": "Sai Reddy",
+    "email": "sai.reddy291@outlook.com",
+    "contact": "+917680349889",
+    "signup_date": "2024-12-31T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_dFIB1Q3VV7FGEJ",
+    "name": "Nikhil Patel",
+    "email": "nikhil.patel522@outlook.com",
+    "contact": "+918817973210",
+    "signup_date": "2026-04-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_D9matwrXyor49A",
+    "name": "Saanvi Desai",
+    "email": "saanvi.desai604@outlook.com",
+    "contact": "+918797263975",
+    "signup_date": "2025-07-07T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_59mYuuzJohh1kF",
+    "name": "Dhruv Bose",
+    "email": "dhruv.bose465@yahoo.com",
+    "contact": "+918711335478",
+    "signup_date": "2024-09-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_XhbRxDRi15vfT4",
+    "name": "Sai Desai",
+    "email": "sai.desai60@outlook.com",
+    "contact": "+919807669062",
+    "signup_date": "2025-03-27T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_j9jowa1004OSej",
+    "name": "Arjun Pillai",
+    "email": "arjun.pillai798@gmail.com",
+    "contact": "+917833593357",
+    "signup_date": "2025-10-08T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_9xuPLb2xpARspW",
+    "name": "Neha Chopra",
+    "email": "neha.chopra348@outlook.com",
+    "contact": "+916579438232",
+    "signup_date": "2024-12-02T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_ZDVNJ63HX7Xvr8",
+    "name": "Kiran Kumar",
+    "email": "kiran.kumar130@outlook.com",
+    "contact": "+917198003892",
+    "signup_date": "2025-02-22T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_1o7qAtYxELjUZY",
+    "name": "Vivaan Chopra",
+    "email": "vivaan.chopra637@rediffmail.com",
+    "contact": "+919568848497",
+    "signup_date": "2025-04-11T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Pe6AZlfOMQNrAC",
+    "name": "Ishaan Mehta",
+    "email": "ishaan.mehta462@yahoo.com",
+    "contact": "+916090598401",
+    "signup_date": "2024-10-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ipzNcPpwT9phyW",
+    "name": "Anjali Pandey",
+    "email": "anjali.pandey441@outlook.com",
+    "contact": "+918630114220",
+    "signup_date": "2024-11-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_3U3IkjHzRLDqY5",
+    "name": "Vivaan Sharma",
+    "email": "vivaan.sharma217@rediffmail.com",
+    "contact": "+918705420859",
+    "signup_date": "2025-02-01T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_LCQOf3Ggk8gh7A",
+    "name": "Vihaan Chopra",
+    "email": "vihaan.chopra513@yahoo.com",
+    "contact": "+919165353026",
+    "signup_date": "2025-10-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_NPQ29aB4dy8s50",
+    "name": "Neha Singh",
+    "email": "neha.singh849@gmail.com",
+    "contact": "+918651929687",
+    "signup_date": "2026-04-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Yt5KMtp86A6sta",
+    "name": "Arjun Patel",
+    "email": "arjun.patel651@gmail.com",
+    "contact": "+918881626490",
+    "signup_date": "2025-07-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_6TkatW2dSNm0iI",
+    "name": "Priya Mehta",
+    "email": "priya.mehta554@yahoo.com",
+    "contact": "+918438810480",
+    "signup_date": "2024-11-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_y7b40hhKzEF0VM",
+    "name": "Rahul Reddy",
+    "email": "rahul.reddy502@yahoo.com",
+    "contact": "+919383603497",
+    "signup_date": "2025-01-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Vn6ujFqLZSmiM1",
+    "name": "Aarav Bhat",
+    "email": "aarav.bhat995@outlook.com",
+    "contact": "+916151014568",
+    "signup_date": "2025-04-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_E5KPGJv7SClA0C",
+    "name": "Divya Chatterjee",
+    "email": "divya.chatterjee654@outlook.com",
+    "contact": "+919648462120",
+    "signup_date": "2025-01-04T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_5uvh9qo36cZiCd",
+    "name": "Nikhil Menon",
+    "email": "nikhil.menon17@outlook.com",
+    "contact": "+917129711379",
+    "signup_date": "2025-04-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_UBxOn5OyE0UaS6",
+    "name": "Priya Joshi",
+    "email": "priya.joshi852@gmail.com",
+    "contact": "+917128319403",
+    "signup_date": "2024-11-15T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_bMGjKxiOeJMayW",
+    "name": "Aarav Sharma",
+    "email": "aarav.sharma558@outlook.com",
+    "contact": "+916383648904",
+    "signup_date": "2025-05-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_mcmIhGFeAwWxa9",
+    "name": "Isha Reddy",
+    "email": "isha.reddy741@yahoo.com",
+    "contact": "+918029160100",
+    "signup_date": "2025-01-16T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_BiBSYQIvMy6K8n",
+    "name": "Aryan Trivedi",
+    "email": "aryan.trivedi253@outlook.com",
+    "contact": "+917504192071",
+    "signup_date": "2025-05-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_pGLrIbNUYQDajW",
+    "name": "Neha Mehta",
+    "email": "neha.mehta683@gmail.com",
+    "contact": "+918351804126",
+    "signup_date": "2025-02-21T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_iyrtQqxSNkcoLP",
+    "name": "Anjali Sharma",
+    "email": "anjali.sharma860@yahoo.com",
+    "contact": "+917862903752",
+    "signup_date": "2025-03-03T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_CjYIskbHIkYYhQ",
+    "name": "Divya Agarwal",
+    "email": "divya.agarwal703@gmail.com",
+    "contact": "+916493720400",
+    "signup_date": "2024-09-01T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_8ysSrUhr9Q12cj",
+    "name": "Divya Gupta",
+    "email": "divya.gupta153@outlook.com",
+    "contact": "+918873492221",
+    "signup_date": "2026-04-12T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_dlly1sDBQVEerW",
+    "name": "Rohan Das",
+    "email": "rohan.das886@rediffmail.com",
+    "contact": "+917839080216",
+    "signup_date": "2024-10-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_w8ARUN9X2lFQKX",
+    "name": "Anjali Rao",
+    "email": "anjali.rao676@outlook.com",
+    "contact": "+919844723904",
+    "signup_date": "2025-06-14T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_dnnOr9LvfKZh7x",
+    "name": "Arjun Mehta",
+    "email": "arjun.mehta979@outlook.com",
+    "contact": "+917628386515",
+    "signup_date": "2025-05-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_IWpUZXCYqKXdoI",
+    "name": "Riya Chopra",
+    "email": "riya.chopra829@outlook.com",
+    "contact": "+918007982037",
+    "signup_date": "2024-11-02T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_KAVUbhdVTkzAwx",
+    "name": "Saanvi Singh",
+    "email": "saanvi.singh309@rediffmail.com",
+    "contact": "+919546070716",
+    "signup_date": "2024-11-20T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_L5jWRzdLDMIiBe",
+    "name": "Diya Rao",
+    "email": "diya.rao768@rediffmail.com",
+    "contact": "+919486934704",
+    "signup_date": "2025-03-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_XPxlFbBHzEeQy8",
+    "name": "Sai Kumar",
+    "email": "sai.kumar866@gmail.com",
+    "contact": "+918477115843",
+    "signup_date": "2026-01-12T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Pb9MRYp73HYmgL",
+    "name": "Karan Pandey",
+    "email": "karan.pandey61@outlook.com",
+    "contact": "+916514771291",
+    "signup_date": "2025-01-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_r1wlSk1ZubhMmP",
+    "name": "Aarav Reddy",
+    "email": "aarav.reddy638@yahoo.com",
+    "contact": "+919975199399",
+    "signup_date": "2025-07-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_7nkTTDRZCicpVm",
+    "name": "Krishna Bhat",
+    "email": "krishna.bhat718@outlook.com",
+    "contact": "+916344550478",
+    "signup_date": "2025-10-14T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_9tvlho7mIE0E55",
+    "name": "Aarav Das",
+    "email": "aarav.das707@outlook.com",
+    "contact": "+918202673652",
+    "signup_date": "2024-09-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ENVeKiavpgtqvu",
+    "name": "Arjun Pillai",
+    "email": "arjun.pillai210@rediffmail.com",
+    "contact": "+919824591110",
+    "signup_date": "2025-09-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ESRToaCuxJZnzL",
+    "name": "Kiran Das",
+    "email": "kiran.das653@yahoo.com",
+    "contact": "+917216754939",
+    "signup_date": "2025-10-24T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_4lqAKoEY2Il2Vw",
+    "name": "Nikhil Rao",
+    "email": "nikhil.rao890@outlook.com",
+    "contact": "+916160495176",
+    "signup_date": "2025-03-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_glVF7ViyuwJw47",
+    "name": "Riya Pandey",
+    "email": "riya.pandey975@gmail.com",
+    "contact": "+916801387220",
+    "signup_date": "2025-02-26T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_rWbqUOqieJxr9X",
+    "name": "Isha Rao",
+    "email": "isha.rao601@rediffmail.com",
+    "contact": "+917929000861",
+    "signup_date": "2025-09-14T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_2FLoOckDCsBhyZ",
+    "name": "Ishaan Gupta",
+    "email": "ishaan.gupta813@gmail.com",
+    "contact": "+919177289824",
+    "signup_date": "2025-05-14T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_lqLGrC8sw4aVwb",
+    "name": "Ishaan Pillai",
+    "email": "ishaan.pillai517@rediffmail.com",
+    "contact": "+916683919737",
+    "signup_date": "2024-10-01T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_dSyfzd1hARl04s",
+    "name": "Diya Rao",
+    "email": "diya.rao687@rediffmail.com",
+    "contact": "+918805831784",
+    "signup_date": "2025-12-28T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_6gwc9AFfyR8d0o",
+    "name": "Vivaan Das",
+    "email": "vivaan.das212@outlook.com",
+    "contact": "+916026159386",
+    "signup_date": "2024-11-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_ZQuNGzGaI0VyIQ",
+    "name": "Neha Trivedi",
+    "email": "neha.trivedi885@yahoo.com",
+    "contact": "+917897253904",
+    "signup_date": "2025-06-01T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_YTpqh4AMrxiGoJ",
+    "name": "Meera Gupta",
+    "email": "meera.gupta642@outlook.com",
+    "contact": "+917123056865",
+    "signup_date": "2024-10-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_8WMrSFs3oLuEFO",
+    "name": "Aryan Menon",
+    "email": "aryan.menon553@rediffmail.com",
+    "contact": "+918654383504",
+    "signup_date": "2025-01-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_rpP05Zc2KovwVN",
+    "name": "Reyansh Chatterjee",
+    "email": "reyansh.chatterjee263@yahoo.com",
+    "contact": "+916162497779",
+    "signup_date": "2026-03-12T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_bEU1LsujN0KGRU",
+    "name": "Diya Chatterjee",
+    "email": "diya.chatterjee475@yahoo.com",
+    "contact": "+917604186144",
+    "signup_date": "2026-04-07T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_wGZZ0BPbuSCP8I",
+    "name": "Karan Rao",
+    "email": "karan.rao355@outlook.com",
+    "contact": "+916701268018",
+    "signup_date": "2025-08-22T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_WjzDlWKyqdHI2C",
+    "name": "Vivaan Reddy",
+    "email": "vivaan.reddy607@outlook.com",
+    "contact": "+918668456757",
+    "signup_date": "2024-09-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_FmoLMuJGqJFXMj",
+    "name": "Kabir Rao",
+    "email": "kabir.rao112@gmail.com",
+    "contact": "+917942399873",
+    "signup_date": "2025-07-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_7jXCxeTyCEjJXC",
+    "name": "Pooja Iyer",
+    "email": "pooja.iyer888@rediffmail.com",
+    "contact": "+918484854228",
+    "signup_date": "2024-10-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_kElgTmSV6ioYq6",
+    "name": "Lakshmi Mehta",
+    "email": "lakshmi.mehta149@outlook.com",
+    "contact": "+918862652509",
+    "signup_date": "2025-04-12T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_yPf6Gk23qf0dEg",
+    "name": "Arjun Reddy",
+    "email": "arjun.reddy450@yahoo.com",
+    "contact": "+919954571954",
+    "signup_date": "2025-03-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_i6cAs7gLn1FFE0",
+    "name": "Krishna Kumar",
+    "email": "krishna.kumar83@outlook.com",
+    "contact": "+919400049593",
+    "signup_date": "2025-04-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_IDHy2r1cRNITj2",
+    "name": "Reyansh Chopra",
+    "email": "reyansh.chopra408@rediffmail.com",
+    "contact": "+917330098951",
+    "signup_date": "2025-07-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_iq96wCUamnVYd2",
+    "name": "Meera Joshi",
+    "email": "meera.joshi403@yahoo.com",
+    "contact": "+916333340001",
+    "signup_date": "2024-11-12T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_yCAaqNB75K8rGx",
+    "name": "Shreya Sharma",
+    "email": "shreya.sharma618@gmail.com",
+    "contact": "+916826042182",
+    "signup_date": "2025-03-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_xiHWelecQ7GMY6",
+    "name": "Karan Singh",
+    "email": "karan.singh501@outlook.com",
+    "contact": "+918183171013",
+    "signup_date": "2025-06-21T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Mu1g8dAZmQG77G",
+    "name": "Karan Patel",
+    "email": "karan.patel774@rediffmail.com",
+    "contact": "+919294480048",
+    "signup_date": "2024-09-06T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_VMJuwo2Nel2jCB",
+    "name": "Kiran Nair",
+    "email": "kiran.nair803@yahoo.com",
+    "contact": "+916100024410",
+    "signup_date": "2025-04-12T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_dUTaXPWOxwNS3e",
+    "name": "Vivaan Iyer",
+    "email": "vivaan.iyer388@rediffmail.com",
+    "contact": "+917964478405",
+    "signup_date": "2025-12-11T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_mTKEY1Bx5YiA7I",
+    "name": "Nikhil Kumar",
+    "email": "nikhil.kumar462@yahoo.com",
+    "contact": "+917842935531",
+    "signup_date": "2025-08-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Tj22qtq0zi0TsS",
+    "name": "Divya Pillai",
+    "email": "divya.pillai916@rediffmail.com",
+    "contact": "+918092936978",
+    "signup_date": "2025-08-08T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_oYLm8k1NUTbpMR",
+    "name": "Rahul Sharma",
+    "email": "rahul.sharma151@outlook.com",
+    "contact": "+916620002212",
+    "signup_date": "2025-01-22T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_eifyxi5eLlesat",
+    "name": "Karan Das",
+    "email": "karan.das185@rediffmail.com",
+    "contact": "+918353965359",
+    "signup_date": "2026-02-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_OmQiTkNU5JU10J",
+    "name": "Vivaan Chatterjee",
+    "email": "vivaan.chatterjee353@yahoo.com",
+    "contact": "+916898074706",
+    "signup_date": "2025-05-22T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_832Rq7owvzoK1x",
+    "name": "Shreya Bhat",
+    "email": "shreya.bhat326@yahoo.com",
+    "contact": "+917494262970",
+    "signup_date": "2026-01-03T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_wWjcJd8IWYpXJ1",
+    "name": "Isha Kapoor",
+    "email": "isha.kapoor921@rediffmail.com",
+    "contact": "+917423829411",
+    "signup_date": "2025-05-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_EkBrFGabpd69ZQ",
+    "name": "Anjali Kumar",
+    "email": "anjali.kumar742@outlook.com",
+    "contact": "+917974955699",
+    "signup_date": "2025-02-13T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_BY7INGKPEOpBVN",
+    "name": "Lakshmi Trivedi",
+    "email": "lakshmi.trivedi904@outlook.com",
+    "contact": "+919102441086",
+    "signup_date": "2025-09-30T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_yoly8tmkFKU6n1",
+    "name": "Kabir Chatterjee",
+    "email": "kabir.chatterjee812@gmail.com",
+    "contact": "+918883170649",
+    "signup_date": "2025-11-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_CYdgXt4iUa3LbV",
+    "name": "Neha Sharma",
+    "email": "neha.sharma727@outlook.com",
+    "contact": "+916064440572",
+    "signup_date": "2025-06-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_AXPiYTEAcISr4T",
+    "name": "Kiran Trivedi",
+    "email": "kiran.trivedi570@yahoo.com",
+    "contact": "+919515426278",
+    "signup_date": "2025-11-27T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_cjGE4XvIp7F3gc",
+    "name": "Arjun Sharma",
+    "email": "arjun.sharma67@yahoo.com",
+    "contact": "+919735189317",
+    "signup_date": "2026-04-12T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_PDXm4oOEGPV6Gr",
+    "name": "Karan Gupta",
+    "email": "karan.gupta356@rediffmail.com",
+    "contact": "+916400530755",
+    "signup_date": "2025-05-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_uaBYp0EkLxce2U",
+    "name": "Kabir Bhat",
+    "email": "kabir.bhat632@outlook.com",
+    "contact": "+919042911913",
+    "signup_date": "2025-12-24T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_GZUxXqv0xzpdNl",
+    "name": "Nikhil Pandey",
+    "email": "nikhil.pandey774@yahoo.com",
+    "contact": "+918490978717",
+    "signup_date": "2026-03-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_qYyNJjGDvRL8iM",
+    "name": "Isha Patel",
+    "email": "isha.patel809@outlook.com",
+    "contact": "+919641047714",
+    "signup_date": "2024-12-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_mjqHKY3SCmxcGg",
+    "name": "Reyansh Iyer",
+    "email": "reyansh.iyer590@gmail.com",
+    "contact": "+917368000322",
+    "signup_date": "2024-12-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_VOzCUFne16UIjo",
+    "name": "Rahul Iyer",
+    "email": "rahul.iyer30@yahoo.com",
+    "contact": "+919626413946",
+    "signup_date": "2025-09-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_0QnarJdi17izs4",
+    "name": "Reyansh Chopra",
+    "email": "reyansh.chopra829@rediffmail.com",
+    "contact": "+917739564700",
+    "signup_date": "2024-10-04T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_K4fEnmmUWjBBYc",
+    "name": "Vihaan Chatterjee",
+    "email": "vihaan.chatterjee343@rediffmail.com",
+    "contact": "+918256817404",
+    "signup_date": "2026-01-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_IiXvq8DrrUsXKT",
+    "name": "Nikhil Kumar",
+    "email": "nikhil.kumar453@outlook.com",
+    "contact": "+916818582956",
+    "signup_date": "2024-10-14T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_6gIyjuwcEAnJnt",
+    "name": "Aditya Singh",
+    "email": "aditya.singh80@gmail.com",
+    "contact": "+918857905939",
+    "signup_date": "2025-12-10T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_JCYSYeq9M5UdvN",
+    "name": "Nikhil Rao",
+    "email": "nikhil.rao400@outlook.com",
+    "contact": "+916994844252",
+    "signup_date": "2026-01-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_jnGz23zNLblL8F",
+    "name": "Divya Iyer",
+    "email": "divya.iyer573@outlook.com",
+    "contact": "+916256223555",
+    "signup_date": "2025-08-02T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_bcNX2pUBAPZKDh",
+    "name": "Rohan Singh",
+    "email": "rohan.singh388@outlook.com",
+    "contact": "+918707239609",
+    "signup_date": "2025-04-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_JDBwV1sn4XG5Kx",
+    "name": "Ananya Chopra",
+    "email": "ananya.chopra810@yahoo.com",
+    "contact": "+918878933529",
+    "signup_date": "2024-08-24T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_QLDf3XOpP1nOeX",
+    "name": "Riya Desai",
+    "email": "riya.desai346@gmail.com",
+    "contact": "+918702693672",
+    "signup_date": "2024-12-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ihkQlfd9kF1j8f",
+    "name": "Kavya Rao",
+    "email": "kavya.rao171@gmail.com",
+    "contact": "+916318067249",
+    "signup_date": "2024-12-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_b3LHh7HK1CjyjC",
+    "name": "Aryan Reddy",
+    "email": "aryan.reddy489@outlook.com",
+    "contact": "+919948702192",
+    "signup_date": "2024-11-24T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_CFwLlkcTuPbisq",
+    "name": "Priya Pandey",
+    "email": "priya.pandey885@yahoo.com",
+    "contact": "+919344489267",
+    "signup_date": "2025-08-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_fLafK0XYs4nKH8",
+    "name": "Aarav Menon",
+    "email": "aarav.menon875@rediffmail.com",
+    "contact": "+918202132419",
+    "signup_date": "2025-10-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_r9KYnGYfMjliHs",
+    "name": "Nikhil Joshi",
+    "email": "nikhil.joshi998@yahoo.com",
+    "contact": "+917914438699",
+    "signup_date": "2025-06-09T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_3PwLXrwEeuAhG1",
+    "name": "Tara Singh",
+    "email": "tara.singh10@outlook.com",
+    "contact": "+917067329297",
+    "signup_date": "2025-03-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_8LCCkTk7GIGpqy",
+    "name": "Ananya Pillai",
+    "email": "ananya.pillai826@rediffmail.com",
+    "contact": "+916382827910",
+    "signup_date": "2026-02-08T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Q0yOZwxcrvhP6r",
+    "name": "Riya Trivedi",
+    "email": "riya.trivedi9@outlook.com",
+    "contact": "+919478934904",
+    "signup_date": "2024-11-12T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_YiXPrTN2NGbgqr",
+    "name": "Neha Chatterjee",
+    "email": "neha.chatterjee743@rediffmail.com",
+    "contact": "+916590227777",
+    "signup_date": "2025-07-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_7BZkUWjJaI2Ru9",
+    "name": "Aarav Menon",
+    "email": "aarav.menon349@gmail.com",
+    "contact": "+917712425190",
+    "signup_date": "2024-10-20T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_49HWGr7pzsOsEI",
+    "name": "Pooja Pandey",
+    "email": "pooja.pandey6@gmail.com",
+    "contact": "+918836355917",
+    "signup_date": "2025-07-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_vjRqiOJKJf7X0s",
+    "name": "Isha Pandey",
+    "email": "isha.pandey924@outlook.com",
+    "contact": "+919954246724",
+    "signup_date": "2025-05-13T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_uL5c65rbvzn1ba",
+    "name": "Shreya Menon",
+    "email": "shreya.menon49@yahoo.com",
+    "contact": "+919463165350",
+    "signup_date": "2024-10-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_BVmQ2h7wK3wJ8n",
+    "name": "Rohan Trivedi",
+    "email": "rohan.trivedi4@yahoo.com",
+    "contact": "+917958036716",
+    "signup_date": "2025-11-12T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_UeFgkVpmfT60Gd",
+    "name": "Vivaan Mehta",
+    "email": "vivaan.mehta27@rediffmail.com",
+    "contact": "+916488126266",
+    "signup_date": "2025-12-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_JfYSloJ0nKcZvY",
+    "name": "Saanvi Singh",
+    "email": "saanvi.singh942@outlook.com",
+    "contact": "+919772046120",
+    "signup_date": "2026-01-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_STnRLoD9PqGnyz",
+    "name": "Vivaan Singh",
+    "email": "vivaan.singh525@gmail.com",
+    "contact": "+919347481641",
+    "signup_date": "2026-01-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_qtR6ZAxVcTYuuO",
+    "name": "Aditya Kumar",
+    "email": "aditya.kumar816@yahoo.com",
+    "contact": "+916342480715",
+    "signup_date": "2025-09-07T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_tKmAI1nSetoeQ1",
+    "name": "Riya Mehta",
+    "email": "riya.mehta134@yahoo.com",
+    "contact": "+916511917131",
+    "signup_date": "2025-04-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_QYx6Ymu1EMLDri",
+    "name": "Riya Chopra",
+    "email": "riya.chopra729@yahoo.com",
+    "contact": "+919082476426",
+    "signup_date": "2025-09-01T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_UlNqzi3W0D5n7m",
+    "name": "Arjun Menon",
+    "email": "arjun.menon780@gmail.com",
+    "contact": "+919510914225",
+    "signup_date": "2024-11-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_YRuFPMgjzCAGIW",
+    "name": "Ananya Iyer",
+    "email": "ananya.iyer679@gmail.com",
+    "contact": "+916837157172",
+    "signup_date": "2024-08-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Hgc0eKph2H61sf",
+    "name": "Kabir Trivedi",
+    "email": "kabir.trivedi308@rediffmail.com",
+    "contact": "+916467470976",
+    "signup_date": "2026-03-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_5B1bLRSNSkCxL5",
+    "name": "Arjun Gupta",
+    "email": "arjun.gupta928@outlook.com",
+    "contact": "+919538677545",
+    "signup_date": "2025-01-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_okaTvG8XXI6z5y",
+    "name": "Divya Menon",
+    "email": "divya.menon4@outlook.com",
+    "contact": "+917657595313",
+    "signup_date": "2026-01-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_EQjEjbRt17vIMG",
+    "name": "Rahul Nair",
+    "email": "rahul.nair550@outlook.com",
+    "contact": "+917084243862",
+    "signup_date": "2025-03-03T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_EKpZG6f4jSJkJ4",
+    "name": "Kabir Agarwal",
+    "email": "kabir.agarwal665@yahoo.com",
+    "contact": "+918019394618",
+    "signup_date": "2024-12-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_wR3oWP9WCsDEXY",
+    "name": "Saanvi Pandey",
+    "email": "saanvi.pandey992@gmail.com",
+    "contact": "+917003985195",
+    "signup_date": "2025-12-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_jAu26tPfZlSXFe",
+    "name": "Nikhil Bhat",
+    "email": "nikhil.bhat529@yahoo.com",
+    "contact": "+917193916936",
+    "signup_date": "2025-08-14T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_tUZVwuIgVYionf",
+    "name": "Aditya Sharma",
+    "email": "aditya.sharma600@rediffmail.com",
+    "contact": "+918090882036",
+    "signup_date": "2025-08-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_MQrvLW7T2iQ1jn",
+    "name": "Dhruv Pillai",
+    "email": "dhruv.pillai552@yahoo.com",
+    "contact": "+918925537187",
+    "signup_date": "2024-11-16T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_tOHEtWZIYItmwN",
+    "name": "Priya Verma",
+    "email": "priya.verma894@rediffmail.com",
+    "contact": "+919777473503",
+    "signup_date": "2026-03-22T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_7W1nRGZI1OXhtd",
+    "name": "Divya Pandey",
+    "email": "divya.pandey506@gmail.com",
+    "contact": "+916766123024",
+    "signup_date": "2024-11-01T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_2U29hkWr7PFN1w",
+    "name": "Ananya Pillai",
+    "email": "ananya.pillai676@gmail.com",
+    "contact": "+918578281161",
+    "signup_date": "2025-11-20T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_fdMTFaCN55yAmA",
+    "name": "Anjali Chatterjee",
+    "email": "anjali.chatterjee880@yahoo.com",
+    "contact": "+919422617616",
+    "signup_date": "2024-11-28T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_6viWeGf6tocUi8",
+    "name": "Divya Chopra",
+    "email": "divya.chopra987@rediffmail.com",
+    "contact": "+916893673451",
+    "signup_date": "2024-08-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Uv3PT7Hn40lMcK",
+    "name": "Aarav Kapoor",
+    "email": "aarav.kapoor882@rediffmail.com",
+    "contact": "+918568355785",
+    "signup_date": "2025-03-17T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_q4CYiba0Ya0iQk",
+    "name": "Kabir Joshi",
+    "email": "kabir.joshi53@gmail.com",
+    "contact": "+917897482980",
+    "signup_date": "2025-07-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_8KnxD3K3HEI4iz",
+    "name": "Dhruv Trivedi",
+    "email": "dhruv.trivedi743@yahoo.com",
+    "contact": "+916030198425",
+    "signup_date": "2025-01-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_1pCxexUiEdcMX0",
+    "name": "Aditya Kumar",
+    "email": "aditya.kumar87@yahoo.com",
+    "contact": "+918085417438",
+    "signup_date": "2025-11-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_sI07FgWsaUNh1Y",
+    "name": "Kavya Chopra",
+    "email": "kavya.chopra473@rediffmail.com",
+    "contact": "+917476649309",
+    "signup_date": "2025-08-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ZneHiJAXQUf4sE",
+    "name": "Anjali Menon",
+    "email": "anjali.menon591@yahoo.com",
+    "contact": "+918505432632",
+    "signup_date": "2026-01-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_IUOQmTxXllBVYJ",
+    "name": "Vivaan Bose",
+    "email": "vivaan.bose521@yahoo.com",
+    "contact": "+916856354076",
+    "signup_date": "2026-03-27T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Y4EvOR5V1UrQys",
+    "name": "Ananya Rao",
+    "email": "ananya.rao98@outlook.com",
+    "contact": "+918053010766",
+    "signup_date": "2025-05-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_jLDBlBf71UlTqR",
+    "name": "Saanvi Iyer",
+    "email": "saanvi.iyer647@gmail.com",
+    "contact": "+918853516245",
+    "signup_date": "2025-08-28T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_qIvIqfDP6x6gNe",
+    "name": "Aditya Mehta",
+    "email": "aditya.mehta90@gmail.com",
+    "contact": "+917107575993",
+    "signup_date": "2026-01-11T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_lzAQt3c5wOeeWI",
+    "name": "Ishaan Chopra",
+    "email": "ishaan.chopra683@outlook.com",
+    "contact": "+917346458077",
+    "signup_date": "2025-03-06T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_cg6efpBnwP0bM0",
+    "name": "Priya Mehta",
+    "email": "priya.mehta491@outlook.com",
+    "contact": "+916348645022",
+    "signup_date": "2025-12-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_0TYVz04FmOEzux",
+    "name": "Lakshmi Agarwal",
+    "email": "lakshmi.agarwal985@gmail.com",
+    "contact": "+919619663234",
+    "signup_date": "2025-02-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_onWiixhgJKj75f",
+    "name": "Rohan Patel",
+    "email": "rohan.patel473@outlook.com",
+    "contact": "+919742048074",
+    "signup_date": "2025-08-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_p4PqHl0fsK1rFS",
+    "name": "Pooja Bose",
+    "email": "pooja.bose454@gmail.com",
+    "contact": "+918769904191",
+    "signup_date": "2024-11-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_y1LpNxTaEOavHm",
+    "name": "Priya Sharma",
+    "email": "priya.sharma42@yahoo.com",
+    "contact": "+918566936374",
+    "signup_date": "2025-02-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_MmTDGjyHk1PBKE",
+    "name": "Saanvi Pandey",
+    "email": "saanvi.pandey98@rediffmail.com",
+    "contact": "+918254904666",
+    "signup_date": "2025-03-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_NETLRcSN487tNN",
+    "name": "Aryan Gupta",
+    "email": "aryan.gupta867@gmail.com",
+    "contact": "+916494588829",
+    "signup_date": "2024-09-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_0ZYwO7pVrX2PQq",
+    "name": "Vivaan Pandey",
+    "email": "vivaan.pandey30@outlook.com",
+    "contact": "+919774341843",
+    "signup_date": "2024-10-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_9ZFy4P8EW15n0Y",
+    "name": "Dhruv Reddy",
+    "email": "dhruv.reddy664@gmail.com",
+    "contact": "+916424062955",
+    "signup_date": "2025-08-30T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_36EdmgEWyLgtOx",
+    "name": "Neha Patel",
+    "email": "neha.patel363@yahoo.com",
+    "contact": "+919740653432",
+    "signup_date": "2025-05-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_bL9KPtYXu80V8i",
+    "name": "Lakshmi Gupta",
+    "email": "lakshmi.gupta354@rediffmail.com",
+    "contact": "+918329958382",
+    "signup_date": "2024-09-12T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_OjpFhOrTMSWqjL",
+    "name": "Arjun Bose",
+    "email": "arjun.bose643@gmail.com",
+    "contact": "+918730668471",
+    "signup_date": "2024-09-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_3Kl7boPw4W89tR",
+    "name": "Kabir Agarwal",
+    "email": "kabir.agarwal532@rediffmail.com",
+    "contact": "+916058065899",
+    "signup_date": "2026-01-03T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_2sOWRwSmIhSVC5",
+    "name": "Saanvi Bhat",
+    "email": "saanvi.bhat990@yahoo.com",
+    "contact": "+918771683262",
+    "signup_date": "2025-08-15T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_t6Vx8fTynDOkoZ",
+    "name": "Anjali Pandey",
+    "email": "anjali.pandey782@gmail.com",
+    "contact": "+918864861408",
+    "signup_date": "2025-10-29T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_IwvEAmHyVTNNPh",
+    "name": "Priya Pillai",
+    "email": "priya.pillai180@rediffmail.com",
+    "contact": "+917025314580",
+    "signup_date": "2025-05-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_v5ibiEoy52HBVB",
+    "name": "Saanvi Singh",
+    "email": "saanvi.singh54@gmail.com",
+    "contact": "+919073560409",
+    "signup_date": "2025-12-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_5pXFpIKPwctCdO",
+    "name": "Sai Reddy",
+    "email": "sai.reddy480@outlook.com",
+    "contact": "+916849680534",
+    "signup_date": "2026-01-27T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_DZ6qtSO38K0jBA",
+    "name": "Rohan Pandey",
+    "email": "rohan.pandey655@rediffmail.com",
+    "contact": "+918876356828",
+    "signup_date": "2025-08-22T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_AabhJad07Zl4OV",
+    "name": "Tara Chopra",
+    "email": "tara.chopra851@yahoo.com",
+    "contact": "+916429649724",
+    "signup_date": "2025-12-22T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_oBZNnQydU9DB3q",
+    "name": "Saanvi Bose",
+    "email": "saanvi.bose268@outlook.com",
+    "contact": "+919417620405",
+    "signup_date": "2025-12-12T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_kGeKo31xujAAYy",
+    "name": "Kavya Verma",
+    "email": "kavya.verma714@outlook.com",
+    "contact": "+917649433557",
+    "signup_date": "2025-12-28T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_RtfjzsVMozjur2",
+    "name": "Aarav Gupta",
+    "email": "aarav.gupta619@yahoo.com",
+    "contact": "+918453574811",
+    "signup_date": "2025-11-04T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_5AuEyArhm4IV8i",
+    "name": "Vivaan Das",
+    "email": "vivaan.das827@rediffmail.com",
+    "contact": "+916366066386",
+    "signup_date": "2025-07-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_rWjCb15jiNrrPk",
+    "name": "Ananya Bhat",
+    "email": "ananya.bhat307@rediffmail.com",
+    "contact": "+918513850388",
+    "signup_date": "2025-08-15T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_hGeA8jz9Mn65Fp",
+    "name": "Vihaan Menon",
+    "email": "vihaan.menon793@outlook.com",
+    "contact": "+918661710218",
+    "signup_date": "2025-09-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_VyiHF7XcJiiOrw",
+    "name": "Kabir Patel",
+    "email": "kabir.patel278@outlook.com",
+    "contact": "+916735954394",
+    "signup_date": "2026-01-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_3YnuuWlioLMzx8",
+    "name": "Shreya Pandey",
+    "email": "shreya.pandey419@gmail.com",
+    "contact": "+918075831407",
+    "signup_date": "2024-11-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_VuinZWyJpraA5m",
+    "name": "Anjali Trivedi",
+    "email": "anjali.trivedi243@outlook.com",
+    "contact": "+918103444950",
+    "signup_date": "2025-01-15T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_fgOexYUfKqWav5",
+    "name": "Pooja Menon",
+    "email": "pooja.menon662@gmail.com",
+    "contact": "+917069449514",
+    "signup_date": "2025-04-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_wGZvM3G5HrT8tQ",
+    "name": "Kavya Kumar",
+    "email": "kavya.kumar448@rediffmail.com",
+    "contact": "+916253870396",
+    "signup_date": "2026-02-25T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_FIrTikwv5zoSCY",
+    "name": "Nikhil Mehta",
+    "email": "nikhil.mehta152@yahoo.com",
+    "contact": "+919515896310",
+    "signup_date": "2025-12-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_uWyMlhRB14n1YX",
+    "name": "Kavya Mehta",
+    "email": "kavya.mehta98@yahoo.com",
+    "contact": "+917193031071",
+    "signup_date": "2025-09-24T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_bleDMwKS1dgvub",
+    "name": "Rahul Sharma",
+    "email": "rahul.sharma654@outlook.com",
+    "contact": "+916831876787",
+    "signup_date": "2024-12-07T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_W4Nn4bvJEpHeEM",
+    "name": "Reyansh Rao",
+    "email": "reyansh.rao344@yahoo.com",
+    "contact": "+919249969259",
+    "signup_date": "2025-07-15T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_V8yD0QlKQXdxiu",
+    "name": "Kavya Singh",
+    "email": "kavya.singh523@outlook.com",
+    "contact": "+917251571699",
+    "signup_date": "2025-09-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_m1P97jvzAcgzGW",
+    "name": "Aryan Menon",
+    "email": "aryan.menon58@gmail.com",
+    "contact": "+916972367748",
+    "signup_date": "2024-10-21T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Pzbb6TWHSDlp38",
+    "name": "Nikhil Rao",
+    "email": "nikhil.rao606@rediffmail.com",
+    "contact": "+918411312132",
+    "signup_date": "2024-08-30T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_xW1t9zvkPBPJyS",
+    "name": "Kabir Chatterjee",
+    "email": "kabir.chatterjee440@yahoo.com",
+    "contact": "+916320393540",
+    "signup_date": "2024-09-08T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_0IMOiV9XbNAUVg",
+    "name": "Priya Patel",
+    "email": "priya.patel237@yahoo.com",
+    "contact": "+917112985900",
+    "signup_date": "2024-10-10T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_675tTXoHT9Q3kl",
+    "name": "Isha Reddy",
+    "email": "isha.reddy681@yahoo.com",
+    "contact": "+916811996693",
+    "signup_date": "2024-11-20T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_TLv8UkwsQ5jfZM",
+    "name": "Nikhil Kapoor",
+    "email": "nikhil.kapoor721@outlook.com",
+    "contact": "+917626125584",
+    "signup_date": "2025-08-28T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Xihel51qNUHCFf",
+    "name": "Reyansh Chopra",
+    "email": "reyansh.chopra729@yahoo.com",
+    "contact": "+916130935885",
+    "signup_date": "2025-09-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_I0kS81vRBpXtwJ",
+    "name": "Neha Nair",
+    "email": "neha.nair826@gmail.com",
+    "contact": "+918801853312",
+    "signup_date": "2024-12-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Hmw1wGkMkiCyaW",
+    "name": "Divya Das",
+    "email": "divya.das211@rediffmail.com",
+    "contact": "+918092102185",
+    "signup_date": "2026-03-09T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_UBp6MgO4wkPGOJ",
+    "name": "Kiran Rao",
+    "email": "kiran.rao832@yahoo.com",
+    "contact": "+919688912729",
+    "signup_date": "2025-05-21T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_C5Es5p5YxjeQ5N",
+    "name": "Priya Mehta",
+    "email": "priya.mehta199@rediffmail.com",
+    "contact": "+917366505984",
+    "signup_date": "2025-07-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_VOH0iHi4sKCNSM",
+    "name": "Diya Gupta",
+    "email": "diya.gupta351@rediffmail.com",
+    "contact": "+916628784726",
+    "signup_date": "2024-10-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_llsryjGwLD5tTg",
+    "name": "Divya Agarwal",
+    "email": "divya.agarwal535@rediffmail.com",
+    "contact": "+916952070055",
+    "signup_date": "2025-03-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_iH9JgpzPsv40Ld",
+    "name": "Arjun Verma",
+    "email": "arjun.verma758@rediffmail.com",
+    "contact": "+917320231116",
+    "signup_date": "2024-09-09T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_rmFp95KaxJBnbs",
+    "name": "Dhruv Chatterjee",
+    "email": "dhruv.chatterjee747@outlook.com",
+    "contact": "+917054599124",
+    "signup_date": "2025-06-02T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_7HmmEln4qYNIY1",
+    "name": "Aryan Patel",
+    "email": "aryan.patel686@gmail.com",
+    "contact": "+918824415392",
+    "signup_date": "2025-08-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_lygZJpgd55PFUy",
+    "name": "Nikhil Desai",
+    "email": "nikhil.desai702@yahoo.com",
+    "contact": "+917369763612",
+    "signup_date": "2025-03-04T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_P9Eu0OwL3OV1U8",
+    "name": "Meera Bhat",
+    "email": "meera.bhat875@outlook.com",
+    "contact": "+919708681485",
+    "signup_date": "2024-12-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_CAbEz6MoBtZu0b",
+    "name": "Nikhil Sharma",
+    "email": "nikhil.sharma827@yahoo.com",
+    "contact": "+917410972137",
+    "signup_date": "2025-01-29T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_LIJxup8hLeBmP7",
+    "name": "Neha Iyer",
+    "email": "neha.iyer848@rediffmail.com",
+    "contact": "+917582248193",
+    "signup_date": "2025-11-07T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_begipqr7pwOAuG",
+    "name": "Dhruv Chatterjee",
+    "email": "dhruv.chatterjee617@rediffmail.com",
+    "contact": "+919682537460",
+    "signup_date": "2025-11-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_uqkef4HpxyLYOI",
+    "name": "Meera Das",
+    "email": "meera.das392@outlook.com",
+    "contact": "+918455547223",
+    "signup_date": "2025-10-05T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_o536GLyyVuPA9l",
+    "name": "Diya Pandey",
+    "email": "diya.pandey403@outlook.com",
+    "contact": "+917980315306",
+    "signup_date": "2025-04-06T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_4K1Z4Sf4oEIuC5",
+    "name": "Pooja Bhat",
+    "email": "pooja.bhat406@outlook.com",
+    "contact": "+919057210805",
+    "signup_date": "2024-12-01T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_LXfpfAaVHOPdMK",
+    "name": "Ananya Nair",
+    "email": "ananya.nair312@rediffmail.com",
+    "contact": "+917019678018",
+    "signup_date": "2025-06-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_uMuHpYzslMkc8H",
+    "name": "Rahul Pillai",
+    "email": "rahul.pillai351@rediffmail.com",
+    "contact": "+916216661457",
+    "signup_date": "2024-09-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_LS8yRmy8cSdN7G",
+    "name": "Ishaan Mehta",
+    "email": "ishaan.mehta572@outlook.com",
+    "contact": "+916303727161",
+    "signup_date": "2024-12-24T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_MdMtlDKcwIGBtD",
+    "name": "Aarav Bhat",
+    "email": "aarav.bhat394@outlook.com",
+    "contact": "+918808389517",
+    "signup_date": "2024-12-17T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_VcUF7VB7xnbvdD",
+    "name": "Divya Kapoor",
+    "email": "divya.kapoor797@outlook.com",
+    "contact": "+918649006417",
+    "signup_date": "2025-06-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_A1ukoao0yZjd9y",
+    "name": "Krishna Iyer",
+    "email": "krishna.iyer251@gmail.com",
+    "contact": "+918973706588",
+    "signup_date": "2025-07-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_XDyloi412SO9Bl",
+    "name": "Riya Das",
+    "email": "riya.das476@gmail.com",
+    "contact": "+917609097780",
+    "signup_date": "2025-07-28T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_iZ0gfTEhhyrYKs",
+    "name": "Vivaan Reddy",
+    "email": "vivaan.reddy284@gmail.com",
+    "contact": "+916051843241",
+    "signup_date": "2026-04-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_29KZmeg5qkaDbJ",
+    "name": "Rohan Pillai",
+    "email": "rohan.pillai496@gmail.com",
+    "contact": "+916337616850",
+    "signup_date": "2025-06-21T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_dJsShbPhFlfNLa",
+    "name": "Priya Menon",
+    "email": "priya.menon422@outlook.com",
+    "contact": "+919837197661",
+    "signup_date": "2024-12-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_lZN2r6ujSq0PxM",
+    "name": "Shreya Bose",
+    "email": "shreya.bose770@outlook.com",
+    "contact": "+916334571966",
+    "signup_date": "2026-04-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_SKjKjUrLajsBl5",
+    "name": "Sai Reddy",
+    "email": "sai.reddy411@rediffmail.com",
+    "contact": "+916384817680",
+    "signup_date": "2024-11-14T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_tSWHSCJ2iK75gw",
+    "name": "Krishna Patel",
+    "email": "krishna.patel639@gmail.com",
+    "contact": "+917081882549",
+    "signup_date": "2025-08-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_tpuVNRm5Q0dmb6",
+    "name": "Isha Pillai",
+    "email": "isha.pillai746@gmail.com",
+    "contact": "+919070437711",
+    "signup_date": "2026-01-01T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_yiTAel8vx232f6",
+    "name": "Divya Kapoor",
+    "email": "divya.kapoor360@yahoo.com",
+    "contact": "+916609160614",
+    "signup_date": "2025-04-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_U8pI3jT58kNb7H",
+    "name": "Rahul Reddy",
+    "email": "rahul.reddy361@gmail.com",
+    "contact": "+917655705676",
+    "signup_date": "2025-04-03T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9RNxGcgn9MMKQS",
+    "name": "Aarav Joshi",
+    "email": "aarav.joshi737@gmail.com",
+    "contact": "+916343035109",
+    "signup_date": "2026-04-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_GuMpUQCPn8lRx1",
+    "name": "Saanvi Patel",
+    "email": "saanvi.patel204@rediffmail.com",
+    "contact": "+916206803765",
+    "signup_date": "2026-04-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_OAkUTvufBKD460",
+    "name": "Ishaan Verma",
+    "email": "ishaan.verma270@gmail.com",
+    "contact": "+918364030823",
+    "signup_date": "2025-05-27T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_oIwQjOWVN05gJh",
+    "name": "Aryan Iyer",
+    "email": "aryan.iyer131@yahoo.com",
+    "contact": "+916455274664",
+    "signup_date": "2025-01-21T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_syaExR0JChaa87",
+    "name": "Diya Pandey",
+    "email": "diya.pandey158@gmail.com",
+    "contact": "+916650267307",
+    "signup_date": "2025-10-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_QNQ3EamvDpu3j6",
+    "name": "Aarav Chopra",
+    "email": "aarav.chopra924@gmail.com",
+    "contact": "+916165745970",
+    "signup_date": "2024-09-30T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9MEPuHTR1iGyWa",
+    "name": "Rohan Menon",
+    "email": "rohan.menon580@yahoo.com",
+    "contact": "+919546706717",
+    "signup_date": "2026-01-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_Qo89AIjxn1mtSb",
+    "name": "Kabir Verma",
+    "email": "kabir.verma582@yahoo.com",
+    "contact": "+918241279154",
+    "signup_date": "2025-05-14T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_l3abWHP1Zi9H1Z",
+    "name": "Ananya Pandey",
+    "email": "ananya.pandey399@yahoo.com",
+    "contact": "+917319281084",
+    "signup_date": "2025-03-19T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_0qX175VTHLe8VQ",
+    "name": "Kabir Joshi",
+    "email": "kabir.joshi465@gmail.com",
+    "contact": "+916684422417",
+    "signup_date": "2025-01-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Bhc0KxIqrYupDz",
+    "name": "Vivaan Iyer",
+    "email": "vivaan.iyer703@rediffmail.com",
+    "contact": "+916657930945",
+    "signup_date": "2025-03-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_LJ0D4LqckiVbie",
+    "name": "Shreya Verma",
+    "email": "shreya.verma417@outlook.com",
+    "contact": "+919361441175",
+    "signup_date": "2024-12-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_MR3Fv3Gfsvi6U7",
+    "name": "Tara Reddy",
+    "email": "tara.reddy914@gmail.com",
+    "contact": "+916632791804",
+    "signup_date": "2025-03-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_8wpguqYEKI7Kbc",
+    "name": "Shreya Das",
+    "email": "shreya.das194@outlook.com",
+    "contact": "+916801977299",
+    "signup_date": "2025-09-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_wjH0Fn0KN69Tq2",
+    "name": "Lakshmi Pandey",
+    "email": "lakshmi.pandey494@yahoo.com",
+    "contact": "+916179039902",
+    "signup_date": "2025-03-03T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_zMAKgzYGnf3IOa",
+    "name": "Aryan Nair",
+    "email": "aryan.nair815@yahoo.com",
+    "contact": "+917026082669",
+    "signup_date": "2026-02-08T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_jsj70QSemqVJRO",
+    "name": "Dhruv Reddy",
+    "email": "dhruv.reddy945@rediffmail.com",
+    "contact": "+916292433379",
+    "signup_date": "2025-01-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_B0rYuMELqEZu9v",
+    "name": "Anjali Rao",
+    "email": "anjali.rao124@yahoo.com",
+    "contact": "+918266647753",
+    "signup_date": "2026-02-05T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_cMWU41WCWBelp3",
+    "name": "Arjun Das",
+    "email": "arjun.das909@rediffmail.com",
+    "contact": "+918727428448",
+    "signup_date": "2025-09-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_FlhaMW7Nr8Hc9G",
+    "name": "Neha Bose",
+    "email": "neha.bose16@rediffmail.com",
+    "contact": "+919450186509",
+    "signup_date": "2025-03-12T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_RWt59puKJ2SjIZ",
+    "name": "Kabir Mehta",
+    "email": "kabir.mehta341@yahoo.com",
+    "contact": "+916546961739",
+    "signup_date": "2025-04-01T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_fqrn6M0vkzwArx",
+    "name": "Arjun Chopra",
+    "email": "arjun.chopra864@yahoo.com",
+    "contact": "+917685274946",
+    "signup_date": "2025-09-21T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_4G27eKLSoC5wN8",
+    "name": "Pooja Kapoor",
+    "email": "pooja.kapoor915@outlook.com",
+    "contact": "+919971243993",
+    "signup_date": "2025-04-03T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9uvp4f4IHgwzTw",
+    "name": "Arjun Gupta",
+    "email": "arjun.gupta357@outlook.com",
+    "contact": "+917944396516",
+    "signup_date": "2025-05-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_FNuu44akD3r4fu",
+    "name": "Sai Iyer",
+    "email": "sai.iyer665@outlook.com",
+    "contact": "+919775277188",
+    "signup_date": "2025-11-04T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_lwphrChWmNxFvC",
+    "name": "Kiran Agarwal",
+    "email": "kiran.agarwal465@gmail.com",
+    "contact": "+918458454329",
+    "signup_date": "2025-12-21T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_In9hKyWySk0JGH",
+    "name": "Divya Chopra",
+    "email": "divya.chopra296@outlook.com",
+    "contact": "+917822774214",
+    "signup_date": "2025-12-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_3CYOoCpgUvBend",
+    "name": "Aarav Sharma",
+    "email": "aarav.sharma732@yahoo.com",
+    "contact": "+917779194500",
+    "signup_date": "2025-11-14T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_jlOSTKjl5qUvRy",
+    "name": "Isha Chatterjee",
+    "email": "isha.chatterjee582@gmail.com",
+    "contact": "+919441809048",
+    "signup_date": "2024-10-12T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_tYCxuCIB0vK98J",
+    "name": "Pooja Nair",
+    "email": "pooja.nair222@yahoo.com",
+    "contact": "+919556414556",
+    "signup_date": "2025-06-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_opUO07sf6QyZjA",
+    "name": "Shreya Gupta",
+    "email": "shreya.gupta823@gmail.com",
+    "contact": "+917690176466",
+    "signup_date": "2025-05-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_AAaRyFvkNlPKib",
+    "name": "Priya Iyer",
+    "email": "priya.iyer941@outlook.com",
+    "contact": "+919162293752",
+    "signup_date": "2024-09-04T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Q7jcK0aioqs7aK",
+    "name": "Kiran Kumar",
+    "email": "kiran.kumar786@outlook.com",
+    "contact": "+919442332741",
+    "signup_date": "2025-10-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_eReEa5ZCZ8MrzO",
+    "name": "Rohan Iyer",
+    "email": "rohan.iyer767@outlook.com",
+    "contact": "+917180633860",
+    "signup_date": "2025-04-25T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_sSUKgSaounYgxi",
+    "name": "Neha Gupta",
+    "email": "neha.gupta437@yahoo.com",
+    "contact": "+919200833023",
+    "signup_date": "2024-12-20T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_bj9J5mOF4SuY9A",
+    "name": "Nikhil Reddy",
+    "email": "nikhil.reddy885@yahoo.com",
+    "contact": "+918265658979",
+    "signup_date": "2026-03-31T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_TPPhEk0rwPR86X",
+    "name": "Saanvi Kumar",
+    "email": "saanvi.kumar342@rediffmail.com",
+    "contact": "+916759338231",
+    "signup_date": "2024-09-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_F5wVz2zbmMRp1i",
+    "name": "Lakshmi Rao",
+    "email": "lakshmi.rao687@rediffmail.com",
+    "contact": "+919126537079",
+    "signup_date": "2025-06-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_vENNOBaQZXLiLS",
+    "name": "Neha Desai",
+    "email": "neha.desai832@outlook.com",
+    "contact": "+918610399818",
+    "signup_date": "2025-05-22T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_7nlW6MMptUWBOv",
+    "name": "Aditya Nair",
+    "email": "aditya.nair164@outlook.com",
+    "contact": "+916054262859",
+    "signup_date": "2025-08-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_CHS6EXKZG6RVMW",
+    "name": "Karan Kapoor",
+    "email": "karan.kapoor165@gmail.com",
+    "contact": "+918046612048",
+    "signup_date": "2025-09-26T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_q91EUlsDLWGZKm",
+    "name": "Saanvi Chatterjee",
+    "email": "saanvi.chatterjee612@gmail.com",
+    "contact": "+919916425037",
+    "signup_date": "2025-06-14T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_1RqJW5V0BIgCPI",
+    "name": "Diya Rao",
+    "email": "diya.rao822@gmail.com",
+    "contact": "+919156239351",
+    "signup_date": "2025-12-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_NVqp8y5PvgVotU",
+    "name": "Aarav Das",
+    "email": "aarav.das468@yahoo.com",
+    "contact": "+917904498284",
+    "signup_date": "2025-04-11T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_4bnwZZRDoEMOyF",
+    "name": "Rohan Bose",
+    "email": "rohan.bose898@gmail.com",
+    "contact": "+918569135637",
+    "signup_date": "2025-08-25T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Acs5jvzNB96QAy",
+    "name": "Isha Rao",
+    "email": "isha.rao824@yahoo.com",
+    "contact": "+916845498848",
+    "signup_date": "2024-10-09T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_ORrNSXrvqvKKHv",
+    "name": "Aditya Kapoor",
+    "email": "aditya.kapoor805@outlook.com",
+    "contact": "+916261129743",
+    "signup_date": "2024-12-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_1gLPa47yo3aDvm",
+    "name": "Dhruv Agarwal",
+    "email": "dhruv.agarwal915@rediffmail.com",
+    "contact": "+917964127147",
+    "signup_date": "2026-02-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_BOsDIrN5gojk4I",
+    "name": "Kiran Kumar",
+    "email": "kiran.kumar831@outlook.com",
+    "contact": "+919037804745",
+    "signup_date": "2026-01-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_jRnemlgvBZali4",
+    "name": "Aditya Sharma",
+    "email": "aditya.sharma861@rediffmail.com",
+    "contact": "+919723480249",
+    "signup_date": "2026-04-07T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_iNyKNiVb6ZTpqN",
+    "name": "Krishna Trivedi",
+    "email": "krishna.trivedi966@gmail.com",
+    "contact": "+916789183167",
+    "signup_date": "2025-01-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_3SzXg201oNrf5w",
+    "name": "Aryan Kapoor",
+    "email": "aryan.kapoor740@gmail.com",
+    "contact": "+917225101050",
+    "signup_date": "2024-09-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_hze2YhGW4ZlaTC",
+    "name": "Vihaan Rao",
+    "email": "vihaan.rao92@rediffmail.com",
+    "contact": "+918656855586",
+    "signup_date": "2025-10-01T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_h2cRYtSIK2q6tF",
+    "name": "Kiran Iyer",
+    "email": "kiran.iyer747@outlook.com",
+    "contact": "+916211596648",
+    "signup_date": "2026-02-22T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Egy8FG6JHDPnqd",
+    "name": "Vihaan Agarwal",
+    "email": "vihaan.agarwal506@rediffmail.com",
+    "contact": "+918669359584",
+    "signup_date": "2026-03-19T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_jK1Vq8f2juy7vz",
+    "name": "Neha Gupta",
+    "email": "neha.gupta701@yahoo.com",
+    "contact": "+918254686905",
+    "signup_date": "2025-07-14T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_TO8QPeUpEYawym",
+    "name": "Karan Agarwal",
+    "email": "karan.agarwal690@outlook.com",
+    "contact": "+916846805713",
+    "signup_date": "2025-04-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_m6N2mSbxXn1gm4",
+    "name": "Krishna Rao",
+    "email": "krishna.rao181@gmail.com",
+    "contact": "+916156782779",
+    "signup_date": "2025-03-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_WvAqLs9BMX29RO",
+    "name": "Rahul Bose",
+    "email": "rahul.bose764@rediffmail.com",
+    "contact": "+918056087998",
+    "signup_date": "2025-08-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_MHM3fHbz5aqM96",
+    "name": "Aryan Reddy",
+    "email": "aryan.reddy796@rediffmail.com",
+    "contact": "+917434881360",
+    "signup_date": "2024-09-07T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_zTceYt9ZXwQOL4",
+    "name": "Diya Joshi",
+    "email": "diya.joshi210@outlook.com",
+    "contact": "+918651565095",
+    "signup_date": "2026-04-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_PnSdW9J3cEEIDe",
+    "name": "Saanvi Gupta",
+    "email": "saanvi.gupta112@gmail.com",
+    "contact": "+917763499870",
+    "signup_date": "2024-09-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_hVcuJwEKatiedz",
+    "name": "Nikhil Verma",
+    "email": "nikhil.verma350@outlook.com",
+    "contact": "+916834599082",
+    "signup_date": "2025-09-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_4zm3wnzoB2wVjG",
+    "name": "Lakshmi Trivedi",
+    "email": "lakshmi.trivedi316@gmail.com",
+    "contact": "+918377964711",
+    "signup_date": "2026-04-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_AUo3LhiiP42gPa",
+    "name": "Ishaan Menon",
+    "email": "ishaan.menon657@rediffmail.com",
+    "contact": "+917460664878",
+    "signup_date": "2025-01-27T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_2hQKREOhbZcZBc",
+    "name": "Nikhil Agarwal",
+    "email": "nikhil.agarwal51@yahoo.com",
+    "contact": "+918014241592",
+    "signup_date": "2024-10-09T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_YpATzerSr4uKgy",
+    "name": "Aryan Bhat",
+    "email": "aryan.bhat326@outlook.com",
+    "contact": "+917891025129",
+    "signup_date": "2024-11-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9Z0BzD7SGk7kS5",
+    "name": "Diya Chopra",
+    "email": "diya.chopra509@outlook.com",
+    "contact": "+918545715579",
+    "signup_date": "2024-12-11T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_hImKalyFDd2NUQ",
+    "name": "Shreya Reddy",
+    "email": "shreya.reddy95@yahoo.com",
+    "contact": "+918863304100",
+    "signup_date": "2026-03-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_mqo0gHxSoUgzFH",
+    "name": "Aditya Chopra",
+    "email": "aditya.chopra530@yahoo.com",
+    "contact": "+917072601733",
+    "signup_date": "2025-02-12T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_bPa6u9D2NJyPs8",
+    "name": "Neha Chatterjee",
+    "email": "neha.chatterjee288@outlook.com",
+    "contact": "+918906075128",
+    "signup_date": "2025-03-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_JWlqxOfcX5NLjN",
+    "name": "Krishna Kapoor",
+    "email": "krishna.kapoor645@outlook.com",
+    "contact": "+917540275800",
+    "signup_date": "2026-04-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_7lf2AV5z2LjF99",
+    "name": "Aarav Agarwal",
+    "email": "aarav.agarwal309@outlook.com",
+    "contact": "+918944662183",
+    "signup_date": "2026-01-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_q5FMZwq95WBbag",
+    "name": "Kavya Patel",
+    "email": "kavya.patel874@yahoo.com",
+    "contact": "+919780554239",
+    "signup_date": "2025-02-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_sQ3y7cX0Iwg1WG",
+    "name": "Kabir Mehta",
+    "email": "kabir.mehta923@gmail.com",
+    "contact": "+917647198485",
+    "signup_date": "2026-01-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_RyhCdGx3Fbq5Hc",
+    "name": "Ishaan Trivedi",
+    "email": "ishaan.trivedi5@gmail.com",
+    "contact": "+919924871114",
+    "signup_date": "2025-07-22T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_tVAdspuvk5VtuC",
+    "name": "Kabir Agarwal",
+    "email": "kabir.agarwal729@yahoo.com",
+    "contact": "+918778080644",
+    "signup_date": "2024-11-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_RX6cmTyQ5oGGfZ",
+    "name": "Rahul Joshi",
+    "email": "rahul.joshi657@yahoo.com",
+    "contact": "+918842612354",
+    "signup_date": "2026-03-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Gfju3zjPh19oxf",
+    "name": "Kabir Chatterjee",
+    "email": "kabir.chatterjee225@outlook.com",
+    "contact": "+918946927889",
+    "signup_date": "2025-05-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_aTRiajqbgXUdqj",
+    "name": "Nikhil Patel",
+    "email": "nikhil.patel707@gmail.com",
+    "contact": "+916873822900",
+    "signup_date": "2026-01-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_wHY5lrzRyCt58P",
+    "name": "Tara Menon",
+    "email": "tara.menon823@rediffmail.com",
+    "contact": "+919724326273",
+    "signup_date": "2025-12-12T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_abPtEK5zpb8tbd",
+    "name": "Vivaan Pandey",
+    "email": "vivaan.pandey731@rediffmail.com",
+    "contact": "+916115091374",
+    "signup_date": "2026-04-01T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_LkmLVMPTTNBRQS",
+    "name": "Rohan Das",
+    "email": "rohan.das388@rediffmail.com",
+    "contact": "+919950239831",
+    "signup_date": "2026-03-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_u6YxglGLGDBTJQ",
+    "name": "Shreya Verma",
+    "email": "shreya.verma119@yahoo.com",
+    "contact": "+916918592691",
+    "signup_date": "2026-03-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9kvOMKO2p5SRbC",
+    "name": "Priya Sharma",
+    "email": "priya.sharma116@rediffmail.com",
+    "contact": "+918769556582",
+    "signup_date": "2025-01-02T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_U8mlPkBjMhMEf1",
+    "name": "Saanvi Menon",
+    "email": "saanvi.menon573@rediffmail.com",
+    "contact": "+918179949359",
+    "signup_date": "2026-04-21T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ZmzW79xIOcVv85",
+    "name": "Rohan Bhat",
+    "email": "rohan.bhat316@yahoo.com",
+    "contact": "+918431419686",
+    "signup_date": "2025-05-14T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_7tAeN7ZoV4on26",
+    "name": "Karan Singh",
+    "email": "karan.singh82@rediffmail.com",
+    "contact": "+916158799117",
+    "signup_date": "2026-01-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_qJqL3VK5VrYVi7",
+    "name": "Kavya Trivedi",
+    "email": "kavya.trivedi563@outlook.com",
+    "contact": "+918905822422",
+    "signup_date": "2025-01-30T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_GDRA2AOwgZUPeG",
+    "name": "Saanvi Verma",
+    "email": "saanvi.verma412@yahoo.com",
+    "contact": "+918881416954",
+    "signup_date": "2026-02-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_0OEpNtKFiW2OSd",
+    "name": "Priya Das",
+    "email": "priya.das882@yahoo.com",
+    "contact": "+918426403344",
+    "signup_date": "2024-10-09T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_v7H31lfWNOdCuB",
+    "name": "Aarav Chatterjee",
+    "email": "aarav.chatterjee701@yahoo.com",
+    "contact": "+916467130544",
+    "signup_date": "2025-12-28T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_IEvqradGuZe2qW",
+    "name": "Riya Kumar",
+    "email": "riya.kumar668@gmail.com",
+    "contact": "+918463230651",
+    "signup_date": "2025-08-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_DdyydCwHzpsYAS",
+    "name": "Kavya Kumar",
+    "email": "kavya.kumar68@gmail.com",
+    "contact": "+916083004340",
+    "signup_date": "2025-03-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_fNn1hMmUSNj6Qr",
+    "name": "Diya Singh",
+    "email": "diya.singh446@outlook.com",
+    "contact": "+919155685870",
+    "signup_date": "2026-03-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_7ruD61mejtdb9S",
+    "name": "Meera Bhat",
+    "email": "meera.bhat601@yahoo.com",
+    "contact": "+918666932894",
+    "signup_date": "2025-11-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_nf82Mvt3YvRhef",
+    "name": "Vihaan Chopra",
+    "email": "vihaan.chopra928@gmail.com",
+    "contact": "+919611908400",
+    "signup_date": "2025-11-28T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_xC5cbELxrGU1gL",
+    "name": "Priya Kumar",
+    "email": "priya.kumar180@outlook.com",
+    "contact": "+918279938646",
+    "signup_date": "2026-01-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_CnQLrj4U3pjsTo",
+    "name": "Aarav Pillai",
+    "email": "aarav.pillai181@rediffmail.com",
+    "contact": "+918145724814",
+    "signup_date": "2026-04-14T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_40uUrKslvepBCV",
+    "name": "Ananya Reddy",
+    "email": "ananya.reddy814@gmail.com",
+    "contact": "+917634365151",
+    "signup_date": "2025-04-12T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_wq22Hpm2YdHQnm",
+    "name": "Meera Kumar",
+    "email": "meera.kumar335@outlook.com",
+    "contact": "+918035325118",
+    "signup_date": "2025-07-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_NEJlZjrbOmcBEx",
+    "name": "Priya Nair",
+    "email": "priya.nair829@yahoo.com",
+    "contact": "+918005717199",
+    "signup_date": "2025-03-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_gBpiEyOCoX81gb",
+    "name": "Lakshmi Trivedi",
+    "email": "lakshmi.trivedi614@gmail.com",
+    "contact": "+916874375287",
+    "signup_date": "2025-05-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_IoiEiwtNyYFpOg",
+    "name": "Krishna Desai",
+    "email": "krishna.desai816@yahoo.com",
+    "contact": "+916462434278",
+    "signup_date": "2024-09-02T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_58ZS37umAJH7dY",
+    "name": "Rahul Joshi",
+    "email": "rahul.joshi996@gmail.com",
+    "contact": "+917337539181",
+    "signup_date": "2025-07-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_A37oLtDRA4YFy0",
+    "name": "Karan Menon",
+    "email": "karan.menon129@gmail.com",
+    "contact": "+916931709180",
+    "signup_date": "2024-12-11T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_VVAFy4ShJRIuwH",
+    "name": "Priya Mehta",
+    "email": "priya.mehta564@yahoo.com",
+    "contact": "+916991978582",
+    "signup_date": "2025-05-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_pOdyMi9XC9k2Z5",
+    "name": "Tara Pillai",
+    "email": "tara.pillai905@gmail.com",
+    "contact": "+917378869330",
+    "signup_date": "2025-01-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_vgfg7FKAJF7nTg",
+    "name": "Neha Menon",
+    "email": "neha.menon708@rediffmail.com",
+    "contact": "+918792691263",
+    "signup_date": "2024-09-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_8s38D7CiiWyhW9",
+    "name": "Rohan Bhat",
+    "email": "rohan.bhat956@rediffmail.com",
+    "contact": "+916935534878",
+    "signup_date": "2025-02-16T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Cf6ICkpPMsOEKb",
+    "name": "Vihaan Mehta",
+    "email": "vihaan.mehta876@outlook.com",
+    "contact": "+919202496944",
+    "signup_date": "2025-01-04T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ZJJQZEapzlbwfx",
+    "name": "Aditya Patel",
+    "email": "aditya.patel886@rediffmail.com",
+    "contact": "+917719752468",
+    "signup_date": "2024-10-24T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Ha4wlYzjkHRMPN",
+    "name": "Ananya Trivedi",
+    "email": "ananya.trivedi878@rediffmail.com",
+    "contact": "+918541629613",
+    "signup_date": "2024-09-22T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_qdnEBfsIvM63bC",
+    "name": "Karan Reddy",
+    "email": "karan.reddy493@yahoo.com",
+    "contact": "+917233797290",
+    "signup_date": "2024-08-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_1W0UXnlmMJ0qw6",
+    "name": "Riya Joshi",
+    "email": "riya.joshi563@rediffmail.com",
+    "contact": "+919071651022",
+    "signup_date": "2025-08-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_xjdMzSKb4nHfmY",
+    "name": "Rahul Sharma",
+    "email": "rahul.sharma5@yahoo.com",
+    "contact": "+919139316870",
+    "signup_date": "2025-09-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_LpO6GK8i0QTwOP",
+    "name": "Reyansh Agarwal",
+    "email": "reyansh.agarwal461@yahoo.com",
+    "contact": "+917925972344",
+    "signup_date": "2025-05-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_USi5wQRPgQZQUj",
+    "name": "Sai Pillai",
+    "email": "sai.pillai259@yahoo.com",
+    "contact": "+916146999122",
+    "signup_date": "2026-03-15T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Wu5UYBeT9xwXok",
+    "name": "Karan Reddy",
+    "email": "karan.reddy85@gmail.com",
+    "contact": "+917517398058",
+    "signup_date": "2025-11-07T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_LKy0poWjYaVk4h",
+    "name": "Divya Reddy",
+    "email": "divya.reddy839@rediffmail.com",
+    "contact": "+919333463047",
+    "signup_date": "2025-10-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Mq3CuoXmXf6dwr",
+    "name": "Shreya Iyer",
+    "email": "shreya.iyer559@rediffmail.com",
+    "contact": "+916167657345",
+    "signup_date": "2026-01-17T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_FYOJM8vDRQeRNZ",
+    "name": "Vivaan Pillai",
+    "email": "vivaan.pillai790@rediffmail.com",
+    "contact": "+918649029632",
+    "signup_date": "2025-01-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_l4Xvx3OA7dPUpy",
+    "name": "Rahul Gupta",
+    "email": "rahul.gupta209@yahoo.com",
+    "contact": "+916784065127",
+    "signup_date": "2024-11-26T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_poyfTDjYpQWLId",
+    "name": "Dhruv Nair",
+    "email": "dhruv.nair861@rediffmail.com",
+    "contact": "+919877017314",
+    "signup_date": "2025-02-01T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_LRFZLDSpOXgnR6",
+    "name": "Reyansh Kapoor",
+    "email": "reyansh.kapoor393@yahoo.com",
+    "contact": "+917760464718",
+    "signup_date": "2026-03-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_hazMO3CZPcaI8G",
+    "name": "Nikhil Gupta",
+    "email": "nikhil.gupta29@rediffmail.com",
+    "contact": "+918753542911",
+    "signup_date": "2025-12-08T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_O1jRjh7d6QWOma",
+    "name": "Lakshmi Nair",
+    "email": "lakshmi.nair425@rediffmail.com",
+    "contact": "+919457353932",
+    "signup_date": "2026-04-02T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_P6huCQo8lr8Ix7",
+    "name": "Dhruv Nair",
+    "email": "dhruv.nair265@gmail.com",
+    "contact": "+917996661025",
+    "signup_date": "2026-01-03T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ihemA7R1dhKGmK",
+    "name": "Aditya Chatterjee",
+    "email": "aditya.chatterjee330@outlook.com",
+    "contact": "+917175547870",
+    "signup_date": "2025-05-22T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_g8TlDWuJa1aaXP",
+    "name": "Vivaan Desai",
+    "email": "vivaan.desai164@rediffmail.com",
+    "contact": "+916482872604",
+    "signup_date": "2026-03-13T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_9KhQH0fgVK5Ynk",
+    "name": "Aarav Menon",
+    "email": "aarav.menon862@yahoo.com",
+    "contact": "+919317869644",
+    "signup_date": "2024-10-20T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_L1ZpJdhfPZjWNe",
+    "name": "Priya Mehta",
+    "email": "priya.mehta32@yahoo.com",
+    "contact": "+919445216798",
+    "signup_date": "2024-11-07T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_ZGVVJei0ZzHVvZ",
+    "name": "Meera Chatterjee",
+    "email": "meera.chatterjee596@yahoo.com",
+    "contact": "+916072077867",
+    "signup_date": "2025-01-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_wOXQJndok99CJV",
+    "name": "Karan Chatterjee",
+    "email": "karan.chatterjee245@gmail.com",
+    "contact": "+917904374724",
+    "signup_date": "2026-03-15T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_6n4OsTg0KFADq7",
+    "name": "Ishaan Chopra",
+    "email": "ishaan.chopra303@gmail.com",
+    "contact": "+916374495756",
+    "signup_date": "2025-11-14T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_gnTU6CgFmZE8aG",
+    "name": "Rahul Chatterjee",
+    "email": "rahul.chatterjee121@yahoo.com",
+    "contact": "+917347307686",
+    "signup_date": "2026-04-24T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Y2gzWY9ZwaQBpB",
+    "name": "Lakshmi Bhat",
+    "email": "lakshmi.bhat574@rediffmail.com",
+    "contact": "+918014930952",
+    "signup_date": "2026-02-27T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_YGn5I6YZocWhQV",
+    "name": "Saanvi Sharma",
+    "email": "saanvi.sharma683@gmail.com",
+    "contact": "+916752178845",
+    "signup_date": "2024-11-02T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_hwY64si3jd9wQg",
+    "name": "Aryan Desai",
+    "email": "aryan.desai433@yahoo.com",
+    "contact": "+919833001402",
+    "signup_date": "2024-10-21T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_yYib65YVHF4whA",
+    "name": "Vivaan Singh",
+    "email": "vivaan.singh948@rediffmail.com",
+    "contact": "+919365570534",
+    "signup_date": "2025-08-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_wJHhtnttt7nOc7",
+    "name": "Arjun Verma",
+    "email": "arjun.verma315@outlook.com",
+    "contact": "+916682705232",
+    "signup_date": "2025-05-16T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_rF61HxjpMGPn9x",
+    "name": "Shreya Joshi",
+    "email": "shreya.joshi670@outlook.com",
+    "contact": "+919119468030",
+    "signup_date": "2025-04-26T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_cwrdZQX5tfH8Mj",
+    "name": "Rahul Pandey",
+    "email": "rahul.pandey441@rediffmail.com",
+    "contact": "+916562774507",
+    "signup_date": "2025-01-21T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_mErjdt2swjotSl",
+    "name": "Rahul Patel",
+    "email": "rahul.patel784@gmail.com",
+    "contact": "+918006643537",
+    "signup_date": "2025-02-17T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_k5mwwbiQJubIzE",
+    "name": "Pooja Bose",
+    "email": "pooja.bose729@gmail.com",
+    "contact": "+919109835797",
+    "signup_date": "2025-06-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_DipbV8zlCE0LDS",
+    "name": "Anjali Bhat",
+    "email": "anjali.bhat141@gmail.com",
+    "contact": "+917191175248",
+    "signup_date": "2025-03-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_HN9N67rt9lirFL",
+    "name": "Lakshmi Kumar",
+    "email": "lakshmi.kumar539@outlook.com",
+    "contact": "+918531145180",
+    "signup_date": "2025-06-28T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_QjqZ3aD9ekFkMm",
+    "name": "Ishaan Joshi",
+    "email": "ishaan.joshi689@outlook.com",
+    "contact": "+916533443811",
+    "signup_date": "2025-09-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_cgzfrRYeD3kmXs",
+    "name": "Shreya Agarwal",
+    "email": "shreya.agarwal220@rediffmail.com",
+    "contact": "+918493067771",
+    "signup_date": "2024-09-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_MtXXQjKUaut64i",
+    "name": "Neha Kapoor",
+    "email": "neha.kapoor632@rediffmail.com",
+    "contact": "+916791731176",
+    "signup_date": "2025-11-28T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_30fkLDGCUQQC4y",
+    "name": "Riya Singh",
+    "email": "riya.singh980@gmail.com",
+    "contact": "+917670404283",
+    "signup_date": "2025-04-01T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ybVnZtkqB0f5UO",
+    "name": "Rohan Iyer",
+    "email": "rohan.iyer861@yahoo.com",
+    "contact": "+919225690473",
+    "signup_date": "2025-04-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_msVDSuzO9VhxTN",
+    "name": "Pooja Joshi",
+    "email": "pooja.joshi453@rediffmail.com",
+    "contact": "+917775363130",
+    "signup_date": "2025-08-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_jrjyVeVWc6mRiJ",
+    "name": "Priya Sharma",
+    "email": "priya.sharma174@rediffmail.com",
+    "contact": "+918232486199",
+    "signup_date": "2026-02-10T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_n9DuZ1hD76XUeQ",
+    "name": "Diya Reddy",
+    "email": "diya.reddy94@yahoo.com",
+    "contact": "+916659273392",
+    "signup_date": "2026-02-12T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_bMNquO7ILL3yQo",
+    "name": "Divya Singh",
+    "email": "divya.singh412@rediffmail.com",
+    "contact": "+917827881775",
+    "signup_date": "2024-09-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_bPWXZ7sgCuOd75",
+    "name": "Karan Das",
+    "email": "karan.das956@outlook.com",
+    "contact": "+916570513051",
+    "signup_date": "2024-10-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_iP1vtnqDE12qIn",
+    "name": "Kavya Das",
+    "email": "kavya.das380@gmail.com",
+    "contact": "+918000739236",
+    "signup_date": "2025-02-14T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Io2AWdYA9oO9tI",
+    "name": "Rohan Joshi",
+    "email": "rohan.joshi678@yahoo.com",
+    "contact": "+919033469128",
+    "signup_date": "2025-02-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_l2NuMc4CCwiibq",
+    "name": "Aditya Desai",
+    "email": "aditya.desai945@rediffmail.com",
+    "contact": "+917912784782",
+    "signup_date": "2025-06-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_GpEwBSaK4tYJYj",
+    "name": "Shreya Pandey",
+    "email": "shreya.pandey753@gmail.com",
+    "contact": "+919254196058",
+    "signup_date": "2025-12-21T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_3ltYN1aVs0arkZ",
+    "name": "Priya Sharma",
+    "email": "priya.sharma152@outlook.com",
+    "contact": "+918858582749",
+    "signup_date": "2025-08-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_dWQfLfgyM3GBKS",
+    "name": "Sai Chopra",
+    "email": "sai.chopra562@rediffmail.com",
+    "contact": "+916129058710",
+    "signup_date": "2025-11-09T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_oJHP5HUeKsD3jj",
+    "name": "Aryan Joshi",
+    "email": "aryan.joshi357@yahoo.com",
+    "contact": "+917151614127",
+    "signup_date": "2026-03-04T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_TVmi2JgKWsUOHN",
+    "name": "Nikhil Iyer",
+    "email": "nikhil.iyer924@yahoo.com",
+    "contact": "+918423459145",
+    "signup_date": "2024-12-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_xRx7mT3W0xU0A5",
+    "name": "Saanvi Mehta",
+    "email": "saanvi.mehta840@outlook.com",
+    "contact": "+918421412059",
+    "signup_date": "2026-02-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_uFjFRT28O9fnYz",
+    "name": "Arjun Kumar",
+    "email": "arjun.kumar299@rediffmail.com",
+    "contact": "+916970968185",
+    "signup_date": "2025-12-01T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_YrXh7uwsVWxnuD",
+    "name": "Diya Joshi",
+    "email": "diya.joshi180@rediffmail.com",
+    "contact": "+916438139109",
+    "signup_date": "2025-04-28T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_rUyyBJtMze8CtE",
+    "name": "Dhruv Nair",
+    "email": "dhruv.nair50@yahoo.com",
+    "contact": "+916605269359",
+    "signup_date": "2024-11-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ztBNnfX2YLFsh3",
+    "name": "Priya Pandey",
+    "email": "priya.pandey907@rediffmail.com",
+    "contact": "+916236572326",
+    "signup_date": "2025-09-20T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_zpflTjxYyXNuyc",
+    "name": "Lakshmi Reddy",
+    "email": "lakshmi.reddy848@yahoo.com",
+    "contact": "+916419893957",
+    "signup_date": "2025-10-22T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_bOyddglxuHYdgs",
+    "name": "Diya Singh",
+    "email": "diya.singh217@gmail.com",
+    "contact": "+917601849214",
+    "signup_date": "2025-09-20T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_SzapS2dIXg8Ih2",
+    "name": "Krishna Kapoor",
+    "email": "krishna.kapoor954@outlook.com",
+    "contact": "+919889227096",
+    "signup_date": "2025-06-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_6JanLVaCcmoUKe",
+    "name": "Pooja Bose",
+    "email": "pooja.bose168@yahoo.com",
+    "contact": "+917357748870",
+    "signup_date": "2024-11-17T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_1lZdWFfxPbxI2f",
+    "name": "Lakshmi Joshi",
+    "email": "lakshmi.joshi892@outlook.com",
+    "contact": "+916414863338",
+    "signup_date": "2025-11-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_vKrxOqpSYwPGoU",
+    "name": "Divya Gupta",
+    "email": "divya.gupta77@rediffmail.com",
+    "contact": "+917565425788",
+    "signup_date": "2024-11-13T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_1NIW86gOgPFcCS",
+    "name": "Arjun Chatterjee",
+    "email": "arjun.chatterjee914@yahoo.com",
+    "contact": "+918082467393",
+    "signup_date": "2025-12-03T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_mx0IdJXrcGo0VD",
+    "name": "Kiran Mehta",
+    "email": "kiran.mehta508@gmail.com",
+    "contact": "+918165329298",
+    "signup_date": "2025-06-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_pI7ED7g6g8V3ZV",
+    "name": "Tara Iyer",
+    "email": "tara.iyer102@yahoo.com",
+    "contact": "+917708831946",
+    "signup_date": "2026-01-07T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_1qcYJS1fxWpBqY",
+    "name": "Isha Gupta",
+    "email": "isha.gupta938@yahoo.com",
+    "contact": "+919913008587",
+    "signup_date": "2026-03-10T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_XX7i0MMf4C83vq",
+    "name": "Ishaan Bose",
+    "email": "ishaan.bose919@gmail.com",
+    "contact": "+918513519777",
+    "signup_date": "2026-03-08T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_dFJR38rD4cFKLZ",
+    "name": "Shreya Pillai",
+    "email": "shreya.pillai715@gmail.com",
+    "contact": "+918531191631",
+    "signup_date": "2026-03-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_au3v2dKBebwKHi",
+    "name": "Kiran Das",
+    "email": "kiran.das98@yahoo.com",
+    "contact": "+919000168708",
+    "signup_date": "2026-03-26T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_L0JRWwPy1x1Uds",
+    "name": "Kavya Singh",
+    "email": "kavya.singh240@rediffmail.com",
+    "contact": "+919989458939",
+    "signup_date": "2025-03-10T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_UDfLNLpfUBJXgq",
+    "name": "Krishna Singh",
+    "email": "krishna.singh391@rediffmail.com",
+    "contact": "+918623189693",
+    "signup_date": "2025-04-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_MyT6wieLTidClB",
+    "name": "Divya Agarwal",
+    "email": "divya.agarwal810@yahoo.com",
+    "contact": "+919384377353",
+    "signup_date": "2025-07-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_onH4kkDKcEsvuP",
+    "name": "Arjun Chopra",
+    "email": "arjun.chopra29@outlook.com",
+    "contact": "+919391367919",
+    "signup_date": "2024-12-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_sLg3pjzHqjESsr",
+    "name": "Isha Gupta",
+    "email": "isha.gupta318@rediffmail.com",
+    "contact": "+918727971656",
+    "signup_date": "2025-10-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_CmDOtMo3IiyqUn",
+    "name": "Rohan Patel",
+    "email": "rohan.patel909@gmail.com",
+    "contact": "+916617661769",
+    "signup_date": "2025-05-13T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_R82Mf2gwqhPoq7",
+    "name": "Kabir Singh",
+    "email": "kabir.singh877@yahoo.com",
+    "contact": "+919832059306",
+    "signup_date": "2025-11-22T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_6ocl0TFwRDi96T",
+    "name": "Pooja Trivedi",
+    "email": "pooja.trivedi882@outlook.com",
+    "contact": "+917505702708",
+    "signup_date": "2024-11-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_J6p5CN1yB2ijP2",
+    "name": "Karan Bhat",
+    "email": "karan.bhat93@rediffmail.com",
+    "contact": "+919572078550",
+    "signup_date": "2025-08-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_FkTdPns6CgAXFw",
+    "name": "Aditya Sharma",
+    "email": "aditya.sharma158@outlook.com",
+    "contact": "+918721623519",
+    "signup_date": "2025-03-01T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_7q0Q8YO6S05mbD",
+    "name": "Saanvi Kapoor",
+    "email": "saanvi.kapoor561@gmail.com",
+    "contact": "+918757227533",
+    "signup_date": "2024-12-01T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_mXsZxxXMNaXWpj",
+    "name": "Vivaan Agarwal",
+    "email": "vivaan.agarwal70@rediffmail.com",
+    "contact": "+919322595625",
+    "signup_date": "2026-02-11T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_88OmFDRASV7A9h",
+    "name": "Ishaan Agarwal",
+    "email": "ishaan.agarwal137@rediffmail.com",
+    "contact": "+917877489816",
+    "signup_date": "2024-11-28T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_UEdDYXOjmclrig",
+    "name": "Rohan Nair",
+    "email": "rohan.nair16@gmail.com",
+    "contact": "+917883810949",
+    "signup_date": "2025-08-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Jl5SwG3bZHRRJ6",
+    "name": "Kavya Sharma",
+    "email": "kavya.sharma998@yahoo.com",
+    "contact": "+916030357928",
+    "signup_date": "2025-08-21T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9VzZlo7x4Gkcah",
+    "name": "Divya Bose",
+    "email": "divya.bose578@yahoo.com",
+    "contact": "+917791196308",
+    "signup_date": "2025-11-21T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_b4cOVKZMoRnh5o",
+    "name": "Karan Sharma",
+    "email": "karan.sharma102@yahoo.com",
+    "contact": "+916188944727",
+    "signup_date": "2024-10-20T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_gTB8ZYA2LeWgk5",
+    "name": "Reyansh Verma",
+    "email": "reyansh.verma245@gmail.com",
+    "contact": "+917239692074",
+    "signup_date": "2024-12-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_nY6IcxcQQMmwpL",
+    "name": "Dhruv Pandey",
+    "email": "dhruv.pandey968@rediffmail.com",
+    "contact": "+919032265180",
+    "signup_date": "2025-12-17T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_y0UvON8TmYUX33",
+    "name": "Aryan Desai",
+    "email": "aryan.desai834@yahoo.com",
+    "contact": "+916658094935",
+    "signup_date": "2025-03-15T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_aG6DK21aGruN7M",
+    "name": "Priya Verma",
+    "email": "priya.verma706@outlook.com",
+    "contact": "+916458970929",
+    "signup_date": "2025-12-05T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_C76i8mb2eVbuan",
+    "name": "Vivaan Trivedi",
+    "email": "vivaan.trivedi847@rediffmail.com",
+    "contact": "+916762615373",
+    "signup_date": "2025-12-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_mJy9FXaBlVQTxD",
+    "name": "Reyansh Desai",
+    "email": "reyansh.desai497@gmail.com",
+    "contact": "+916230297217",
+    "signup_date": "2025-10-19T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_rr0tWg9ukHo56I",
+    "name": "Aditya Kapoor",
+    "email": "aditya.kapoor650@gmail.com",
+    "contact": "+918507773560",
+    "signup_date": "2025-01-18T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_McBFNNgucGqiS1",
+    "name": "Aditya Kumar",
+    "email": "aditya.kumar224@rediffmail.com",
+    "contact": "+916838069126",
+    "signup_date": "2025-11-27T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_it38DCYJbjCCjI",
+    "name": "Krishna Iyer",
+    "email": "krishna.iyer283@yahoo.com",
+    "contact": "+918197688569",
+    "signup_date": "2025-08-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ZP7P6FXrg97Ds4",
+    "name": "Karan Chatterjee",
+    "email": "karan.chatterjee67@outlook.com",
+    "contact": "+918549139652",
+    "signup_date": "2025-08-20T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_xJeApLFB37i8Cu",
+    "name": "Kiran Mehta",
+    "email": "kiran.mehta692@gmail.com",
+    "contact": "+919729973583",
+    "signup_date": "2025-05-28T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_JGmSM0Q8gYLKxT",
+    "name": "Ishaan Trivedi",
+    "email": "ishaan.trivedi427@outlook.com",
+    "contact": "+919848541380",
+    "signup_date": "2025-08-09T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_IvJvRaRb3qFbaw",
+    "name": "Nikhil Joshi",
+    "email": "nikhil.joshi3@gmail.com",
+    "contact": "+916227123811",
+    "signup_date": "2026-02-13T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_3i8xuneeWwNCTK",
+    "name": "Pooja Chatterjee",
+    "email": "pooja.chatterjee741@gmail.com",
+    "contact": "+917093359738",
+    "signup_date": "2026-03-29T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_o7Ax8Xgk2CB0j1",
+    "name": "Sai Chopra",
+    "email": "sai.chopra65@gmail.com",
+    "contact": "+916679150976",
+    "signup_date": "2026-04-03T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_gOq9BjQmaDMkWZ",
+    "name": "Rohan Verma",
+    "email": "rohan.verma197@gmail.com",
+    "contact": "+916199038418",
+    "signup_date": "2024-12-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_1GzDTgv1T5GGJr",
+    "name": "Shreya Chatterjee",
+    "email": "shreya.chatterjee998@rediffmail.com",
+    "contact": "+917815433717",
+    "signup_date": "2025-08-20T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_c9C7O3WZQWjysc",
+    "name": "Aryan Patel",
+    "email": "aryan.patel755@rediffmail.com",
+    "contact": "+918714454355",
+    "signup_date": "2025-04-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Adc92xgIiiUSel",
+    "name": "Kabir Bose",
+    "email": "kabir.bose900@rediffmail.com",
+    "contact": "+917589450412",
+    "signup_date": "2024-11-02T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_1cTbhx348NhmXT",
+    "name": "Meera Joshi",
+    "email": "meera.joshi292@rediffmail.com",
+    "contact": "+917636369065",
+    "signup_date": "2025-04-10T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_AMqASqBZKUVFwl",
+    "name": "Vihaan Kumar",
+    "email": "vihaan.kumar966@yahoo.com",
+    "contact": "+919617504409",
+    "signup_date": "2025-04-27T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_0R7ox9aY6IR7zd",
+    "name": "Diya Trivedi",
+    "email": "diya.trivedi176@yahoo.com",
+    "contact": "+918420272548",
+    "signup_date": "2026-02-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_RDfVxJJx4QFBBV",
+    "name": "Kabir Nair",
+    "email": "kabir.nair146@yahoo.com",
+    "contact": "+919730074982",
+    "signup_date": "2025-10-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_1qijfMQ6VZUNkt",
+    "name": "Pooja Agarwal",
+    "email": "pooja.agarwal225@yahoo.com",
+    "contact": "+917151349949",
+    "signup_date": "2025-12-12T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_X7QA2J316zl1el",
+    "name": "Priya Bhat",
+    "email": "priya.bhat416@outlook.com",
+    "contact": "+916494350159",
+    "signup_date": "2025-10-05T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_8oSPkpzAJmHksL",
+    "name": "Divya Patel",
+    "email": "divya.patel113@gmail.com",
+    "contact": "+918972588588",
+    "signup_date": "2024-12-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_1GcN6SRcAwJV2g",
+    "name": "Isha Desai",
+    "email": "isha.desai299@outlook.com",
+    "contact": "+916106683054",
+    "signup_date": "2025-01-24T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_c7iamwO0b0Rzsu",
+    "name": "Dhruv Mehta",
+    "email": "dhruv.mehta494@yahoo.com",
+    "contact": "+918657827307",
+    "signup_date": "2024-12-07T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_P3ZAuFUof3UG8g",
+    "name": "Ishaan Bhat",
+    "email": "ishaan.bhat756@outlook.com",
+    "contact": "+918290114091",
+    "signup_date": "2025-05-25T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_3gt9qfp5oXy1vy",
+    "name": "Arjun Singh",
+    "email": "arjun.singh124@gmail.com",
+    "contact": "+916184562742",
+    "signup_date": "2025-05-01T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_DnbPgAFbK7tDgg",
+    "name": "Aryan Pandey",
+    "email": "aryan.pandey708@outlook.com",
+    "contact": "+919575846330",
+    "signup_date": "2026-03-28T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_v1amMyRWoyL6kw",
+    "name": "Lakshmi Kumar",
+    "email": "lakshmi.kumar814@rediffmail.com",
+    "contact": "+917712247824",
+    "signup_date": "2025-03-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Q62ujmhjalt1nW",
+    "name": "Karan Joshi",
+    "email": "karan.joshi988@gmail.com",
+    "contact": "+919846096429",
+    "signup_date": "2026-02-14T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_FMnm4eHx413VrU",
+    "name": "Saanvi Nair",
+    "email": "saanvi.nair498@outlook.com",
+    "contact": "+917522038653",
+    "signup_date": "2025-04-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_1y0Ludm4HAdxAa",
+    "name": "Vihaan Gupta",
+    "email": "vihaan.gupta125@rediffmail.com",
+    "contact": "+918404705830",
+    "signup_date": "2026-04-24T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_IZL5zCiPSWLAlx",
+    "name": "Kiran Mehta",
+    "email": "kiran.mehta78@gmail.com",
+    "contact": "+918060070982",
+    "signup_date": "2025-09-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_btrHczyzd5O9Hh",
+    "name": "Arjun Pillai",
+    "email": "arjun.pillai61@outlook.com",
+    "contact": "+919267678617",
+    "signup_date": "2025-08-09T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_g3Njl1OPk46hhG",
+    "name": "Neha Kapoor",
+    "email": "neha.kapoor958@yahoo.com",
+    "contact": "+916029438940",
+    "signup_date": "2025-09-11T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Y8uTIxOUCsh4Tu",
+    "name": "Riya Reddy",
+    "email": "riya.reddy958@outlook.com",
+    "contact": "+918576135160",
+    "signup_date": "2025-03-29T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_HFVsIu3lwX1XA7",
+    "name": "Aryan Trivedi",
+    "email": "aryan.trivedi905@gmail.com",
+    "contact": "+916920715230",
+    "signup_date": "2024-12-24T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_W5kx0cpzmM2PCG",
+    "name": "Kiran Mehta",
+    "email": "kiran.mehta128@rediffmail.com",
+    "contact": "+918552797385",
+    "signup_date": "2025-06-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_AWAQSqSUIwdotc",
+    "name": "Riya Desai",
+    "email": "riya.desai29@outlook.com",
+    "contact": "+918218462992",
+    "signup_date": "2025-10-30T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_H8VsnLsn6Hul3D",
+    "name": "Diya Bhat",
+    "email": "diya.bhat322@rediffmail.com",
+    "contact": "+919802664086",
+    "signup_date": "2025-07-30T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9cJvqoQXiwimrW",
+    "name": "Kabir Sharma",
+    "email": "kabir.sharma842@outlook.com",
+    "contact": "+917091035214",
+    "signup_date": "2025-06-03T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_pfyHs0QuQrDNSe",
+    "name": "Aarav Sharma",
+    "email": "aarav.sharma10@yahoo.com",
+    "contact": "+917098350623",
+    "signup_date": "2026-01-15T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_HkZlx19pJEED8u",
+    "name": "Krishna Gupta",
+    "email": "krishna.gupta306@outlook.com",
+    "contact": "+916963743401",
+    "signup_date": "2024-12-16T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_n7Usw7kZVBNbAm",
+    "name": "Ishaan Pandey",
+    "email": "ishaan.pandey278@rediffmail.com",
+    "contact": "+919029322375",
+    "signup_date": "2026-01-24T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_5N6ugMAPmv6EMq",
+    "name": "Karan Gupta",
+    "email": "karan.gupta437@yahoo.com",
+    "contact": "+917614031327",
+    "signup_date": "2025-05-01T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_1kbWrfycOEXlGU",
+    "name": "Aarav Menon",
+    "email": "aarav.menon505@rediffmail.com",
+    "contact": "+919381920680",
+    "signup_date": "2025-06-16T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_AKsyL3yV8ApK3i",
+    "name": "Diya Rao",
+    "email": "diya.rao357@gmail.com",
+    "contact": "+917017303911",
+    "signup_date": "2025-11-25T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_AMWppT4giooTRm",
+    "name": "Reyansh Bhat",
+    "email": "reyansh.bhat498@rediffmail.com",
+    "contact": "+918910416809",
+    "signup_date": "2025-12-28T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_lP1vPcLjTs646n",
+    "name": "Dhruv Pillai",
+    "email": "dhruv.pillai714@outlook.com",
+    "contact": "+919442591436",
+    "signup_date": "2026-02-25T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_v9cSq9xw7YmFi8",
+    "name": "Vivaan Pillai",
+    "email": "vivaan.pillai134@gmail.com",
+    "contact": "+917386434173",
+    "signup_date": "2025-02-08T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_4ZsT0mcIwUXA0f",
+    "name": "Krishna Reddy",
+    "email": "krishna.reddy856@yahoo.com",
+    "contact": "+916606744451",
+    "signup_date": "2025-08-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_pWrfpb10t4uC15",
+    "name": "Vihaan Agarwal",
+    "email": "vihaan.agarwal160@rediffmail.com",
+    "contact": "+916370924433",
+    "signup_date": "2026-04-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_5yqgp8wLJgzJAx",
+    "name": "Aryan Trivedi",
+    "email": "aryan.trivedi633@yahoo.com",
+    "contact": "+916542249949",
+    "signup_date": "2025-01-18T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_kdhW03qgTfjrPK",
+    "name": "Vihaan Pillai",
+    "email": "vihaan.pillai249@outlook.com",
+    "contact": "+916907833275",
+    "signup_date": "2026-04-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_rQ97wTxC7cIDDt",
+    "name": "Aditya Agarwal",
+    "email": "aditya.agarwal90@yahoo.com",
+    "contact": "+919798890254",
+    "signup_date": "2025-03-02T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_lqkOTOyT7I1OZa",
+    "name": "Riya Verma",
+    "email": "riya.verma74@yahoo.com",
+    "contact": "+916947306612",
+    "signup_date": "2024-09-09T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_xCltP5XEpPOIUq",
+    "name": "Aryan Agarwal",
+    "email": "aryan.agarwal418@rediffmail.com",
+    "contact": "+919136843619",
+    "signup_date": "2025-08-14T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_9OmpBtCBLwOztN",
+    "name": "Kavya Bhat",
+    "email": "kavya.bhat281@yahoo.com",
+    "contact": "+918222433941",
+    "signup_date": "2024-10-24T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_aH5UAXAt10R7Ri",
+    "name": "Rohan Pandey",
+    "email": "rohan.pandey589@outlook.com",
+    "contact": "+918752106544",
+    "signup_date": "2024-11-19T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_NfsPZuX4SqSHGt",
+    "name": "Neha Verma",
+    "email": "neha.verma292@outlook.com",
+    "contact": "+916045298405",
+    "signup_date": "2025-07-28T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_ISMiDjPFCIsoZ8",
+    "name": "Kavya Joshi",
+    "email": "kavya.joshi248@rediffmail.com",
+    "contact": "+916431237545",
+    "signup_date": "2026-03-04T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Zpdj7Ud5Zd9ypg",
+    "name": "Rohan Pillai",
+    "email": "rohan.pillai240@yahoo.com",
+    "contact": "+916314166454",
+    "signup_date": "2025-03-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_zeAuq8wvVI5l9T",
+    "name": "Sai Trivedi",
+    "email": "sai.trivedi858@gmail.com",
+    "contact": "+917582931700",
+    "signup_date": "2025-03-31T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_G942ZnKxtStVls",
+    "name": "Kiran Trivedi",
+    "email": "kiran.trivedi819@yahoo.com",
+    "contact": "+919450390938",
+    "signup_date": "2026-01-12T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_0Daj7vXnRDQcvS",
+    "name": "Kabir Chatterjee",
+    "email": "kabir.chatterjee329@outlook.com",
+    "contact": "+918745753194",
+    "signup_date": "2025-04-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_SzvrGznV8CrubM",
+    "name": "Lakshmi Pillai",
+    "email": "lakshmi.pillai670@gmail.com",
+    "contact": "+917604239140",
+    "signup_date": "2026-03-08T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_vjQRQJMQcBbjzS",
+    "name": "Priya Nair",
+    "email": "priya.nair133@yahoo.com",
+    "contact": "+916762912773",
+    "signup_date": "2026-03-10T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_RqkctqzIXeVIZg",
+    "name": "Kavya Das",
+    "email": "kavya.das460@rediffmail.com",
+    "contact": "+919216008713",
+    "signup_date": "2024-10-24T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_BqLBtJSxiLgZ77",
+    "name": "Karan Chopra",
+    "email": "karan.chopra419@outlook.com",
+    "contact": "+917819011248",
+    "signup_date": "2025-07-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Ntx12iBm7WBV6f",
+    "name": "Vivaan Pillai",
+    "email": "vivaan.pillai748@gmail.com",
+    "contact": "+916849609853",
+    "signup_date": "2026-02-16T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_npnMt014ELbv1p",
+    "name": "Pooja Rao",
+    "email": "pooja.rao637@outlook.com",
+    "contact": "+917704602935",
+    "signup_date": "2024-11-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_zmFyh69srWoKJv",
+    "name": "Neha Patel",
+    "email": "neha.patel750@rediffmail.com",
+    "contact": "+917417658839",
+    "signup_date": "2026-01-28T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_z42nC8YfakjhIs",
+    "name": "Isha Verma",
+    "email": "isha.verma467@gmail.com",
+    "contact": "+917253742722",
+    "signup_date": "2025-08-11T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_LcQLhtraEioupZ",
+    "name": "Tara Chopra",
+    "email": "tara.chopra657@gmail.com",
+    "contact": "+916707373292",
+    "signup_date": "2025-12-13T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_aU1pJsNOA9v0Km",
+    "name": "Anjali Reddy",
+    "email": "anjali.reddy849@gmail.com",
+    "contact": "+917739648449",
+    "signup_date": "2025-03-16T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_zLoqCaqsic1h68",
+    "name": "Ananya Sharma",
+    "email": "ananya.sharma554@rediffmail.com",
+    "contact": "+916090326571",
+    "signup_date": "2024-12-02T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_maz9Ph5p8HwfWa",
+    "name": "Kiran Gupta",
+    "email": "kiran.gupta616@yahoo.com",
+    "contact": "+918586624962",
+    "signup_date": "2025-04-17T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_sYv3kaDLNDG3jE",
+    "name": "Aditya Iyer",
+    "email": "aditya.iyer170@yahoo.com",
+    "contact": "+919782848433",
+    "signup_date": "2024-10-06T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_w8ZHZdbzLTUlXG",
+    "name": "Kiran Das",
+    "email": "kiran.das407@outlook.com",
+    "contact": "+917114339691",
+    "signup_date": "2025-01-18T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9mUa3y7MYNlzR3",
+    "name": "Dhruv Kumar",
+    "email": "dhruv.kumar616@rediffmail.com",
+    "contact": "+919463908000",
+    "signup_date": "2024-11-20T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_1dogO9MULgGlaI",
+    "name": "Ishaan Pillai",
+    "email": "ishaan.pillai222@outlook.com",
+    "contact": "+919372039386",
+    "signup_date": "2024-09-19T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_FNBO9sVAqrtptA",
+    "name": "Vihaan Patel",
+    "email": "vihaan.patel838@rediffmail.com",
+    "contact": "+918757523953",
+    "signup_date": "2025-11-27T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_QFhrfBYeNvnTP4",
+    "name": "Shreya Patel",
+    "email": "shreya.patel741@rediffmail.com",
+    "contact": "+916311650555",
+    "signup_date": "2026-02-28T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_pkdRbr9baRkPO1",
+    "name": "Saanvi Menon",
+    "email": "saanvi.menon417@outlook.com",
+    "contact": "+919688942591",
+    "signup_date": "2025-08-13T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_qyoseqWbSa5zCB",
+    "name": "Isha Chatterjee",
+    "email": "isha.chatterjee144@yahoo.com",
+    "contact": "+919698064053",
+    "signup_date": "2024-10-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_k0w9TFGOzpTxwn",
+    "name": "Diya Chopra",
+    "email": "diya.chopra535@gmail.com",
+    "contact": "+919215954402",
+    "signup_date": "2025-06-02T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_5sjdozAX1bACsl",
+    "name": "Rohan Iyer",
+    "email": "rohan.iyer129@yahoo.com",
+    "contact": "+916200790327",
+    "signup_date": "2026-01-30T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_nqk5s0opBSmgVp",
+    "name": "Nikhil Trivedi",
+    "email": "nikhil.trivedi865@rediffmail.com",
+    "contact": "+919819958846",
+    "signup_date": "2025-01-13T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_LHVRlLTrfcKssb",
+    "name": "Arjun Iyer",
+    "email": "arjun.iyer208@outlook.com",
+    "contact": "+918927554486",
+    "signup_date": "2024-12-28T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_PzHMVEVHqf9D4d",
+    "name": "Kabir Patel",
+    "email": "kabir.patel173@rediffmail.com",
+    "contact": "+916604543880",
+    "signup_date": "2025-04-16T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_Dicxfu4zh6w39y",
+    "name": "Shreya Verma",
+    "email": "shreya.verma371@yahoo.com",
+    "contact": "+916458064448",
+    "signup_date": "2024-12-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_A4AfQFlEdnbDl2",
+    "name": "Rahul Bhat",
+    "email": "rahul.bhat907@rediffmail.com",
+    "contact": "+916788219359",
+    "signup_date": "2024-11-06T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_meU9OaN8armWnh",
+    "name": "Ishaan Chatterjee",
+    "email": "ishaan.chatterjee542@outlook.com",
+    "contact": "+919447810761",
+    "signup_date": "2025-12-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_cGq1KyU3U6zDQe",
+    "name": "Shreya Pillai",
+    "email": "shreya.pillai293@yahoo.com",
+    "contact": "+918495983867",
+    "signup_date": "2026-02-23T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_Ijv4ODDpFpvjSB",
+    "name": "Vivaan Trivedi",
+    "email": "vivaan.trivedi352@gmail.com",
+    "contact": "+919815987611",
+    "signup_date": "2025-12-23T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_9CwwJCYxMQwKYn",
+    "name": "Riya Chopra",
+    "email": "riya.chopra794@rediffmail.com",
+    "contact": "+916183318215",
+    "signup_date": "2025-12-02T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_gCsBVtRc6qC6Z2",
+    "name": "Rohan Verma",
+    "email": "rohan.verma828@rediffmail.com",
+    "contact": "+916556712462",
+    "signup_date": "2025-12-13T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_FD3G3TRVC6pyWV",
+    "name": "Kiran Chopra",
+    "email": "kiran.chopra1@gmail.com",
+    "contact": "+917693373205",
+    "signup_date": "2025-12-26T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_i7xgglRr2lkipy",
+    "name": "Ananya Menon",
+    "email": "ananya.menon984@gmail.com",
+    "contact": "+919620394016",
+    "signup_date": "2025-07-09T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_f5qfw9qHmBseRV",
+    "name": "Aarav Verma",
+    "email": "aarav.verma384@yahoo.com",
+    "contact": "+919047846786",
+    "signup_date": "2024-12-08T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_LCsVek3bV7puqy",
+    "name": "Krishna Rao",
+    "email": "krishna.rao407@rediffmail.com",
+    "contact": "+916051832057",
+    "signup_date": "2025-07-19T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_7bZrevjootE3M3",
+    "name": "Kabir Bose",
+    "email": "kabir.bose563@outlook.com",
+    "contact": "+918777848978",
+    "signup_date": "2025-08-02T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_aZLLKb1hUAW8F1",
+    "name": "Saanvi Pandey",
+    "email": "saanvi.pandey990@outlook.com",
+    "contact": "+918739540346",
+    "signup_date": "2025-09-23T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_rHCpakswk9QYmC",
+    "name": "Priya Chopra",
+    "email": "priya.chopra812@gmail.com",
+    "contact": "+918186428225",
+    "signup_date": "2025-10-29T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_5lUGseVztynfwr",
+    "name": "Kavya Chatterjee",
+    "email": "kavya.chatterjee97@gmail.com",
+    "contact": "+916796688865",
+    "signup_date": "2025-04-26T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ZR7hgbtpx2Vdxj",
+    "name": "Shreya Agarwal",
+    "email": "shreya.agarwal80@rediffmail.com",
+    "contact": "+919277004710",
+    "signup_date": "2025-07-11T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_ioWQpWp7fFVe97",
+    "name": "Kiran Pandey",
+    "email": "kiran.pandey436@gmail.com",
+    "contact": "+916734541844",
+    "signup_date": "2024-11-20T00:00:00.000Z",
+    "plan_tier": "premium"
+  },
+  {
+    "customer_id": "cust_VbF1Oy2VqNXLD9",
+    "name": "Reyansh Gupta",
+    "email": "reyansh.gupta284@outlook.com",
+    "contact": "+916571648406",
+    "signup_date": "2025-01-31T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_F2p1PclxafA9yW",
+    "name": "Reyansh Nair",
+    "email": "reyansh.nair21@yahoo.com",
+    "contact": "+919218778212",
+    "signup_date": "2025-05-17T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_DP7E8RkOvS5CDR",
+    "name": "Anjali Trivedi",
+    "email": "anjali.trivedi228@outlook.com",
+    "contact": "+918658364568",
+    "signup_date": "2025-12-05T00:00:00.000Z",
+    "plan_tier": "basic"
+  },
+  {
+    "customer_id": "cust_o66crPOHNvDuT9",
+    "name": "Anjali Bhat",
+    "email": "anjali.bhat698@gmail.com",
+    "contact": "+919901190712",
+    "signup_date": "2024-09-05T00:00:00.000Z",
+    "plan_tier": "standard"
+  },
+  {
+    "customer_id": "cust_RrQIcZnhGR02BP",
+    "name": "Meera Iyer",
+    "email": "meera.iyer471@outlook.com",
+    "contact": "+919845120773",
+    "signup_date": "2025-08-15T00:00:00.000Z",
+    "plan_tier": "premium"
+  }
+]

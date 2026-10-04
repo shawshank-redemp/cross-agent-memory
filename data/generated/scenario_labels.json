@@ -1,0 +1,3627 @@
+[
+  {
+    "customer_id": "cust_1Fhgl8gpg32FN5",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_OHLqx803PrfzNA",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_tpdWl8SZZSqVLn",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_mig08KAzwgFQOy",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_n2MECMP63YeUfO",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_ZGxpL46laRrNLp",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_TtM3grI3fJxoEF",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_2jCMn3QiTmERhG",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_fRpYbIDLbH8UOj",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_XOvAbSydBndQIy",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_WdJGnHJCGOJtC1",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_TGGr4gVjCpr183",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_l7DlJ7qaSp1d6H",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_TayCWoD4sXO7HO",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_gzOqxFe8DRMOq3",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_eOpL2GU7hgJpxI",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_8UNpfsgw9GJm9Y",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_jyA1UEQvPyOa3n",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_hTZVTx7HvehllK",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_yCJeTo5nenT7Kd",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_nYexVOLlrbfYfB",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_3yPCwdkfo4lyli",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_yjrUuri41qIxxR",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_tmk82dgustPrzc",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_TnFaP2deXXeGXX",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_uvro1XM2nepbB9",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_68e5N4DAdxT3oh",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_9j1xxFCKr1RBzS",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_zMar2cTGgzrclb",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_bkCAwR2AOW7B0c",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_HsHtD641pXJZrX",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_cdh1gfRJAw2JJJ",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_JkELVONgQCMqbM",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_U7vITOHl3nsu29",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_AnmSrixx9hB96I",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_wEu8Ik2vpEEKHM",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_B83d4kAhSvO7L8",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_O9tqiDAb8OPrmk",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_HhBTmaQ2TnCvAl",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_u31wwTmevyY5Qp",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_Yf2sxH6FuJNgzU",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_yJDBVtgOVXN9nO",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_pe3Mpd5GsVCsol",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_68eaEU8SInOyFM",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_cMkO0VEtfrZF9F",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_390MyQGZmA2Ljk",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_5ecaV0WIAHR2Oj",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_4C32wCELe6nrKo",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_bpEEDjnIsV2zDn",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_mIthsYzjHtGmJp",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_EfxgAGCFRGFVig",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_GKpleIYeFzBlxn",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_OlZnrciC02VB63",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_FqZl8FxFfhRoHS",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_mJhtWrAI4Wgh4y",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_KJrRWDCpMFXlds",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_O4aA3EVmGKxvl5",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_btLGU8WbAfcyY0",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_akEOqrI7Ex6TXv",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_ShfxFS12qfF0lC",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_FqrBhGiDPcmDID",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_92b8QE5Jw6hyEF",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_BVJshIchL94Tmd",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_4tMf5pqE56jhSq",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_4CHywIYWDeFy9N",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_ImRjGEaV4Vvi2d",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_9Irvmf9Ge4d401",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_4wYTdRnWKfhKfj",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_riGYkQsuX45osI",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_FymZo1aIgNU2ZD",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_7iPj0zHMBO4uBq",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_Cy3UdjlwMpJtRT",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_FaCJoS9XmN3b9s",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_YeOdfNUraXoeMg",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_ahLgXarmfwCyBc",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_NeVaYoVIUoIw6J",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_mdKH8ITEzWju20",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_sJllEq5g7RNPsx",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_uaLl0UwzYZDJwG",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_Jh5n8A3DrPn4gj",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_cHfuPFcQIFYsQc",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_Jv9Hu6i0MeZdQD",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_sVo0GI7wjj9pg3",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Q8gyxRXEYHghvM",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_KMVXOh4C1CZ4Ts",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_7UF63ZnCpMV69A",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_KcmdF1SzQTntr0",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_d92QWfSXWdlpV8",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_e5nQ5LmSCZDdad",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_psCDFAu4FLB8pJ",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_uCDNv5l0BSFo3B",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_0sC5kMmIbskxt2",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_4UPtO2WMN31k6U",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_LV3ajg6JhUJII1",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_5BpwD7tZFbljDa",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_6J3k7gGg6MfmLZ",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_ThpuBXORHASHPI",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_hEBHfu1orWad5s",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_BuKXazH13NT6mE",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_YJVgBhUgRFGh67",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_z9BHzdeBT5f3TV",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_POpk7R2ykXvbrq",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_JGtEGl9OzOO0kn",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_bQdKphHM2ccPvA",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_iB7L9ZOX66Drrs",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_jEE4CDiLblLtw9",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_leuX4lmNEfWZyR",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_kvRP6QfE6THrKm",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_FHwAyhAROzouhs",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_p89WKbiHm9XaoF",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_QRmhTsWU2aw2rI",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_cOeb8IHATU3PkF",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Rvc8C37qN232Lg",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_8yMluhuyPiGTtr",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_qZ0WPc84FqvAbH",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_Qy4CgMUrB2hhcP",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_kfoZOOFgQ7aR35",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_y37qHFOZUoThsv",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Q6GcWnIx3PzM3N",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_UENhgFuC0YgUGf",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_en9pqGufCzPPKM",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_Ziiywm4fVvTTbZ",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_ZjbVIhSRu1hmqE",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_WF2qfAeFeZHFqH",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_3gfSKwQZzDkaSu",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_DRHFwKfLyM9I4h",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_NgYYrLA7sljDc0",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_14XKi3LbeOOPcJ",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_NfmZ9V7DAFHsPB",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_dsYdqBwMcVu5hd",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_qdEsZlvOJk66JC",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Ln8WNbqZgzLmds",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_jTUBIYtfC8SKew",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_ylj2OJvM0dzlxj",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_hQCMh7oFjL0vvW",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_f16qyNBq6qOkNM",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Itc68eYuVb51R7",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_iU6QZXhFuepLaL",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_RAtbWTnufBGxl7",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_YykAsLxdiRk9xL",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_STdY3Gc25PswaA",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_wFADX6mDsfE1Wf",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_wvqzKHruWSBl3j",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_uFb1fWR06ZvtGr",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_rOCBAs7V7JjkT4",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_BcaN1jdJ2gqXJ1",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_hZDcBctiC6eXQI",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_CPC8x3pneE17f4",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_y0AMg7RwuwYhqd",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Dt9MSacxjrnYlI",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_3bwDYxkQoDEnKx",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_0JvXq3Tm7SGrdh",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_JTTfDyCUKD9DOm",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_vkhg0MvcvyPBhi",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_isGclnHywXumri",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_l0ML9h89OVzaHp",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_Btep96kfHrIQDW",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_69wTDTGGKgV40l",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_1TuvefwM8YDryI",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_9OPZxCBr4Y0Zpt",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_HJsyewIVi8DlWI",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Qekz0wSC4nfs7Z",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_SN9bDabKq7A3Cu",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_mMI6v00M90dOWF",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_bdfOThAnkslXoa",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_SbW20fZ2tolw3k",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_MQK9EC2IZUUpWm",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_H9wpgA2zvM9ikx",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_4vQFPtH3c9mrvW",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_dFIB1Q3VV7FGEJ",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_D9matwrXyor49A",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_59mYuuzJohh1kF",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_XhbRxDRi15vfT4",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_j9jowa1004OSej",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_9xuPLb2xpARspW",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_ZDVNJ63HX7Xvr8",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_1o7qAtYxELjUZY",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_Pe6AZlfOMQNrAC",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_ipzNcPpwT9phyW",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_3U3IkjHzRLDqY5",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_LCQOf3Ggk8gh7A",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_NPQ29aB4dy8s50",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_Yt5KMtp86A6sta",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_6TkatW2dSNm0iI",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_y7b40hhKzEF0VM",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_Vn6ujFqLZSmiM1",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_E5KPGJv7SClA0C",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_5uvh9qo36cZiCd",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_UBxOn5OyE0UaS6",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_bMGjKxiOeJMayW",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_mcmIhGFeAwWxa9",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_BiBSYQIvMy6K8n",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_pGLrIbNUYQDajW",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_iyrtQqxSNkcoLP",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_CjYIskbHIkYYhQ",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_8ysSrUhr9Q12cj",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_dlly1sDBQVEerW",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_w8ARUN9X2lFQKX",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_dnnOr9LvfKZh7x",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_IWpUZXCYqKXdoI",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_KAVUbhdVTkzAwx",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_L5jWRzdLDMIiBe",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_XPxlFbBHzEeQy8",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_Pb9MRYp73HYmgL",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_r1wlSk1ZubhMmP",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_7nkTTDRZCicpVm",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_9tvlho7mIE0E55",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_ENVeKiavpgtqvu",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_ESRToaCuxJZnzL",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_4lqAKoEY2Il2Vw",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_glVF7ViyuwJw47",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_rWbqUOqieJxr9X",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_2FLoOckDCsBhyZ",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_lqLGrC8sw4aVwb",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_dSyfzd1hARl04s",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_6gwc9AFfyR8d0o",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_ZQuNGzGaI0VyIQ",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_YTpqh4AMrxiGoJ",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_8WMrSFs3oLuEFO",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_rpP05Zc2KovwVN",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_bEU1LsujN0KGRU",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_wGZZ0BPbuSCP8I",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_WjzDlWKyqdHI2C",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_FmoLMuJGqJFXMj",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_7jXCxeTyCEjJXC",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_kElgTmSV6ioYq6",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_yPf6Gk23qf0dEg",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_i6cAs7gLn1FFE0",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_IDHy2r1cRNITj2",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_iq96wCUamnVYd2",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_yCAaqNB75K8rGx",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_xiHWelecQ7GMY6",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Mu1g8dAZmQG77G",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_VMJuwo2Nel2jCB",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_dUTaXPWOxwNS3e",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_mTKEY1Bx5YiA7I",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Tj22qtq0zi0TsS",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_oYLm8k1NUTbpMR",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_eifyxi5eLlesat",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_OmQiTkNU5JU10J",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_832Rq7owvzoK1x",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_wWjcJd8IWYpXJ1",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_EkBrFGabpd69ZQ",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_BY7INGKPEOpBVN",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_yoly8tmkFKU6n1",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_CYdgXt4iUa3LbV",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_AXPiYTEAcISr4T",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_cjGE4XvIp7F3gc",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_PDXm4oOEGPV6Gr",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_uaBYp0EkLxce2U",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_GZUxXqv0xzpdNl",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_qYyNJjGDvRL8iM",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_mjqHKY3SCmxcGg",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_VOzCUFne16UIjo",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_0QnarJdi17izs4",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_K4fEnmmUWjBBYc",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_IiXvq8DrrUsXKT",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_6gIyjuwcEAnJnt",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_JCYSYeq9M5UdvN",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_jnGz23zNLblL8F",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_bcNX2pUBAPZKDh",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_JDBwV1sn4XG5Kx",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_QLDf3XOpP1nOeX",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_ihkQlfd9kF1j8f",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_b3LHh7HK1CjyjC",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_CFwLlkcTuPbisq",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_fLafK0XYs4nKH8",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_r9KYnGYfMjliHs",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_3PwLXrwEeuAhG1",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_8LCCkTk7GIGpqy",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Q0yOZwxcrvhP6r",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_YiXPrTN2NGbgqr",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_7BZkUWjJaI2Ru9",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_49HWGr7pzsOsEI",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_vjRqiOJKJf7X0s",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_uL5c65rbvzn1ba",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_BVmQ2h7wK3wJ8n",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_UeFgkVpmfT60Gd",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_JfYSloJ0nKcZvY",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_STnRLoD9PqGnyz",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_qtR6ZAxVcTYuuO",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_tKmAI1nSetoeQ1",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_QYx6Ymu1EMLDri",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_UlNqzi3W0D5n7m",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_YRuFPMgjzCAGIW",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Hgc0eKph2H61sf",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_5B1bLRSNSkCxL5",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_okaTvG8XXI6z5y",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_EQjEjbRt17vIMG",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_EKpZG6f4jSJkJ4",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_wR3oWP9WCsDEXY",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_jAu26tPfZlSXFe",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_tUZVwuIgVYionf",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_MQrvLW7T2iQ1jn",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_tOHEtWZIYItmwN",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_7W1nRGZI1OXhtd",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_2U29hkWr7PFN1w",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_fdMTFaCN55yAmA",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_6viWeGf6tocUi8",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Uv3PT7Hn40lMcK",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_q4CYiba0Ya0iQk",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_8KnxD3K3HEI4iz",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_1pCxexUiEdcMX0",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_sI07FgWsaUNh1Y",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_ZneHiJAXQUf4sE",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_IUOQmTxXllBVYJ",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_Y4EvOR5V1UrQys",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_jLDBlBf71UlTqR",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_qIvIqfDP6x6gNe",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_lzAQt3c5wOeeWI",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_cg6efpBnwP0bM0",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_0TYVz04FmOEzux",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_onWiixhgJKj75f",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_p4PqHl0fsK1rFS",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_y1LpNxTaEOavHm",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_MmTDGjyHk1PBKE",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_NETLRcSN487tNN",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_0ZYwO7pVrX2PQq",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_9ZFy4P8EW15n0Y",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_36EdmgEWyLgtOx",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_bL9KPtYXu80V8i",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_OjpFhOrTMSWqjL",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_3Kl7boPw4W89tR",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_2sOWRwSmIhSVC5",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_t6Vx8fTynDOkoZ",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_IwvEAmHyVTNNPh",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_v5ibiEoy52HBVB",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_5pXFpIKPwctCdO",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_DZ6qtSO38K0jBA",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_AabhJad07Zl4OV",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_oBZNnQydU9DB3q",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_kGeKo31xujAAYy",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_RtfjzsVMozjur2",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_5AuEyArhm4IV8i",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_rWjCb15jiNrrPk",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_hGeA8jz9Mn65Fp",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_VyiHF7XcJiiOrw",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_3YnuuWlioLMzx8",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_VuinZWyJpraA5m",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_fgOexYUfKqWav5",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_wGZvM3G5HrT8tQ",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_FIrTikwv5zoSCY",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_uWyMlhRB14n1YX",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_bleDMwKS1dgvub",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_W4Nn4bvJEpHeEM",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_V8yD0QlKQXdxiu",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_m1P97jvzAcgzGW",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Pzbb6TWHSDlp38",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_xW1t9zvkPBPJyS",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_0IMOiV9XbNAUVg",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_675tTXoHT9Q3kl",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_TLv8UkwsQ5jfZM",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_Xihel51qNUHCFf",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_I0kS81vRBpXtwJ",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Hmw1wGkMkiCyaW",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_UBp6MgO4wkPGOJ",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_C5Es5p5YxjeQ5N",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_VOH0iHi4sKCNSM",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_llsryjGwLD5tTg",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_iH9JgpzPsv40Ld",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_rmFp95KaxJBnbs",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_7HmmEln4qYNIY1",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_lygZJpgd55PFUy",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_P9Eu0OwL3OV1U8",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_CAbEz6MoBtZu0b",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_LIJxup8hLeBmP7",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_begipqr7pwOAuG",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_uqkef4HpxyLYOI",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_o536GLyyVuPA9l",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_4K1Z4Sf4oEIuC5",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_LXfpfAaVHOPdMK",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_uMuHpYzslMkc8H",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_LS8yRmy8cSdN7G",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_MdMtlDKcwIGBtD",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_VcUF7VB7xnbvdD",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_A1ukoao0yZjd9y",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_XDyloi412SO9Bl",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_iZ0gfTEhhyrYKs",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_29KZmeg5qkaDbJ",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_dJsShbPhFlfNLa",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_lZN2r6ujSq0PxM",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_SKjKjUrLajsBl5",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_tSWHSCJ2iK75gw",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_tpuVNRm5Q0dmb6",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_yiTAel8vx232f6",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_U8pI3jT58kNb7H",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_9RNxGcgn9MMKQS",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_GuMpUQCPn8lRx1",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_OAkUTvufBKD460",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_oIwQjOWVN05gJh",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_syaExR0JChaa87",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_QNQ3EamvDpu3j6",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_9MEPuHTR1iGyWa",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_Qo89AIjxn1mtSb",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_l3abWHP1Zi9H1Z",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_0qX175VTHLe8VQ",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_Bhc0KxIqrYupDz",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_LJ0D4LqckiVbie",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_MR3Fv3Gfsvi6U7",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_8wpguqYEKI7Kbc",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_wjH0Fn0KN69Tq2",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_zMAKgzYGnf3IOa",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_jsj70QSemqVJRO",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_B0rYuMELqEZu9v",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_cMWU41WCWBelp3",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_FlhaMW7Nr8Hc9G",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_RWt59puKJ2SjIZ",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_fqrn6M0vkzwArx",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_4G27eKLSoC5wN8",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_9uvp4f4IHgwzTw",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_FNuu44akD3r4fu",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_lwphrChWmNxFvC",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_In9hKyWySk0JGH",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_3CYOoCpgUvBend",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_jlOSTKjl5qUvRy",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_tYCxuCIB0vK98J",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_opUO07sf6QyZjA",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_AAaRyFvkNlPKib",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_Q7jcK0aioqs7aK",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_eReEa5ZCZ8MrzO",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_sSUKgSaounYgxi",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_bj9J5mOF4SuY9A",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_TPPhEk0rwPR86X",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_F5wVz2zbmMRp1i",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_vENNOBaQZXLiLS",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_7nlW6MMptUWBOv",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_CHS6EXKZG6RVMW",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_q91EUlsDLWGZKm",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_1RqJW5V0BIgCPI",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_NVqp8y5PvgVotU",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_4bnwZZRDoEMOyF",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_Acs5jvzNB96QAy",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_ORrNSXrvqvKKHv",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_1gLPa47yo3aDvm",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_BOsDIrN5gojk4I",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_jRnemlgvBZali4",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_iNyKNiVb6ZTpqN",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_3SzXg201oNrf5w",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_hze2YhGW4ZlaTC",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_h2cRYtSIK2q6tF",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_Egy8FG6JHDPnqd",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_jK1Vq8f2juy7vz",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_TO8QPeUpEYawym",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_m6N2mSbxXn1gm4",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_WvAqLs9BMX29RO",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_MHM3fHbz5aqM96",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_zTceYt9ZXwQOL4",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_PnSdW9J3cEEIDe",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_hVcuJwEKatiedz",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_4zm3wnzoB2wVjG",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_AUo3LhiiP42gPa",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_2hQKREOhbZcZBc",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_YpATzerSr4uKgy",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_9Z0BzD7SGk7kS5",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_hImKalyFDd2NUQ",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_mqo0gHxSoUgzFH",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_bPa6u9D2NJyPs8",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_JWlqxOfcX5NLjN",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_7lf2AV5z2LjF99",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_q5FMZwq95WBbag",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_sQ3y7cX0Iwg1WG",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_RyhCdGx3Fbq5Hc",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_tVAdspuvk5VtuC",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_RX6cmTyQ5oGGfZ",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Gfju3zjPh19oxf",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_aTRiajqbgXUdqj",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_wHY5lrzRyCt58P",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_abPtEK5zpb8tbd",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_LkmLVMPTTNBRQS",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_u6YxglGLGDBTJQ",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_9kvOMKO2p5SRbC",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_U8mlPkBjMhMEf1",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_ZmzW79xIOcVv85",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_7tAeN7ZoV4on26",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_qJqL3VK5VrYVi7",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_GDRA2AOwgZUPeG",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_0OEpNtKFiW2OSd",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_v7H31lfWNOdCuB",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_IEvqradGuZe2qW",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_DdyydCwHzpsYAS",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_fNn1hMmUSNj6Qr",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_7ruD61mejtdb9S",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_nf82Mvt3YvRhef",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_xC5cbELxrGU1gL",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_CnQLrj4U3pjsTo",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_40uUrKslvepBCV",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_wq22Hpm2YdHQnm",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_NEJlZjrbOmcBEx",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_gBpiEyOCoX81gb",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_IoiEiwtNyYFpOg",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_58ZS37umAJH7dY",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_A37oLtDRA4YFy0",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_VVAFy4ShJRIuwH",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_pOdyMi9XC9k2Z5",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_vgfg7FKAJF7nTg",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_8s38D7CiiWyhW9",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_Cf6ICkpPMsOEKb",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_ZJJQZEapzlbwfx",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_Ha4wlYzjkHRMPN",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_qdnEBfsIvM63bC",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_1W0UXnlmMJ0qw6",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_xjdMzSKb4nHfmY",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_LpO6GK8i0QTwOP",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_USi5wQRPgQZQUj",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_Wu5UYBeT9xwXok",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_LKy0poWjYaVk4h",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Mq3CuoXmXf6dwr",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_FYOJM8vDRQeRNZ",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_l4Xvx3OA7dPUpy",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_poyfTDjYpQWLId",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_LRFZLDSpOXgnR6",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_hazMO3CZPcaI8G",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_O1jRjh7d6QWOma",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_P6huCQo8lr8Ix7",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_ihemA7R1dhKGmK",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_g8TlDWuJa1aaXP",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_9KhQH0fgVK5Ynk",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_L1ZpJdhfPZjWNe",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_ZGVVJei0ZzHVvZ",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_wOXQJndok99CJV",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_6n4OsTg0KFADq7",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_gnTU6CgFmZE8aG",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_Y2gzWY9ZwaQBpB",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_YGn5I6YZocWhQV",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_hwY64si3jd9wQg",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_yYib65YVHF4whA",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_wJHhtnttt7nOc7",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_rF61HxjpMGPn9x",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_cwrdZQX5tfH8Mj",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_mErjdt2swjotSl",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_k5mwwbiQJubIzE",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_DipbV8zlCE0LDS",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_HN9N67rt9lirFL",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_QjqZ3aD9ekFkMm",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_cgzfrRYeD3kmXs",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_MtXXQjKUaut64i",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_30fkLDGCUQQC4y",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_ybVnZtkqB0f5UO",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_msVDSuzO9VhxTN",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_jrjyVeVWc6mRiJ",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_n9DuZ1hD76XUeQ",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_bMNquO7ILL3yQo",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_bPWXZ7sgCuOd75",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_iP1vtnqDE12qIn",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Io2AWdYA9oO9tI",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_l2NuMc4CCwiibq",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_GpEwBSaK4tYJYj",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_3ltYN1aVs0arkZ",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_dWQfLfgyM3GBKS",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_oJHP5HUeKsD3jj",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_TVmi2JgKWsUOHN",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_xRx7mT3W0xU0A5",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_uFjFRT28O9fnYz",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_YrXh7uwsVWxnuD",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_rUyyBJtMze8CtE",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_ztBNnfX2YLFsh3",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_zpflTjxYyXNuyc",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_bOyddglxuHYdgs",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_SzapS2dIXg8Ih2",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_6JanLVaCcmoUKe",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_1lZdWFfxPbxI2f",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_vKrxOqpSYwPGoU",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_1NIW86gOgPFcCS",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_mx0IdJXrcGo0VD",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_pI7ED7g6g8V3ZV",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_1qcYJS1fxWpBqY",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_XX7i0MMf4C83vq",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_dFJR38rD4cFKLZ",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_au3v2dKBebwKHi",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_L0JRWwPy1x1Uds",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_UDfLNLpfUBJXgq",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_MyT6wieLTidClB",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_onH4kkDKcEsvuP",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_sLg3pjzHqjESsr",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_CmDOtMo3IiyqUn",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_R82Mf2gwqhPoq7",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_6ocl0TFwRDi96T",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_J6p5CN1yB2ijP2",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_FkTdPns6CgAXFw",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_7q0Q8YO6S05mbD",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_mXsZxxXMNaXWpj",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_88OmFDRASV7A9h",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_UEdDYXOjmclrig",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Jl5SwG3bZHRRJ6",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_9VzZlo7x4Gkcah",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_b4cOVKZMoRnh5o",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_gTB8ZYA2LeWgk5",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_nY6IcxcQQMmwpL",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_y0UvON8TmYUX33",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_aG6DK21aGruN7M",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_C76i8mb2eVbuan",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_mJy9FXaBlVQTxD",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_rr0tWg9ukHo56I",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_McBFNNgucGqiS1",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_it38DCYJbjCCjI",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_ZP7P6FXrg97Ds4",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_xJeApLFB37i8Cu",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_JGmSM0Q8gYLKxT",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_IvJvRaRb3qFbaw",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_3i8xuneeWwNCTK",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_o7Ax8Xgk2CB0j1",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_gOq9BjQmaDMkWZ",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_1GzDTgv1T5GGJr",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_c9C7O3WZQWjysc",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_Adc92xgIiiUSel",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_1cTbhx348NhmXT",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_AMqASqBZKUVFwl",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_0R7ox9aY6IR7zd",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_RDfVxJJx4QFBBV",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_1qijfMQ6VZUNkt",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_X7QA2J316zl1el",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_8oSPkpzAJmHksL",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_1GcN6SRcAwJV2g",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_c7iamwO0b0Rzsu",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_P3ZAuFUof3UG8g",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_3gt9qfp5oXy1vy",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_DnbPgAFbK7tDgg",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_v1amMyRWoyL6kw",
+    "scenario": "repeat_offender_dispute",
+    "note": "repeat dispute filer"
+  },
+  {
+    "customer_id": "cust_Q62ujmhjalt1nW",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_FMnm4eHx413VrU",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_1y0Ludm4HAdxAa",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_IZL5zCiPSWLAlx",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_btrHczyzd5O9Hh",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_g3Njl1OPk46hhG",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_Y8uTIxOUCsh4Tu",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_HFVsIu3lwX1XA7",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_W5kx0cpzmM2PCG",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_AWAQSqSUIwdotc",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_H8VsnLsn6Hul3D",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_9cJvqoQXiwimrW",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_pfyHs0QuQrDNSe",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_HkZlx19pJEED8u",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_n7Usw7kZVBNbAm",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_5N6ugMAPmv6EMq",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_1kbWrfycOEXlGU",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_AKsyL3yV8ApK3i",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_AMWppT4giooTRm",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_lP1vPcLjTs646n",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_v9cSq9xw7YmFi8",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_4ZsT0mcIwUXA0f",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_pWrfpb10t4uC15",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_5yqgp8wLJgzJAx",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_kdhW03qgTfjrPK",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_rQ97wTxC7cIDDt",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_lqkOTOyT7I1OZa",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_xCltP5XEpPOIUq",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_9OmpBtCBLwOztN",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_aH5UAXAt10R7Ri",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_NfsPZuX4SqSHGt",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_ISMiDjPFCIsoZ8",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Zpdj7Ud5Zd9ypg",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_zeAuq8wvVI5l9T",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_G942ZnKxtStVls",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_0Daj7vXnRDQcvS",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "won"
+  },
+  {
+    "customer_id": "cust_SzvrGznV8CrubM",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_vjQRQJMQcBbjzS",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_RqkctqzIXeVIZg",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_BqLBtJSxiLgZ77",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Ntx12iBm7WBV6f",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_npnMt014ELbv1p",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_zmFyh69srWoKJv",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_z42nC8YfakjhIs",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_LcQLhtraEioupZ",
+    "scenario": "noise",
+    "note": "edge case / malformed-ish data"
+  },
+  {
+    "customer_id": "cust_aU1pJsNOA9v0Km",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_zLoqCaqsic1h68",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_maz9Ph5p8HwfWa",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_sYv3kaDLNDG3jE",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_w8ZHZdbzLTUlXG",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_9mUa3y7MYNlzR3",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_1dogO9MULgGlaI",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_FNBO9sVAqrtptA",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_QFhrfBYeNvnTP4",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_pkdRbr9baRkPO1",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_qyoseqWbSa5zCB",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_k0w9TFGOzpTxwn",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_5sjdozAX1bACsl",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_nqk5s0opBSmgVp",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_LHVRlLTrfcKssb",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_PzHMVEVHqf9D4d",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_Dicxfu4zh6w39y",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_A4AfQFlEdnbDl2",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "under_review"
+  },
+  {
+    "customer_id": "cust_meU9OaN8armWnh",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_cGq1KyU3U6zDQe",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_Ijv4ODDpFpvjSB",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_9CwwJCYxMQwKYn",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_gCsBVtRc6qC6Z2",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_FD3G3TRVC6pyWV",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_i7xgglRr2lkipy",
+    "scenario": "conflicted_customer",
+    "note": "heavy abandoner who also pays — brake and accelerator true at once"
+  },
+  {
+    "customer_id": "cust_f5qfw9qHmBseRV",
+    "scenario": "repeat_offender_subscription",
+    "note": "repeated billing-cycle failures — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_LCsVek3bV7puqy",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_7bZrevjootE3M3",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_aZLLKb1hUAW8F1",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_rHCpakswk9QYmC",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_5lUGseVztynfwr",
+    "scenario": "repeat_offender_cart",
+    "note": "repeated abandoned carts — gaming/stopping-rule target"
+  },
+  {
+    "customer_id": "cust_ZR7hgbtpx2Vdxj",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_ioWQpWp7fFVe97",
+    "scenario": "normal",
+    "note": "a single recovery-eligible event, no other history — the negative control"
+  },
+  {
+    "customer_id": "cust_VbF1Oy2VqNXLD9",
+    "scenario": "loyal_payer",
+    "note": "established payer, one abandonment — the accelerator path with no brake active"
+  },
+  {
+    "customer_id": "cust_F2p1PclxafA9yW",
+    "scenario": "cross_agent_gaming",
+    "note": "recovery triggers spread across all three agents, none reaching its own threshold"
+  },
+  {
+    "customer_id": "cust_DP7E8RkOvS5CDR",
+    "scenario": "cross_domain_risk",
+    "note": "a dispute on a past order, then a later cart — whether the discount should be suppressed depends on how the dispute resolved",
+    "dispute_outcome": "lost"
+  },
+  {
+    "customer_id": "cust_o66crPOHNvDuT9",
+    "scenario": "churn_signal",
+    "note": "2+ domains in a tight window — should escalate to human"
+  },
+  {
+    "customer_id": "cust_RrQIcZnhGR02BP",
+    "scenario": "cross_domain_risk",
+    "dispute_outcome": "won",
+    "note": "DEMO FIXTURE, hand-composed for the Live Decision Trace replay — not generator output. A dispute ruled against the customer makes the final cart decision a deterministic block in the memory arm."
+  }
+]

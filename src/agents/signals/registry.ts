@@ -1,0 +1,266 @@
+// THE SIGNAL REGISTRY — single source of truth for what a memory signal is,
+// what it means, and what it does.
+//
+// ACCEPTANCE TEST FOR THIS DESIGN
+// Adding a signal computed purely from facts CustomerMemoryProfile ALREADY
+// exposes must be a SINGLE-FILE change, inside src/agents/signals/. No edit to
+// the MemorySignals interface (it is derived from the registry, not written by
+// hand), no edit to the prompt string (the policy block is generated from
+// describe()), and no edit to enforcePolicy (it resolves effects() rather than
+// testing hardcoded booleans).
+//
+// A signal that needs NEW facts additionally requires a profile.ts change.
+// That split is deliberate, not an oversight: profile.ts answers "what is TRUE
+// about this customer", and every asOf-scoped query lives there so temporal
+// correctness is auditable in one place. The registry answers "what does that
+// MEAN and what should we do about it". Mixing the two would scatter asOf
+// scoping across every rule, which is how temporal-leakage bugs get in.
+//
+// This structure exists because adding a signal used to mean four disconnected
+// edits — the interface, the compute function, the prompt string, and
+// enforcePolicy's conditions — and nothing tied them together. That is how the
+// churn-signal discount gap (commit 75f04a3) happened: enforcePolicy's
+// conditions and the prompt's promises drifted apart.
+//
+// SIGNALS ARE EVIDENCE, NOT COMMANDS. Every describe() states a fact and what
+// policy permits given it; none of them issues an order to the model. This is
+// not a stylistic preference. enforcePolicy applies every declared effect
+// deterministically, so imperative prompt text adds no safety on top of it —
+// but it does destroy the measurement. If the prompt commands the outcome,
+// policy_override.original_action records the model obeying an instruction
+// rather than exercising judgment, and "the model and the deterministic rules
+// agreed" becomes a tautology instead of a result worth reporting. Keeping the
+// prompt declarative is what makes that agreement measurable.
+import type { AgentType, CustomerMemoryProfile } from "../../types/index.js";
+import { SIGNAL_DEFINITIONS } from "./definitions.js";
+import { DEFAULT_DISCOUNT_CAP_PERCENT, ESCALATION_MIN_EVENT_AMOUNT_PAISE } from "./thresholds.js";
+import type {
+  AnySignalDefinition,
+  DisputeCautionLevel,
+  SignalContext,
+  SignalEffects,
+  SignalScope,
+  TriggeringEventFacts,
+} from "./types.js";
+
+export const SIGNAL_REGISTRY = SIGNAL_DEFINITIONS;
+
+export type SignalId = keyof typeof SIGNAL_REGISTRY;
+
+// MemorySignals is DERIVED from the registry, never hand-maintained. Two
+// hand-written lists would be two places to edit and would drift — which is
+// the exact failure mode this refactor exists to prevent. `keyof
+// MemorySignals` still resolves to the signal ids, so the experiment layer's
+// blockRules / excludeEntirelyWhen keep compiling unchanged.
+export type MemorySignals = {
+  [K in SignalId]: ReturnType<(typeof SIGNAL_REGISTRY)[K]["compute"]>;
+};
+
+// REGRESSION GUARD. Every field the hand-written interface used to declare,
+// with the same value type. If a future edit renames or retypes one of these
+// in the registry, this stops compiling instead of silently breaking the
+// dashboard, the audit rows, and the experiment layer's signal keys.
+// Updated with the Signals-stage rename. The assertion still earns its place:
+// it pins that MemorySignals stays a real mapped type over the registry, so a
+// signal cannot be registered without appearing here. Only the NAMES moved —
+// disputeCautionWarranted and paymentFriction are gone entirely, both because
+// they had no effects (see definitions.ts for why each was removed).
+interface RegisteredMemorySignalsShape {
+  disputeCautionLevel: DisputeCautionLevel;
+  discountsGrantedByThisAgent: number;
+  discountLimitReached: boolean;
+  repeatRecoveryWithThisAgent: boolean;
+  repeatRecoveryAcrossAgents: boolean;
+  crossAgentSpendLimitReached: boolean;
+  pastDiscountsIneffective: boolean;
+  recentMultiDomainTrouble: boolean;
+  provenPayer: boolean;
+}
+type AssertDerivedCoversRegistry = MemorySignals extends RegisteredMemorySignalsShape ? true : never;
+const _assertDerivedCoversRegistry: AssertDerivedCoversRegistry = true;
+void _assertDerivedCoversRegistry;
+
+// Each entry's `id` must match its key, since the id is what appears in audit
+// rows and policy_override.triggered_by. Cheap to check, and a mismatch would
+// be near-invisible otherwise.
+for (const [key, def] of Object.entries(SIGNAL_REGISTRY as Record<string, AnySignalDefinition>)) {
+  if (def.id !== key) {
+    throw new Error(`Signal registry key "${key}" does not match its declared id "${def.id}".`);
+  }
+}
+
+function entries(): [SignalId, AnySignalDefinition][] {
+  return Object.entries(SIGNAL_REGISTRY) as [SignalId, AnySignalDefinition][];
+}
+
+// Signals of a given scope. Customer-scoped signals are true about the PERSON
+// and are inherited unchanged by any new agent; agent-scoped signals are
+// computed against the asking agent. Registering a fourth agent therefore
+// means implementing only the agent-scoped ones — everything customer-scoped
+// already applies.
+export function signalsByScope(scope: SignalScope): AnySignalDefinition[] {
+  return entries()
+    .map(([, def]) => def)
+    .filter((def) => def.scope === scope);
+}
+
+export function computeMemorySignals(
+  profile: CustomerMemoryProfile,
+  event: TriggeringEventFacts,
+): MemorySignals {
+  const ctx: SignalContext = { profile, agent: event.agent, event };
+  const out = {} as Record<string, unknown>;
+  for (const [id, def] of entries()) {
+    out[id] = def.compute(ctx);
+  }
+  return out as MemorySignals;
+}
+
+export interface ResolvedEffects {
+  blocksDiscount: boolean;
+  suppressesOutreach: boolean;
+  forcesEscalation: boolean;
+  discountCapPercent: number;
+  // Which signals produced a blocking or escalating effect, by registry id.
+  // Feeds policy_override.triggered_by.
+  blockingSignals: SignalId[];
+  escalatingSignals: SignalId[];
+  // Which signal set the winning cap, for the audit trail.
+  cappingSignal: SignalId | null;
+}
+
+// PRECEDENCE RULE: brakes beat accelerators, implemented by taking the MINIMUM
+// cap across every ACTIVE signal. A proven payer who is also gaming gets 10%,
+// not 25% — and no ordering of the registry can accidentally invert that,
+// because minimum is commutative.
+//
+// DEFAULT_DISCOUNT_CAP_PERCENT is the fallback when nothing contributes, not a
+// participant in the minimum. That distinction is what lets the accelerator
+// work at all: with only provenPayer active the set is {25} and the cap is
+// 25%, whereas folding the default in would give min(20, 25) = 20 and the
+// accelerator could never do anything.
+//
+// A signal contributes only when its effects() returns a cap. An inactive
+// boolean, or a dispute level that does not tighten below the default, returns
+// {} — so merely being present can neither raise nor lower the ceiling.
+// `eventAmountPaise` gates ESCALATION ONLY, and is optional so existing callers
+// that only want the cap/block resolution are unaffected. When omitted, no floor
+// is applied.
+//
+// The floor lives here rather than inside a signal's compute() on purpose: the
+// signal stays a pure fact about the customer ("two domains failed within a
+// fortnight"), and policy decides separately whether that fact is worth a
+// person's time on an event of this size. Folding the amount into compute()
+// would have made the signal mean "multi-domain trouble AND materially large",
+// which is two ideas wearing one name.
+export function resolveSignalEffects(
+  signals: MemorySignals,
+  eventAmountPaise?: number,
+): ResolvedEffects {
+  let blocksDiscount = false;
+  let suppressesOutreach = false;
+  let forcesEscalation = false;
+  const blockingSignals: SignalId[] = [];
+  const escalatingSignals: SignalId[] = [];
+  const caps: { id: SignalId; percent: number }[] = [];
+
+  for (const [id, def] of entries()) {
+    const effects: SignalEffects = def.effects((signals as Record<string, unknown>)[id]);
+    if (effects.blocksDiscount) {
+      blocksDiscount = true;
+      blockingSignals.push(id);
+    }
+    if (effects.suppressesOutreach) {
+      suppressesOutreach = true;
+      if (!blockingSignals.includes(id)) blockingSignals.push(id);
+    }
+    if (effects.forcesEscalation) {
+      // A handoff has to be worth the person's time. Measured on the batch, the
+      // system was escalating a ₹199 cart against a ₹300 modelled review cost —
+      // a quarter of forced escalations sat under ₹1,000. See
+      // ESCALATION_MIN_EVENT_AMOUNT_PAISE.
+      const worthAPersonsTime =
+        eventAmountPaise === undefined || eventAmountPaise >= ESCALATION_MIN_EVENT_AMOUNT_PAISE;
+      if (worthAPersonsTime) {
+        forcesEscalation = true;
+        escalatingSignals.push(id);
+      }
+    }
+    if (effects.discountCapPercent != null) caps.push({ id, percent: effects.discountCapPercent });
+  }
+
+  const winner = caps.reduce<{ id: SignalId; percent: number } | null>(
+    (lowest, c) => (lowest === null || c.percent < lowest.percent ? c : lowest),
+    null,
+  );
+
+  return {
+    blocksDiscount,
+    suppressesOutreach,
+    forcesEscalation,
+    discountCapPercent: winner?.percent ?? DEFAULT_DISCOUNT_CAP_PERCENT,
+    blockingSignals,
+    escalatingSignals,
+    cappingSignal: winner?.id ?? null,
+  };
+}
+
+// The policy block sent to the model, GENERATED from describe(). Prompt text
+// and enforcement can no longer disagree, because both are read off the same
+// registry entry.
+//
+// Only signals whose describe() returns non-null appear, so the block carries
+// what actually applies to THIS customer instead of a standing lecture about
+// every rule. The full signal values are still sent separately as
+// policy_signals JSON.
+// What policy DOES about a signal, generated from effects() rather than written
+// by hand. The stated consequence and the enforced one therefore cannot drift:
+// change an effect and the sentence the model reads changes with it.
+function renderSignalEffects(effects: SignalEffects): string | null {
+  const parts: string[] = [];
+  if (effects.blocksDiscount) parts.push("no discount permitted");
+  if (effects.discountCapPercent != null) parts.push(`ceiling ${effects.discountCapPercent}% of the event amount`);
+  if (effects.forcesEscalation) parts.push("a person reviews this before it is sent");
+  return parts.length > 0 ? parts.join("; ") : null;
+}
+
+// THE SIGNALS BLOCK — one block, every signal, one format.
+//
+// This replaces a split that put "interesting" signals into the system prompt as
+// prose and the rest into the user message as bare JSON booleans, so which half
+// a signal landed in depended on its value and the model reconciled two formats
+// in two places for one idea. It also replaces `true`/`false` with the measured
+// quantity behind it: repeatRecoveryWithThisAgent read `true` on 516 decisions
+// covering 3 to 7 actual events, and the model could not tell them apart.
+//
+// Every signal appears on every call, including the unremarkable ones — "1
+// payment, ₹450 lifetime" is information in a way that `provenPayer: false`
+// never was.
+export function buildSignalsBlock(signals: MemorySignals, ctx: SignalContext): string {
+  const lines: string[] = [];
+  for (const [id, def] of entries()) {
+    const value = (signals as Record<string, unknown>)[id];
+    const consequence = renderSignalEffects(def.effects(value));
+    lines.push(`- ${id}: ${def.measure(ctx, value)}${consequence ? `\n    -> ${consequence}` : ""}`);
+  }
+  return lines.join("\n");
+}
+
+// A signal is ACTIVE when it changes what the agent may do. Previously this was
+// "describe() returned text", which conflated "worth mentioning" with
+// "constrains the decision" — a context signal could read as active while
+// constraining nothing.
+export function signalIsActive(def: AnySignalDefinition, value: unknown): boolean {
+  return Object.keys(def.effects(value)).length > 0;
+}
+
+export function summarizeActiveSignals(signals: MemorySignals): string {
+  const active: string[] = [];
+  for (const [id, def] of entries()) {
+    const value = (signals as Record<string, unknown>)[id];
+    if (signalIsActive(def, value)) active.push(`${id}=${String(value)}`);
+  }
+  return active.length > 0 ? active.join(", ") : "none";
+}
+
+export type { AgentType };

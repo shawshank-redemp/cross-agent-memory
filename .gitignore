@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.log
+.DS_Store
+.env
+.env.local
+
+
+
+
+# Claude Code worktrees — full nested checkouts, never part of a commit.
+.claude/worktrees/
+
+# TypeScript incremental build cache (tsc -b)
+*.tsbuildinfo

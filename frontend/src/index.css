@@ -1,0 +1,76 @@
+:root {
+  --text: #3f3f46;
+  --text-h: #18181b;
+  --bg: #fafafa;
+  --card-bg: #ffffff;
+  --border: #e4e4e7;
+  --grid-line: #eceef1;
+  --muted: #71717a;
+
+  --baseline-color: #94a3b8;
+  --memory-color: #7c3aed;
+  --health-color: #059669;
+  --danger: #dc2626;
+
+  font: 15px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
+  /* Pinned. The app is light-themed throughout, so a viewer's OS setting must
+     not repaint it — see the note on the removed dark block below. */
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* NO DARK THEME, DELIBERATELY. This file used to redefine every token under
+   @media (prefers-color-scheme: dark). The app is light-themed by design, and
+   a half-supported dark mode is worse than none: component stylesheets that
+   define their own surfaces (see ReplayView.css) then have to mirror the
+   switch exactly or they paint light panels under near-white text, which is
+   precisely what happened once. One palette, one source of truth. */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  width: 100%;
+  min-height: 100svh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 24px;
+}
+h2 {
+  font-size: 18px;
+}
+h3 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+h4 {
+  font-size: 13px;
+  margin: 0 0 4px;
+  color: var(--muted);
+}
+
+p {
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 13px;
+}

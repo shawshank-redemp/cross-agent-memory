@@ -1,0 +1,510 @@
+.app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 24px 24px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.app-header p {
+  color: var(--muted);
+  max-width: 720px;
+  margin-top: 4px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+}
+
+.callout {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--memory-color);
+  border-radius: 6px;
+  padding: 12px 16px;
+  color: var(--text);
+  margin-top: 16px;
+}
+
+/* Hero banner: the one true takeaway, stated in words so no one has to
+   subtract two card values to find it. */
+.hero-banner {
+  background: color-mix(in srgb, var(--memory-color) 10%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--memory-color) 30%, var(--border));
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.hero-headline {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+.hero-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 6px;
+  max-width: 780px;
+}
+
+/* KPI cards */
+.kpi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.kpi-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+}
+
+.kpi-label {
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.kpi-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-h);
+  margin-top: 4px;
+}
+
+.kpi-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* Charts */
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 16px;
+}
+
+.chart-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* Customer explorer */
+.explorer-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.explorer-controls select {
+  margin-left: 4px;
+}
+
+.explorer-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.customer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 640px;
+  overflow-y: auto;
+}
+
+.customer-list li {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.customer-list li:last-child {
+  border-bottom: none;
+}
+
+.customer-list li:hover {
+  background: color-mix(in srgb, var(--memory-color) 6%, transparent);
+}
+
+.customer-list li.active {
+  background: color-mix(in srgb, var(--memory-color) 14%, transparent);
+}
+
+.customer-list-name {
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.divergence-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--memory-color);
+  margin-left: 6px;
+}
+
+.customer-detail-pane {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  min-height: 300px;
+}
+
+.customer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.scenario-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--memory-color) 15%, transparent);
+  color: var(--memory-color);
+  white-space: nowrap;
+}
+
+.scenario-badge.scenario-normal {
+  background: color-mix(in srgb, var(--muted) 18%, transparent);
+  color: var(--muted);
+}
+.scenario-badge.scenario-noise {
+  background: color-mix(in srgb, var(--baseline-color) 20%, transparent);
+  color: var(--baseline-color);
+}
+.scenario-badge.scenario-repeat_offender_cart,
+.scenario-badge.scenario-repeat_offender_subscription,
+.scenario-badge.scenario-repeat_offender_dispute {
+  background: color-mix(in srgb, #d97706 18%, transparent);
+  color: #d97706;
+}
+.scenario-badge.scenario-cross_domain_risk,
+.scenario-badge.scenario-churn_signal {
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+}
+
+.profile-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.profile-stats > div {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.profile-stats strong {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.profile-stats span {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-h);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+tbody tr {
+  cursor: pointer;
+}
+
+tbody tr:hover {
+  background: color-mix(in srgb, var(--memory-color) 5%, transparent);
+}
+
+tbody tr.divergent td:nth-child(3),
+tbody tr.divergent td:nth-child(4) {
+  font-weight: 600;
+}
+
+tbody tr.divergent {
+  background: color-mix(in srgb, var(--memory-color) 4%, transparent);
+}
+
+tbody tr.selected {
+  outline: 2px solid var(--memory-color);
+  outline-offset: -2px;
+}
+
+.reasoning-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.reasoning-panel > div {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+  border-radius: 6px;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+@media (max-width: 900px) {
+  .explorer-layout {
+    grid-template-columns: 1fr;
+  }
+  .reasoning-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Manual, demo-only payment-link trigger — see SendPaymentLinkButton.tsx. */
+.payment-link-trigger {
+  margin-top: 0.9rem;
+  padding-top: 0.8rem;
+  border-top: 1px dashed var(--grid-line);
+  font-size: 0.85rem;
+}
+
+.payment-link-trigger button {
+  font: inherit;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--memory-color);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--memory-color) 10%, transparent);
+  color: var(--text-h);
+  cursor: pointer;
+}
+
+.payment-link-trigger button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.payment-link-result {
+  display: inline;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.payment-link-error {
+  margin-top: 0.5rem;
+  color: var(--danger);
+}
+
+/* ── Landing page ── */
+.landing {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.landing-hero {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.landing-eyebrow {
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: monospace;
+}
+
+.landing-title {
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: -.02em;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.landing-subtitle {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--muted);
+  max-width: 680px;
+  margin: 0;
+}
+
+.landing-cta {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 12px 24px;
+  background: var(--memory-color);
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: opacity .15s;
+  width: fit-content;
+}
+.landing-cta:hover { opacity: .85; }
+
+.landing-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.landing-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landing-card-icon { font-size: 1.5rem; }
+.landing-card-name { font-weight: 600; font-size: 0.9rem; }
+.landing-card p { font-size: 0.83rem; color: var(--muted); margin: 0; line-height: 1.55; }
+
+.landing-how h2 { margin: 0 0 24px; font-size: 1.2rem; }
+
+.landing-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.landing-step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.landing-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--memory-color) 20%, var(--card-bg));
+  border: 1px solid color-mix(in srgb, var(--memory-color) 40%, var(--border));
+  color: var(--memory-color);
+  font-weight: 700;
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.landing-step strong { font-size: 0.92rem; }
+.landing-step p { margin: 4px 0 0; font-size: 0.83rem; color: var(--muted); line-height: 1.55; }
+
+.landing-footer-cta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  border-top: 1px solid var(--border);
+  padding-top: 32px;
+}
+
+.landing-footer-note {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* ── Dash nav back link ── */
+.dash-nav { margin-bottom: 8px; }
+.dash-back {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+.dash-back:hover { color: var(--text); }
+
+/* ── Landing nav ── */
+.landing-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+.landing-nav-brand {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -.01em;
+}
+.landing-nav-github {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: color .15s, border-color .15s;
+}
+.landing-nav-github:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--text) 40%, var(--border));
+}
