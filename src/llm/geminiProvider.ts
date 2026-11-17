@@ -11,8 +11,9 @@ import type {
 const DEFAULT_MODEL = "gemini-3.8-flash";
 const DEFAULT_RPM = 5;
 const DEFAULT_MAX_CALLS_PER_RUN = 100;
-const MAX_429_RETRIES = 2;
+const MAX_429_RETRIES = 1;
 const INITIAL_BACKOFF_MS = 500;
+const REQUEST_TIMEOUT_MS = 90_000;
 
 interface GeminiResponse {
   text?: string;
@@ -283,6 +284,9 @@ export class GeminiProvider implements LLMProvider {
     const sdk = new GoogleGenAI({
       apiKey,
       httpOptions: {
+        // A stalled request (observed: a 503 that never returned) must fail
+        // into the bounded retry path, not hang the run indefinitely.
+        timeout: REQUEST_TIMEOUT_MS,
         retryOptions: {
           attempts: 1,
           httpStatusCodes: [],

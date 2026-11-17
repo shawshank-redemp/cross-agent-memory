@@ -87,12 +87,22 @@ test("429 retries use bounded exponential backoff; quota errors stop immediately
   const delays: number[] = [];
   const rateLimitError = Object.assign(new Error("Too many requests"), { status: 429 });
   const { provider, requestCount } = providerWithResponses(
-    [rateLimitError, rateLimitError, { text: JSON.stringify(validDecision) }],
+    [rateLimitError, { text: JSON.stringify(validDecision) }],
     { sleep: async (milliseconds) => void delays.push(milliseconds) },
   );
   await provider.generateStructured("system", "user", CartAbandonmentDecisionSchema);
-  assert.deepEqual(delays, [500, 1000]);
-  assert.equal(requestCount(), 3);
+  assert.deepEqual(delays, [500]);
+  assert.equal(requestCount(), 2);
+
+  const persistent429 = providerWithResponses(
+    [rateLimitError, rateLimitError],
+    { sleep: async (milliseconds) => void delays.push(milliseconds) },
+  );
+  await assert.rejects(
+    persistent429.provider.generateStructured("system", "user", CartAbandonmentDecisionSchema),
+    /rate limit persisted after 1 bounded retries/,
+  );
+  assert.equal(persistent429.requestCount(), 2);
 
   const quota = Object.assign(new Error("Quota exceeded for today"), { status: 429 });
   const quotaProvider = providerWithResponses([quota]);

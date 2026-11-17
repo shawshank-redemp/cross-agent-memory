@@ -823,8 +823,12 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
     );
   }
   if (usage.costUsd !== null) {
+    // Gemini free-tier calls are billed at $0. This figure is what the same
+    // usage would cost on the paid tier, so it is labelled notional.
     console.log(
-      `  cost   $${usage.costUsd.toFixed(4)} at ${model} rates`,
+      process.env.LLM_PROVIDER === "gemini"
+        ? `  cost   $${usage.costUsd.toFixed(4)} NOTIONAL (paid-tier ${model} rates; free-tier actual cost $0)`
+        : `  cost   $${usage.costUsd.toFixed(4)} at ${model} rates`,
     );
   } else {
     // Never invent a price for an unrecognised model — the token counts above
