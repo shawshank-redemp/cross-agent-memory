@@ -185,6 +185,20 @@ npm run analyze:compare   # -> data/results/comparison_report.json
 npm run analyze:metrics   # per-agent/per-arm model usage from SQLite
 ```
 
+For a no-cost smoke run, `LLM_PROVIDER=mock` selects deterministic valid
+decisions and makes no Anthropic API calls. `CROSS_AGENT_MEMORY_DB_PATH` can
+isolate the run from the checked-in database:
+
+```bash
+npm run generate:data
+CROSS_AGENT_MEMORY_DB_PATH=/tmp/cam-mock.sqlite npm run load:data
+LLM_PROVIDER=mock CROSS_AGENT_MEMORY_DB_PATH=/tmp/cam-mock.sqlite \
+  npm run agents:baseline -- --scenario=normal --limit=3 --out=mock-baseline.json
+LLM_PROVIDER=mock CROSS_AGENT_MEMORY_DB_PATH=/tmp/cam-mock.sqlite \
+  npm run agents:memory -- --scenario=normal --limit=3 --out=mock-memory.json
+LLM_PROVIDER=mock CROSS_AGENT_MEMORY_DB_PATH=/tmp/cam-mock.sqlite npm run analyze:metrics
+```
+
 The agent steps call the Claude API once per **recovery-eligible** event —
 a cart that was never paid, a failed or halted billing cycle, an unresolved
 dispute. Already-paid carts, active subscriptions and ruled disputes have no

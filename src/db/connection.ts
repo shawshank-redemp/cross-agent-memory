@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const SCHEMA_PATH = join(__dirname, "schema.sql");
-const DEFAULT_DB_PATH = join(__dirname, "..", "..", "data", "db", "cross_agent_memory.sqlite");
+const DEFAULT_DB_PATH =
+  process.env.CROSS_AGENT_MEMORY_DB_PATH ??
+  join(__dirname, "..", "..", "data", "db", "cross_agent_memory.sqlite");
 
 // Column names per table, parsed out of schema.sql. Deliberately derived from
 // the file rather than hand-listed, so it cannot fall behind the schema it is

@@ -217,6 +217,7 @@ class AnthropicProvider implements LLMProvider {
             outputTokens: message.usage.output_tokens,
             cachedTokens: message.usage.cache_read_input_tokens ?? 0,
             cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0,
+            batchDiscount: 0.5,
             latencyMs: Date.now() - startedAt,
             model: MODEL,
           },

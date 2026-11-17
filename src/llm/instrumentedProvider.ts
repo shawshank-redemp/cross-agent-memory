@@ -8,6 +8,28 @@ import type {
   LLMStructuredOutput,
 } from "./provider.js";
 
+export interface LLMUsageTotals {
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  cachedTokens: number;
+  cacheWriteTokens: number;
+  costUsd: number | null;
+}
+
+const usageTotals: LLMUsageTotals = {
+  calls: 0,
+  inputTokens: 0,
+  outputTokens: 0,
+  cachedTokens: 0,
+  cacheWriteTokens: 0,
+  costUsd: 0,
+};
+
+export function getLLMUsageTotals(): LLMUsageTotals {
+  return { ...usageTotals };
+}
+
 function recordCall(
   context: LLMCallContext | undefined,
   result: LLMStructuredOutput<unknown> | null,
@@ -16,6 +38,18 @@ function recordCall(
 ): void {
   if (!context) return;
   const usage = result?.usage;
+  if (usage) {
+    const costUsd = computeCost(usage, usage.model);
+    usageTotals.calls += 1;
+    usageTotals.inputTokens += usage.inputTokens;
+    usageTotals.outputTokens += usage.outputTokens;
+    usageTotals.cachedTokens += usage.cachedTokens ?? 0;
+    usageTotals.cacheWriteTokens += usage.cacheWriteTokens ?? 0;
+    usageTotals.costUsd =
+      usageTotals.costUsd === null || costUsd === null
+        ? null
+        : usageTotals.costUsd + costUsd;
+  }
   const latencyMs = usage?.latencyMs ?? elapsedMs;
   const model = usage?.model ?? "unknown";
   context.db

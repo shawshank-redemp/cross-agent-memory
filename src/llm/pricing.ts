@@ -23,7 +23,10 @@ export const MODEL_PRICES: Record<string, ModelPrice> = {
 };
 
 export function computeCost(
-  usage: Pick<LLMUsage, "inputTokens" | "outputTokens" | "cachedTokens" | "cacheWriteTokens">,
+  usage: Pick<
+    LLMUsage,
+    "inputTokens" | "outputTokens" | "cachedTokens" | "cacheWriteTokens" | "batchDiscount"
+  >,
   model: string,
 ): number | null {
   const price = MODEL_PRICES[model];
@@ -36,11 +39,12 @@ export function computeCost(
   ) {
     return null;
   }
-  return (
+  const undiscountedCost = (
     (usage.inputTokens * price.inputPerMillionTokens +
       usage.outputTokens * price.outputPerMillionTokens +
       cachedTokens * (price.cachedInputPerMillionTokens ?? 0) +
       cacheWriteTokens * (price.cacheWritePerMillionTokens ?? 0)) /
     1_000_000
   );
+  return undiscountedCost * (1 - (usage.batchDiscount ?? 0));
 }

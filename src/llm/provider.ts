@@ -2,13 +2,15 @@ import type Database from "better-sqlite3";
 import type { z } from "zod";
 import type { AgentType } from "../types/index.js";
 import { anthropicProvider } from "./anthropicProvider.js";
-import { instrumentProvider } from "./instrumentedProvider.js";
+import { getLLMUsageTotals, instrumentProvider } from "./instrumentedProvider.js";
+import { mockProvider } from "./mockProvider.js";
 
 export interface LLMUsage {
   inputTokens: number;
   outputTokens: number;
   cachedTokens?: number;
   cacheWriteTokens?: number;
+  batchDiscount?: number;
   latencyMs: number;
   model: string;
 }
@@ -58,16 +60,23 @@ let instrumentedProviderKey = "";
 
 export function getLLMProvider(): LLMProvider {
   const providerName = process.env.LLM_PROVIDER ?? "anthropic";
-  if (providerName !== "anthropic") {
-    throw new Error(`Unsupported LLM_PROVIDER "${providerName}". Supported providers: anthropic`);
+  const provider = providerName === "anthropic"
+    ? anthropicProvider
+    : providerName === "mock"
+      ? mockProvider
+      : null;
+  if (!provider) {
+    throw new Error(`Unsupported LLM_PROVIDER "${providerName}". Supported providers: anthropic, mock`);
   }
-  const key = `${anthropicProvider.name}:${anthropicProvider.model}`;
+  const key = `${provider.name}:${provider.model}`;
   if (!instrumentedProvider || instrumentedProviderKey !== key) {
-    instrumentedProvider = instrumentProvider(anthropicProvider);
+    instrumentedProvider = instrumentProvider(provider);
     instrumentedProviderKey = key;
   }
   return instrumentedProvider;
 }
+
+export { getLLMUsageTotals };
 
 export interface RawStructuredDecision<T> {
   parsed: T;

@@ -3,9 +3,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import { openDb } from "../db/connection.js";
-import { getModelInUse, getUsageTotals } from "./claudeClient.js";
+import { getLLMProvider, getLLMUsageTotals } from "../llm/provider.js";
 import type { LLMStructuredBatchRequest } from "../llm/provider.js";
-import { BATCH_DISCOUNT, costUsd, pricingFor } from "../lib/pricing.js";
 import {
   CART_ELIGIBLE_SQL,
   DISPUTE_ELIGIBLE_SQL,
@@ -759,9 +758,8 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   // `npm run analyze:compare` in a shell chain from scoring an incomplete arm.
   // Actual token spend for this process. Only counts calls THIS run made, so a
   // --resume run reports the cost of the retry, not of the original attempt.
-  const usage = getUsageTotals();
-  const model = getModelInUse();
-  const pricing = pricingFor(model);
+  const usage = getLLMUsageTotals();
+  const model = getLLMProvider().model;
   console.log(`\nAPI usage (this run): ${usage.calls} call(s), ${model}`);
   console.log(
     `  input  ${usage.inputTokens.toLocaleString()} tokens` +
@@ -771,17 +769,19 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
     `  output ${usage.outputTokens.toLocaleString()} tokens` +
       (usage.calls > 0 ? `  (${Math.round(usage.outputTokens / usage.calls)}/call)` : ""),
   );
-  if (usage.cacheReadTokens > 0 || usage.cacheCreationTokens > 0) {
-    console.log(`  cache  ${usage.cacheReadTokens.toLocaleString()} read, ${usage.cacheCreationTokens.toLocaleString()} written`);
+  if (usage.cachedTokens > 0 || usage.cacheWriteTokens > 0) {
+    console.log(
+      `  cache  ${usage.cachedTokens.toLocaleString()} read, ${usage.cacheWriteTokens.toLocaleString()} written`,
+    );
   }
-  if (pricing) {
-    const actual = costUsd(usage.inputTokens, usage.outputTokens, pricing);
-    console.log(`  cost   $${actual.toFixed(2)} at ${model} rates ($${pricing.inputPerMTok}/$${pricing.outputPerMTok} per Mtok)`);
-    console.log(`         $${(actual * BATCH_DISCOUNT).toFixed(2)} had this gone through the Batch API`);
+  if (usage.costUsd !== null) {
+    console.log(
+      `  cost   $${usage.costUsd.toFixed(4)} at ${model} rates`,
+    );
   } else {
     // Never invent a price for an unrecognised model — the token counts above
     // are the answer, and a confidently wrong dollar figure is worse than none.
-    console.log(`  cost   no published pricing for "${model}" in lib/pricing.ts — tokens reported above`);
+    console.log(`  cost   no published pricing for "${model}" in src/llm/pricing.ts — tokens reported above`);
   }
 
   console.log(
