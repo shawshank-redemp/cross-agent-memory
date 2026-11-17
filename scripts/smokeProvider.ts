@@ -58,13 +58,16 @@ function fail(message: string): never {
   process.exit(1);
 }
 
-function metricsFor(db: Database.Database, eventId: string): MetricRow[] {
+// Only rows written by THIS run (rowid above the high-water mark taken before
+// the calls). The isolated DB accumulates across runs, and an earlier run's rows
+// for the same event must not be judged as if this run wrote them.
+function metricsFor(db: Database.Database, eventId: string, sinceRowId: number): MetricRow[] {
   return db
     .prepare(
       `SELECT model, status, input_tokens, output_tokens, cached_tokens, latency_ms, cost_usd
-       FROM llm_call_metrics WHERE event_id = ? ORDER BY rowid`,
+       FROM llm_call_metrics WHERE event_id = ? AND rowid > ? ORDER BY rowid`,
     )
-    .all(eventId) as MetricRow[];
+    .all(eventId, sinceRowId) as MetricRow[];
 }
 
 function customerFor(db: Database.Database, customerId: string): Customer {
@@ -143,6 +146,7 @@ async function main(): Promise<void> {
     },
   ];
 
+  const highWaterBefore = (db.prepare("SELECT COALESCE(MAX(rowid), 0) AS m FROM llm_call_metrics").get() as { m: number }).m;
   const rowsBefore = (db.prepare("SELECT COUNT(*) AS n FROM llm_call_metrics").get() as { n: number }).n;
   let usageSummary = "";
 
@@ -155,7 +159,7 @@ async function main(): Promise<void> {
       fail(`${testCase.agent} call failed: ${err instanceof Error ? err.message : String(err)}`);
     }
     printDecision(testCase.agent, testCase.eventId, decision);
-    const rows = metricsFor(db, testCase.eventId);
+    const rows = metricsFor(db, testCase.eventId, highWaterBefore);
     if (rows.length === 0) fail(`no llm_call_metrics row for ${testCase.agent} ${testCase.eventId}`);
     for (const row of rows) {
       if (!rowIsFromProvider(row.model)) {
