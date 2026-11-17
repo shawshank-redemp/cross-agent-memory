@@ -1,14 +1,30 @@
-// One real Gemini call per agent type, against an isolated database.
+// One real LLM call per agent type, against an isolated database.
+// Usage: tsx scripts/smokeProvider.ts <gemini|ollama>
 //
 // Runs the production BASELINE decide functions (the same code path the
 // baseline arm uses) on one eligible event per agent, then checks that the
 // llm_call_metrics rows were written and that every one was served by Gemini.
 //
-// Refuses to run unless LLM_PROVIDER=gemini. The Anthropic provider is never
+// Refuses to run unless LLM_PROVIDER matches the argument. The Anthropic provider is never
 // constructed here, so no Anthropic API call can be made by this script.
 //
-// Run via `npm run smoke:gemini`, which sets CROSS_AGENT_MEMORY_DB_PATH to an
-// isolated file under data/smoke/ and LLM_PROVIDER=gemini.
+// Run via `npm run smoke:gemini` or `npm run smoke:ollama`, which set
+// CROSS_AGENT_MEMORY_DB_PATH to an isolated file under data/smoke/.
+
+const SUPPORTED = ["gemini", "ollama"] as const;
+type SmokeProvider = (typeof SUPPORTED)[number];
+const provider = process.argv[2] as SmokeProvider;
+if (!SUPPORTED.includes(provider)) {
+  console.error(`usage: smokeProvider.ts <${SUPPORTED.join("|")}>`);
+  process.exit(1);
+}
+
+// Each provider's rows must come from that provider. Gemini models are named
+// gemini-*; Ollama runs whatever OLLAMA_MODEL names, so it is checked exactly.
+function rowIsFromProvider(model: string): boolean {
+  if (provider === "gemini") return model.startsWith("gemini");
+  return model === process.env.OLLAMA_MODEL?.trim();
+}
 
 import type Database from "better-sqlite3";
 import { dbExistsAt, openDb } from "../src/db/connection.js";
@@ -38,7 +54,7 @@ interface MetricRow {
 }
 
 function fail(message: string): never {
-  console.error(`smoke:gemini FAILED: ${message}`);
+  console.error(`smoke:${provider} FAILED: ${message}`);
   process.exit(1);
 }
 
@@ -72,8 +88,11 @@ function printDecision(agent: string, eventId: string, decision: {
 }
 
 async function main(): Promise<void> {
-  if (process.env.LLM_PROVIDER !== "gemini") {
-    fail(`LLM_PROVIDER must be "gemini" (got "${process.env.LLM_PROVIDER ?? "unset"}"). Use npm run smoke:gemini.`);
+  if (process.env.LLM_PROVIDER !== provider) {
+    fail(`LLM_PROVIDER must be "${provider}" (got "${process.env.LLM_PROVIDER ?? "unset"}"). Use npm run smoke:${provider}.`);
+  }
+  if (provider === "ollama" && !process.env.OLLAMA_MODEL?.trim()) {
+    fail("OLLAMA_MODEL must be set (e.g. OLLAMA_MODEL=qwen2.5:1.5b).");
   }
   const dbPath = process.env.CROSS_AGENT_MEMORY_DB_PATH;
   if (!dbPath) fail("CROSS_AGENT_MEMORY_DB_PATH is not set; the smoke test must use an isolated database.");
@@ -83,7 +102,11 @@ async function main(): Promise<void> {
 
   const db = openDb();
   console.log(`Isolated database: ${dbPath}`);
-  console.log(`Provider: gemini, model: ${process.env.GEMINI_MODEL?.trim() || "(default in geminiProvider.ts)"}`);
+  const modelLabel =
+    provider === "gemini"
+      ? process.env.GEMINI_MODEL?.trim() || "(default in geminiProvider.ts)"
+      : process.env.OLLAMA_MODEL?.trim();
+  console.log(`Provider: ${provider}, model: ${modelLabel}`);
 
   const cart = db
     .prepare(`SELECT * FROM cart_abandonment_events WHERE ${CART_ELIGIBLE_SQL} ORDER BY created_at LIMIT 1`)
@@ -135,7 +158,9 @@ async function main(): Promise<void> {
     const rows = metricsFor(db, testCase.eventId);
     if (rows.length === 0) fail(`no llm_call_metrics row for ${testCase.agent} ${testCase.eventId}`);
     for (const row of rows) {
-      if (!row.model.startsWith("gemini")) fail(`metrics row for ${testCase.agent} has model "${row.model}", not Gemini`);
+      if (!rowIsFromProvider(row.model)) {
+        fail(`metrics row for ${testCase.agent} has model "${row.model}", not from ${provider}`);
+      }
       usageSummary +=
         `  ${testCase.agent.padEnd(22)} status=${row.status} in=${row.input_tokens} ` +
         `out=${row.output_tokens} cached=${row.cached_tokens} latency=${row.latency_ms}ms ` +
@@ -148,7 +173,7 @@ async function main(): Promise<void> {
   process.stdout.write(usageSummary);
   console.log(`\nllm_call_metrics rows written this run: ${rowsAfter - rowsBefore}`);
   db.close();
-  console.log("smoke:gemini PASSED: 3 agent decisions, metrics rows present for each, all served by Gemini.");
+  console.log(`smoke:${provider} PASSED: 3 agent decisions, metrics rows present for each, all served by ${provider}.`);
 }
 
 main().catch((err) => {
