@@ -1,8 +1,10 @@
 import { openDb } from "../db/connection.js";
+import { MODEL_PRICES } from "../llm/pricing.js";
 
 interface MetricRow {
   agent: string;
   mode: "baseline" | "memory";
+  model: string;
   input_tokens: number;
   output_tokens: number;
   cached_tokens: number;
@@ -21,7 +23,7 @@ function main(): void {
   const db = openDb();
   const rows = db
     .prepare(
-      `SELECT agent, mode, input_tokens, output_tokens, cached_tokens, cache_write_tokens,
+      `SELECT agent, mode, model, input_tokens, output_tokens, cached_tokens, cache_write_tokens,
               latency_ms, tokens_per_second, cost_usd
        FROM llm_call_metrics
        ORDER BY agent, mode`,
@@ -43,13 +45,20 @@ function main(): void {
   }
 
   console.log("LLM metrics by agent and arm");
+  if (rows.some((row) => MODEL_PRICES[row.model]?.notional)) {
+    console.log(
+      "Gemini free-tier calls cost $0; Gemini amounts below are notional paid-tier estimates " +
+        "using published Standard rates.",
+    );
+  }
   console.log(
-    "agent | arm | calls | total tokens (in/out) | avg tokens/call | cached/read-write tokens | " +
-      "cost/request USD | p50/p95 latency ms | avg output tokens/sec",
+    "agent | arm | models | calls | total tokens (in/out) | avg tokens/call | cached/read-write tokens | " +
+      "cost/request USD (notional where marked) | p50/p95 latency ms | avg output tokens/sec",
   );
   for (const [key, group] of groups) {
     const [agent, mode] = key.split("|") as [string, string];
     const calls = group.length;
+    const models = [...new Set(group.map((row) => row.model))].sort();
     const inputTokens = group.reduce((sum, row) => sum + row.input_tokens, 0);
     const outputTokens = group.reduce((sum, row) => sum + row.output_tokens, 0);
     const cachedTokens = group.reduce((sum, row) => sum + row.cached_tokens, 0);
@@ -57,13 +66,14 @@ function main(): void {
     const priced = group.filter((row) => row.cost_usd !== null);
     const costPerRequest =
       priced.length === calls
-        ? `$${(priced.reduce((sum, row) => sum + row.cost_usd!, 0) / calls).toFixed(6)}`
+        ? `${models.some((model) => MODEL_PRICES[model]?.notional) ? "notional " : ""}` +
+          `$${(priced.reduce((sum, row) => sum + row.cost_usd!, 0) / calls).toFixed(6)}`
         : `n/a (${calls - priced.length} unpriced)`;
     const latencies = group.map((row) => row.latency_ms);
     const avgTokensPerSecond =
       group.reduce((sum, row) => sum + row.tokens_per_second, 0) / calls;
     console.log(
-      `${agent} | ${mode} | ${calls} | ${inputTokens}/${outputTokens} | ` +
+      `${agent} | ${mode} | ${models.join(",")} | ${calls} | ${inputTokens}/${outputTokens} | ` +
         `${((inputTokens + outputTokens) / calls).toFixed(1)} | ${cachedTokens}/${cacheWriteTokens} | ` +
         `${costPerRequest} | ${percentile(latencies, 0.5)}/${percentile(latencies, 0.95)} | ` +
         `${avgTokensPerSecond.toFixed(1)}`,

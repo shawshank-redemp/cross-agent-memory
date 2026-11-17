@@ -55,4 +55,11 @@ test("LLM pricing accounts for cache read/write rates and batch discount", () =>
     2.5,
   );
   assert.equal(computeCost({ inputTokens: 10, outputTokens: 10 }, "unpriced-model"), null);
+  assert.equal(
+    computeCost(
+      { inputTokens: 1_000_000, outputTokens: 1_000_000, cachedTokens: 1_000_000 },
+      "gemini-3.8-flash",
+    ),
+    4.575,
+  );
 });

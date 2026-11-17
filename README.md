@@ -173,7 +173,7 @@ A single combined number would be unfalsifiable.
 
 ```bash
 npm install
-cp .env.example .env   # add ANTHROPIC_API_KEY; LLM_PROVIDER defaults to anthropic
+cp .env.example .env   # add the key for the selected provider
 ```
 
 ```bash
@@ -184,6 +184,11 @@ npm run agents:memory     # memory-informed arm decides on every event
 npm run analyze:compare   # -> data/results/comparison_report.json
 npm run analyze:metrics   # per-agent/per-arm model usage from SQLite
 ```
+
+`LLM_PROVIDER` accepts `anthropic` (default), `gemini`, or `mock`. Gemini uses
+`GEMINI_API_KEY` and defaults to `gemini-3.8-flash`, with `GEMINI_RPM=5` and
+`MAX_LLM_CALLS_PER_RUN=100`. Metrics label Gemini cost as a **notional
+paid-tier estimate**; free-tier Gemini calls are not billed.
 
 For a no-cost smoke run, `LLM_PROVIDER=mock` selects deterministic valid
 decisions and makes no Anthropic API calls. `CROSS_AGENT_MEMORY_DB_PATH` can
