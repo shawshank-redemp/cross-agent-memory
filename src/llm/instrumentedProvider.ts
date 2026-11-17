@@ -32,10 +32,14 @@ export function getLLMUsageTotals(): LLMUsageTotals {
   return { ...usageTotals };
 }
 
+// providerModel is the model the provider was configured with. It labels rows
+// for calls that failed before any usage came back (timeouts, 429/503, refused
+// connections), which otherwise had no model and were recorded as "unknown".
 function recordCall(
   context: LLMCallContext | undefined,
   usage: LLMUsage | undefined,
   elapsedMs: number,
+  providerModel: string,
   error?: unknown,
 ): void {
   if (!context) return;
@@ -52,7 +56,7 @@ function recordCall(
         : usageTotals.costUsd + costUsd;
   }
   const latencyMs = usage?.latencyMs ?? elapsedMs;
-  const model = usage?.model ?? "unknown";
+  const model = usage?.model ?? providerModel;
   context.db
     .prepare(
       `INSERT INTO llm_call_metrics
@@ -103,16 +107,16 @@ export function instrumentProvider(provider: LLMProvider): LLMProvider {
             ...context,
             onAttempt: (attempt: LLMCallAttempt) => {
               attemptRecorded = true;
-              recordCall(context, attempt.usage, attempt.latencyMs, attempt.error);
+              recordCall(context, attempt.usage, attempt.latencyMs, provider.model, attempt.error);
             },
           }
         : undefined;
       try {
         const result = await provider.generateStructured(system, userContent, schema, callContext);
-        if (!attemptRecorded) recordCall(context, result.usage, Date.now() - startedAt);
+        if (!attemptRecorded) recordCall(context, result.usage, Date.now() - startedAt, provider.model);
         return result;
       } catch (err) {
-        if (!attemptRecorded) recordCall(context, undefined, Date.now() - startedAt, err);
+        if (!attemptRecorded) recordCall(context, undefined, Date.now() - startedAt, provider.model, err);
         throw err;
       }
     },
@@ -129,14 +133,14 @@ export function instrumentProvider(provider: LLMProvider): LLMProvider {
               const elapsedMs = Date.now() - startedAt;
               for (const request of requests) {
                 const result = results.get(request.customId);
-                if (result) recordCall(request.context, result.usage, elapsedMs);
-                else recordCall(request.context, undefined, elapsedMs, "Batch did not return a result");
+                if (result) recordCall(request.context, result.usage, elapsedMs, provider.model);
+                else recordCall(request.context, undefined, elapsedMs, provider.model, "Batch did not return a result");
               }
               return results;
             } catch (err) {
               const elapsedMs = Date.now() - startedAt;
               for (const request of requests) {
-                recordCall(request.context, undefined, elapsedMs, err);
+                recordCall(request.context, undefined, elapsedMs, provider.model, err);
               }
               throw err;
             }
