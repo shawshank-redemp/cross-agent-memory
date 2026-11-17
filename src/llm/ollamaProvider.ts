@@ -14,6 +14,7 @@ const DEFAULT_BASE_URL = "http://localhost:11434";
 const DEFAULT_TIMEOUT_MS = 300_000;
 const DEFAULT_MAX_CALLS_PER_RUN = 100;
 const VALIDATION_ATTEMPTS = 2;
+const MAX_OUTPUT_TOKENS = 2048;
 
 export interface OllamaChatResponse {
   message?: { content?: string };
@@ -148,7 +149,10 @@ export class OllamaProvider implements LLMProvider {
       format: z.toJSONSchema(schema, { target: "draft-7" }),
       stream: false,
       // Deterministic decoding: the same prompt should give the same decision.
-      options: { temperature: 0 },
+      // num_predict caps output (Ollama's default is unbounded). Without it a
+      // small model can keep generating reasoning until the request times out.
+      // 2048 matches the Anthropic provider's max_tokens.
+      options: { temperature: 0, num_predict: MAX_OUTPUT_TOKENS },
     };
 
     const startedAt = Date.now();
@@ -161,9 +165,11 @@ export class OllamaProvider implements LLMProvider {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (error) {
-      // Connection refused means the server is not running: no point retrying.
+      // Not retried: a refused connection means the server is down, and a timeout
+      // means the model is too slow for OLLAMA_TIMEOUT_MS. Retrying either wastes time.
       throw new LLMNonRetryableError(
-        `Could not reach Ollama at ${this.baseUrl} (is \`ollama serve\` running?): ${errorMessage(error)}`,
+        `Ollama request to ${this.baseUrl} failed (server down, or no response within ${this.timeoutMs} ms; ` +
+          `raise OLLAMA_TIMEOUT_MS or check \`ollama serve\`): ${errorMessage(error)}`,
       );
     }
     const latencyMs = Date.now() - startedAt;

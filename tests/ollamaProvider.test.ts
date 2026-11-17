@@ -61,12 +61,13 @@ test("requests go to /api/chat with a JSON Schema in format and deterministic op
     model: string;
     stream: boolean;
     format: { type: string; properties: Record<string, unknown> };
-    options: { temperature: number };
+    options: { temperature: number; num_predict: number };
     messages: Array<{ role: string; content: string }>;
   };
   assert.equal(body.model, "qwen-test");
   assert.equal(body.stream, false);
   assert.equal(body.options.temperature, 0);
+  assert.equal(body.options.num_predict, 2048);
   assert.equal(body.format.type, "object");
   assert.ok("action" in body.format.properties, "format should carry the decision schema");
   assert.deepEqual(body.messages.map((m) => m.role), ["system", "user"]);
