@@ -5,6 +5,7 @@ import type Database from "better-sqlite3";
 import { openDb } from "../db/connection.js";
 import { getLLMProvider, getLLMUsageTotals } from "../llm/provider.js";
 import type { LLMStructuredBatchRequest } from "../llm/provider.js";
+import { LLMResponseValidationError } from "../llm/errors.js";
 import {
   CART_ELIGIBLE_SQL,
   DISPUTE_ELIGIBLE_SQL,
@@ -32,6 +33,7 @@ import type {
   DisputeEvent,
   SubscriptionFailureEvent,
 } from "../types/index.js";
+import { createLLMValidationHandoff } from "./llmValidationHandoff.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const RESULTS_DIR = join(__dirname, "..", "..", "data", "results");
@@ -492,6 +494,7 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
   let baselineMemoryLeaks = 0;
   let unsupportedCitations = 0;
   let guardrailFailures = 0;
+  let llmValidationHandoffs = 0;
 
   // Every decision is appended to a JSONL sidecar the moment it is made, so a
   // hard crash (OOM, SIGKILL, a throw outside the per-event catch) still leaves
@@ -510,16 +513,53 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
       try {
         await decideOne(item, customer);
       } catch (err) {
-        // ONE bad event must not end the run. decide() already retried once
-        // internally, so reaching here means the event genuinely failed.
-        const message = err instanceof Error ? err.message : String(err);
-        failures.push({
-          event_id: item.event_id,
-          agent: item.agent,
-          customer_id: customer.customer_id,
-          error: message,
-        });
-        console.error(`  !! FAILED ${item.agent} ${item.event_id} (${customer.customer_id}): ${message}`);
+        if (err instanceof LLMResponseValidationError) {
+          const decision = createLLMValidationHandoff(item.agent, err);
+          const record: DecisionRecord = {
+            ...decision,
+            agent: item.agent,
+            customer_id: customer.customer_id,
+            event_id: item.event_id,
+          };
+          appendAuditLog(db, {
+            customer_id: customer.customer_id,
+            agent: item.agent,
+            mode: params.mode,
+            entry_type: "decision",
+            event_id: item.event_id,
+            action: decision.action,
+            reasoning: decision.reasoning,
+            escalate_to_human: true,
+            policyVersion: POLICY_FINGERPRINT,
+            policyOverride: decision.policy_override ?? null,
+            metadata: {
+              discount_amount: null,
+              memory_factors_used: [],
+              escalation_reason: decision.escalation_reason,
+              unsupported_factor_citations: [],
+            },
+            timestamp: item.timestamp,
+          });
+          decisions.push(record);
+          appendPartial(record);
+          llmValidationHandoffs += 1;
+          console.error(
+            `  !! ${item.agent} ${item.event_id} routed to human review after structured output validation failed.`,
+          );
+        } else {
+          // ONE bad event must not end the run. decide() already retried once
+          // internally, so reaching here means the event genuinely failed.
+          const message = err instanceof Error ? err.message : String(err);
+          failures.push({
+            event_id: item.event_id,
+            agent: item.agent,
+            customer_id: customer.customer_id,
+            error: message,
+          });
+          console.error(
+            `  !! FAILED ${item.agent} ${item.event_id} (${customer.customer_id}): ${message}`,
+          );
+        }
       }
       completed += 1;
       if (completed % 25 === 0 || completed === toProcess.length) {
@@ -702,6 +742,7 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
         unsupportedFactorCitations: unsupportedCitations,
         baselineMemoryLeaks,
         guardrailFailures,
+        llmValidationHandoffs,
         // The run breakers. Reported unconditionally, not only when they trip:
         // "the breaker was never approached" and "there is no breaker" have to
         // look different in a summary, the same reason the guardrail trace row
@@ -750,6 +791,13 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
     console.warn(
       `\n!! ${guardrailFailures} decision(s) failed closed: the guardrail could not be evaluated, so ` +
         `no spend was committed and each was escalated for human review.`,
+    );
+  }
+
+  if (llmValidationHandoffs > 0) {
+    console.warn(
+      `\n!! ${llmValidationHandoffs} structured LLM response(s) failed validation and were routed ` +
+        `to human review with no committed spend.`,
     );
   }
 

@@ -2,7 +2,7 @@
   "name": "cross-agent-memory",
   "version": "0.1.0",
   "private": true,
-  "description": "Shared customer memory layer for Razorpay point-agents (Cart Abandonment, Subscription Recovery, Dispute Responder) \u2014 Razorpay AI Buildathon Track 03.",
+  "description": "Shared customer memory layer for Razorpay point-agents (Cart Abandonment, Subscription Recovery, Dispute Responder) — Razorpay AI Buildathon Track 03.",
   "type": "module",
   "scripts": {
     "generate:data": "tsx src/data/index.ts",
@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",
+    "@google/genai": "^3.4.0",
     "better-sqlite3": "^13.0.3",
     "cors": "^2.8.6",
     "express": "^5.2.1",

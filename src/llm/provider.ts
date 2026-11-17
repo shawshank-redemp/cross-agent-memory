@@ -2,6 +2,8 @@ import type Database from "better-sqlite3";
 import type { z } from "zod";
 import type { AgentType } from "../types/index.js";
 import { anthropicProvider } from "./anthropicProvider.js";
+import { geminiProvider } from "./geminiProvider.js";
+import { LLMNonRetryableError } from "./errors.js";
 import { getLLMUsageTotals, instrumentProvider } from "./instrumentedProvider.js";
 import { mockProvider } from "./mockProvider.js";
 
@@ -13,6 +15,12 @@ export interface LLMUsage {
   batchDiscount?: number;
   latencyMs: number;
   model: string;
+}
+
+export interface LLMCallAttempt {
+  usage?: LLMUsage;
+  latencyMs: number;
+  error?: unknown;
 }
 
 export interface LLMStructuredOutput<T> {
@@ -30,6 +38,7 @@ export interface LLMCallContext {
   stepType: string;
   traceId?: string;
   parentSpanId?: string | null;
+  onAttempt?: (attempt: LLMCallAttempt) => void;
 }
 
 export interface LLMStructuredBatchRequest {
@@ -62,11 +71,15 @@ export function getLLMProvider(): LLMProvider {
   const providerName = process.env.LLM_PROVIDER ?? "anthropic";
   const provider = providerName === "anthropic"
     ? anthropicProvider
+    : providerName === "gemini"
+      ? geminiProvider
     : providerName === "mock"
       ? mockProvider
       : null;
   if (!provider) {
-    throw new Error(`Unsupported LLM_PROVIDER "${providerName}". Supported providers: anthropic, mock`);
+    throw new Error(
+      `Unsupported LLM_PROVIDER "${providerName}". Supported providers: anthropic, gemini, mock`,
+    );
   }
   const key = `${provider.name}:${provider.model}`;
   if (!instrumentedProvider || instrumentedProviderKey !== key) {
@@ -92,6 +105,7 @@ export async function decide<Schema extends z.ZodType>(
   try {
     return (await getLLMProvider().generateStructured(system, userContent, schema, context)).parsed;
   } catch (err) {
+    if (err instanceof LLMNonRetryableError) throw err;
     console.warn(`decide() failed, retrying once: ${err instanceof Error ? err.message : String(err)}`);
     return (await getLLMProvider().generateStructured(system, userContent, schema, context)).parsed;
   }
@@ -107,6 +121,7 @@ export async function decideRaw<Schema extends z.ZodType>(
     const result = await getLLMProvider().generateStructured(system, userContent, schema, context);
     return { parsed: result.parsed, rawText: result.rawText ?? null };
   } catch (err) {
+    if (err instanceof LLMNonRetryableError) throw err;
     console.warn(`decideRaw() failed, retrying once: ${err instanceof Error ? err.message : String(err)}`);
     const result = await getLLMProvider().generateStructured(system, userContent, schema, context);
     return { parsed: result.parsed, rawText: result.rawText ?? null };

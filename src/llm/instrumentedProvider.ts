@@ -2,10 +2,12 @@ import { randomUUID } from "node:crypto";
 import type { z } from "zod";
 import { computeCost } from "./pricing.js";
 import type {
+  LLMCallAttempt,
   LLMCallContext,
   LLMProvider,
   LLMStructuredBatchRequest,
   LLMStructuredOutput,
+  LLMUsage,
 } from "./provider.js";
 
 export interface LLMUsageTotals {
@@ -32,15 +34,14 @@ export function getLLMUsageTotals(): LLMUsageTotals {
 
 function recordCall(
   context: LLMCallContext | undefined,
-  result: LLMStructuredOutput<unknown> | null,
+  usage: LLMUsage | undefined,
   elapsedMs: number,
   error?: unknown,
 ): void {
   if (!context) return;
-  const usage = result?.usage;
+  usageTotals.calls += 1;
   if (usage) {
     const costUsd = computeCost(usage, usage.model);
-    usageTotals.calls += 1;
     usageTotals.inputTokens += usage.inputTokens;
     usageTotals.outputTokens += usage.outputTokens;
     usageTotals.cachedTokens += usage.cachedTokens ?? 0;
@@ -96,12 +97,22 @@ export function instrumentProvider(provider: LLMProvider): LLMProvider {
       context?: LLMCallContext,
     ): Promise<LLMStructuredOutput<z.infer<Schema>>> {
       const startedAt = Date.now();
+      let attemptRecorded = false;
+      const callContext = context
+        ? {
+            ...context,
+            onAttempt: (attempt: LLMCallAttempt) => {
+              attemptRecorded = true;
+              recordCall(context, attempt.usage, attempt.latencyMs, attempt.error);
+            },
+          }
+        : undefined;
       try {
-        const result = await provider.generateStructured(system, userContent, schema, context);
-        recordCall(context, result, Date.now() - startedAt);
+        const result = await provider.generateStructured(system, userContent, schema, callContext);
+        if (!attemptRecorded) recordCall(context, result.usage, Date.now() - startedAt);
         return result;
       } catch (err) {
-        recordCall(context, null, Date.now() - startedAt, err);
+        if (!attemptRecorded) recordCall(context, undefined, Date.now() - startedAt, err);
         throw err;
       }
     },
@@ -118,13 +129,15 @@ export function instrumentProvider(provider: LLMProvider): LLMProvider {
               const elapsedMs = Date.now() - startedAt;
               for (const request of requests) {
                 const result = results.get(request.customId);
-                if (result) recordCall(request.context, result, elapsedMs);
-                else recordCall(request.context, null, elapsedMs, "Batch did not return a result");
+                if (result) recordCall(request.context, result.usage, elapsedMs);
+                else recordCall(request.context, undefined, elapsedMs, "Batch did not return a result");
               }
               return results;
             } catch (err) {
               const elapsedMs = Date.now() - startedAt;
-              for (const request of requests) recordCall(request.context, null, elapsedMs, err);
+              for (const request of requests) {
+                recordCall(request.context, undefined, elapsedMs, err);
+              }
               throw err;
             }
           },
