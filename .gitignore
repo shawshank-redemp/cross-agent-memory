@@ -13,3 +13,6 @@ dist/
 
 # TypeScript incremental build cache (tsc -b)
 *.tsbuildinfo
+
+# Isolated smoke-test databases (smoke:gemini); disposable.
+data/smoke/
