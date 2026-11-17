@@ -437,6 +437,14 @@ export async function decideWithMemory<Schema extends z.ZodType<MemoryDecisionSh
     `${params.systemPrompt}\n${glossaryBlock}`,
     request.content,
     params.schema,
+    {
+      db: params.db,
+      customerId: params.customer.customer_id,
+      eventId: params.eventId,
+      agent: params.agent,
+      mode: "memory",
+      stepType: "decision",
+    },
   );
   stepOrder += 1;
   emitTrace(

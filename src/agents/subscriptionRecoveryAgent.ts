@@ -64,7 +64,19 @@ export async function decideSubscriptionRecoveryBaseline(
   // not return falls through to a live call. See baselinePrefetch.ts.
   const raw =
     takePrefetchedBaseline<z.infer<typeof SubscriptionRecoveryDecisionSchema>>(event.payment_id) ??
-    (await decide(SUBSCRIPTION_BASELINE_SYSTEM_PROMPT, baselineUserContent(customer, event), SubscriptionRecoveryDecisionSchema));
+    (await decide(
+      SUBSCRIPTION_BASELINE_SYSTEM_PROMPT,
+      baselineUserContent(customer, event),
+      SubscriptionRecoveryDecisionSchema,
+      {
+        db,
+        customerId: customer.customer_id,
+        eventId: event.payment_id,
+        agent: "subscription_recovery",
+        mode: "baseline",
+        stepType: "decision",
+      },
+    ));
   // The UNIVERSAL policy layer runs on the baseline arm too. Without it the
   // control would be the only path where model output reaches the ledger
   // unchecked, which is both a safety gap and a confound — see

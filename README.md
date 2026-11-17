@@ -182,6 +182,7 @@ npm run load:data         # load into SQLite -> data/db/
 npm run agents:baseline   # no-memory arm decides on every event
 npm run agents:memory     # memory-informed arm decides on every event
 npm run analyze:compare   # -> data/results/comparison_report.json
+npm run analyze:metrics   # per-agent/per-arm model usage from SQLite
 ```
 
 The agent steps call the Claude API once per **recovery-eligible** event —

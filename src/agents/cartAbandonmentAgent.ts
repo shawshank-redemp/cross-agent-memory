@@ -66,6 +66,14 @@ export async function decideCartAbandonmentBaseline(
       CART_BASELINE_SYSTEM_PROMPT,
       baselineUserContent(customer, event),
       CartAbandonmentDecisionSchema,
+      {
+        db,
+        customerId: customer.customer_id,
+        eventId: event.order_id,
+        agent: "cart_abandonment",
+        mode: "baseline",
+        stepType: "decision",
+      },
     ));
   // The UNIVERSAL policy layer runs on the baseline arm too. Without it the
   // control would be the only path where model output reaches the ledger

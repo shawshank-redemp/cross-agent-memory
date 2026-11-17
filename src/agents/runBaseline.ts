@@ -5,7 +5,7 @@ import {
   decideSubscriptionRecoveryBaseline,
 } from "./subscriptionRecoveryAgent.js";
 import { baselineUserContent, prefetchedRemaining, setPrefetchedBaseline } from "./baselinePrefetch.js";
-import { decideBatch, type BatchRequest } from "./claudeClient.js";
+import { getLLMProvider, type LLMStructuredBatchRequest } from "../llm/provider.js";
 import { CartAbandonmentDecisionSchema, DisputeResponderDecisionSchema, SubscriptionRecoveryDecisionSchema } from "./schema.js";
 import { runAgentBatch } from "./runner.js";
 
@@ -18,7 +18,8 @@ const SYSTEM_PROMPT = {
 // --no-batch falls back to live calls, at full price. Kept because the Batch API
 // carries no latency guarantee — most batches finish inside an hour, the cap is
 // 24 — and a run that has to finish now should be able to say so.
-const useBatch = !process.argv.includes("--no-batch");
+const provider = getLLMProvider();
+const useBatch = Boolean(provider.generateStructuredBatch) && !process.argv.includes("--no-batch");
 
 runAgentBatch({
   mode: "baseline",
@@ -41,8 +42,8 @@ runAgentBatch({
   // Three schemas, one batch: each request carries its own agent's system prompt,
   // and the per-agent schema is applied when its result is parsed.
   prepare: useBatch
-    ? async (toProcess, customerById) => {
-        const requests: BatchRequest[] = [];
+    ? async (toProcess, customerById, db) => {
+        const requests: LLMStructuredBatchRequest[] = [];
         for (const item of toProcess) {
           const customer = customerById.get(item.event.customer_id);
           if (!customer) continue;
@@ -50,6 +51,14 @@ runAgentBatch({
             customId: item.event_id,
             system: SYSTEM_PROMPT[item.agent],
             userContent: baselineUserContent(customer, item.event),
+            context: {
+              db,
+              customerId: customer.customer_id,
+              eventId: item.event_id,
+              agent: item.agent,
+              mode: "baseline",
+              stepType: "decision",
+            },
           });
         }
         console.log(
@@ -67,10 +76,10 @@ runAgentBatch({
         ] as const) {
           const subset = requests.filter((r) => byAgent.get(r.customId) === agent);
           if (subset.length === 0) continue;
-          const got = await decideBatch(subset, schema, (done, total) =>
+          const got = await provider.generateStructuredBatch!(subset, schema, (done, total) =>
             console.log(`  ${agent}: ${done}/${total} resolved`),
           );
-          for (const [k, v] of got) resolved.set(k, v);
+          for (const [k, v] of got) resolved.set(k, v.parsed);
         }
         setPrefetchedBaseline(resolved);
         console.log(

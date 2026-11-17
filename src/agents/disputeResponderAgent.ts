@@ -64,7 +64,19 @@ export async function decideDisputeResponderBaseline(
   // not return falls through to a live call. See baselinePrefetch.ts.
   const raw =
     takePrefetchedBaseline<z.infer<typeof DisputeResponderDecisionSchema>>(event.dispute_id) ??
-    (await decide(DISPUTE_BASELINE_SYSTEM_PROMPT, baselineUserContent(customer, event), DisputeResponderDecisionSchema));
+    (await decide(
+      DISPUTE_BASELINE_SYSTEM_PROMPT,
+      baselineUserContent(customer, event),
+      DisputeResponderDecisionSchema,
+      {
+        db,
+        customerId: customer.customer_id,
+        eventId: event.dispute_id,
+        agent: "dispute_responder",
+        mode: "baseline",
+        stepType: "decision",
+      },
+    ));
   // The UNIVERSAL policy layer runs on the baseline arm too. Without it the
   // control would be the only path where model output reaches the ledger
   // unchecked, which is both a safety gap and a confound — see

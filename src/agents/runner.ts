@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import type Database from "better-sqlite3";
 import { openDb } from "../db/connection.js";
 import { getModelInUse, getUsageTotals } from "./claudeClient.js";
+import type { LLMStructuredBatchRequest } from "../llm/provider.js";
 import { BATCH_DISCOUNT, costUsd, pricingFor } from "../lib/pricing.js";
 import {
   CART_ELIGIBLE_SQL,
@@ -350,7 +351,11 @@ export interface RunAgentBatchParams {
   // Deliberately a hook rather than a second runner: the loop below owns resume,
   // partial-file writes, per-event failure handling, enforcement ordering and the
   // run breakers, and none of that should exist twice.
-  prepare?: (toProcess: TaggedEvent[], customerById: Map<string, Customer>) => Promise<void>;
+  prepare?: (
+    toProcess: TaggedEvent[],
+    customerById: Map<string, Customer>,
+    db: Database.Database,
+  ) => Promise<void>;
   mode: "baseline" | "memory";
   outputFile: string;
   decide: (item: TaggedEvent, customer: Customer, db: Database.Database) => Promise<DecisionLike>;
@@ -448,7 +453,7 @@ export async function runAgentBatch(params: RunAgentBatchParams): Promise<void> 
     rmSync(partialPath);
   }
 
-  if (params.prepare) await params.prepare(toProcess, customerById);
+  if (params.prepare) await params.prepare(toProcess, customerById, db);
 
   const customerCount = new Set(toProcess.map((item) => item.event.customer_id)).size;
   console.log(

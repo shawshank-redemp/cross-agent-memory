@@ -1,7 +1,11 @@
 import Anthropic, { AnthropicError } from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { z } from "zod";
-import type { LLMProvider, LLMStructuredOutput } from "./provider.js";
+import type {
+  LLMProvider,
+  LLMStructuredBatchRequest,
+  LLMStructuredOutput,
+} from "./provider.js";
 
 // Opus 5 is the default per Anthropic's current guidance; override with
 // CLAUDE_MODEL only if you deliberately want to trade quality for cost on a
@@ -20,6 +24,7 @@ export interface RawDecision<T> {
     inputTokens: number;
     outputTokens: number;
     cachedTokens: number;
+    cacheWriteTokens: number;
     latencyMs: number;
     model: string;
   };
@@ -138,9 +143,8 @@ async function decideOnceWithRaw<Schema extends z.ZodType>(
     usage: {
       inputTokens: response.usage.input_tokens,
       outputTokens: response.usage.output_tokens,
-      cachedTokens:
-        (response.usage.cache_read_input_tokens ?? 0) +
-        (response.usage.cache_creation_input_tokens ?? 0),
+      cachedTokens: response.usage.cache_read_input_tokens ?? 0,
+      cacheWriteTokens: response.usage.cache_creation_input_tokens ?? 0,
       latencyMs: Date.now() - startedAt,
       model: MODEL,
     },
@@ -157,6 +161,77 @@ class AnthropicProvider implements LLMProvider {
     schema: Schema,
   ): Promise<LLMStructuredOutput<z.infer<Schema>>> {
     return decideOnceWithRaw(system, userContent, schema);
+  }
+
+  async generateStructuredBatch<Schema extends z.ZodType>(
+    requests: LLMStructuredBatchRequest[],
+    schema: Schema,
+    onProgress?: (done: number, total: number) => void,
+  ): Promise<Map<string, LLMStructuredOutput<z.infer<Schema>>>> {
+    const out = new Map<string, LLMStructuredOutput<z.infer<Schema>>>();
+    if (requests.length === 0) return out;
+
+    const startedAt = Date.now();
+    const client = getClient();
+    const format = zodOutputFormat(schema);
+    const batch = await client.messages.batches.create({
+      requests: requests.map((r) => ({
+        custom_id: r.customId,
+        params: {
+          model: MODEL,
+          max_tokens: 2048,
+          system: [{ type: "text" as const, text: r.system, cache_control: { type: "ephemeral" as const } }],
+          messages: [{ role: "user" as const, content: r.userContent }],
+          output_config: { format },
+        },
+      })),
+    });
+
+    for (;;) {
+      const status = await client.messages.batches.retrieve(batch.id);
+      if (status.processing_status === "ended") break;
+      onProgress?.(status.request_counts.succeeded + status.request_counts.errored, requests.length);
+      await new Promise((resolve) => setTimeout(resolve, 20_000));
+    }
+
+    const failures: string[] = [];
+    for await (const result of await client.messages.batches.results(batch.id)) {
+      if (result.result.type !== "succeeded") {
+        failures.push(`${result.custom_id}: ${result.result.type}`);
+        continue;
+      }
+      const message = result.result.message;
+      recordUsage(message.usage);
+      const text = message.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text;
+      if (!text) {
+        failures.push(`${result.custom_id}: no text block`);
+        continue;
+      }
+      try {
+        const parsed = schema.parse(JSON.parse(text)) as z.infer<Schema>;
+        out.set(result.custom_id, {
+          parsed,
+          rawText: text,
+          usage: {
+            inputTokens: message.usage.input_tokens,
+            outputTokens: message.usage.output_tokens,
+            cachedTokens: message.usage.cache_read_input_tokens ?? 0,
+            cacheWriteTokens: message.usage.cache_creation_input_tokens ?? 0,
+            latencyMs: Date.now() - startedAt,
+            model: MODEL,
+          },
+        });
+      } catch (err) {
+        failures.push(`${result.custom_id}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+
+    if (failures.length > 0) {
+      console.error(`  !! ${failures.length} batch request(s) did not yield a decision:`);
+      for (const failure of failures.slice(0, 10)) console.error(`     ${failure}`);
+      if (failures.length > 10) console.error(`     ... and ${failures.length - 10} more`);
+    }
+    return out;
   }
 }
 
@@ -227,72 +302,13 @@ export { MODEL };
 // Enforcement is unaffected either way: enforceUniversalPolicy runs locally on
 // each response as the runner walks events in order, so spend bounds, the run
 // breaker and the trace rows all behave exactly as they do on the live path.
-export interface BatchRequest {
-  customId: string;
-  system: string;
-  userContent: string;
-}
+export type BatchRequest = LLMStructuredBatchRequest;
 
 export async function decideBatch<Schema extends z.ZodType>(
   requests: BatchRequest[],
   schema: Schema,
   onProgress?: (done: number, total: number) => void,
 ): Promise<Map<string, z.infer<Schema>>> {
-  const out = new Map<string, z.infer<Schema>>();
-  if (requests.length === 0) return out;
-
-  const client = getClient();
-  const format = zodOutputFormat(schema);
-  const batch = await client.messages.batches.create({
-    requests: requests.map((r) => ({
-      custom_id: r.customId,
-      params: {
-        model: MODEL,
-        max_tokens: 2048,
-        // Same cache_control as the live path: one system prompt per agent,
-        // reused across every request in the batch.
-        system: [{ type: "text" as const, text: r.system, cache_control: { type: "ephemeral" as const } }],
-        messages: [{ role: "user" as const, content: r.userContent }],
-        output_config: { format },
-      },
-    })),
-  });
-
-  // Most batches finish well inside an hour; the cap is 24. Polling every 20s
-  // rather than every 60 so a small batch is not left sitting once it is done.
-  for (;;) {
-    const status = await client.messages.batches.retrieve(batch.id);
-    if (status.processing_status === "ended") break;
-    onProgress?.(status.request_counts.succeeded + status.request_counts.errored, requests.length);
-    await new Promise((r) => setTimeout(r, 20_000));
-  }
-
-  const failures: string[] = [];
-  for await (const result of await client.messages.batches.results(batch.id)) {
-    if (result.result.type !== "succeeded") {
-      failures.push(`${result.custom_id}: ${result.result.type}`);
-      continue;
-    }
-    const message = result.result.message;
-    recordUsage(message.usage);
-    const text = message.content.find((b): b is Anthropic.TextBlock => b.type === "text")?.text;
-    if (!text) {
-      failures.push(`${result.custom_id}: no text block`);
-      continue;
-    }
-    // The batch surface returns the raw message, so the structured output is
-    // parsed and validated here rather than by messages.parse().
-    try {
-      out.set(result.custom_id, schema.parse(JSON.parse(text)) as z.infer<Schema>);
-    } catch (err) {
-      failures.push(`${result.custom_id}: ${err instanceof Error ? err.message : String(err)}`);
-    }
-  }
-
-  if (failures.length > 0) {
-    console.error(`  !! ${failures.length} batch request(s) did not yield a decision:`);
-    for (const f of failures.slice(0, 10)) console.error(`     ${f}`);
-    if (failures.length > 10) console.error(`     ... and ${failures.length - 10} more`);
-  }
-  return out;
+  const results = await anthropicProvider.generateStructuredBatch(requests, schema, onProgress);
+  return new Map([...results].map(([id, result]) => [id, result.parsed]));
 }

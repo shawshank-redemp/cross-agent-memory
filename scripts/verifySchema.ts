@@ -31,6 +31,32 @@ console.log("  -- batch invariants --");
 
 const db = openDb();
 
+// --- 0.1 LLM call metrics schema ------------------------------------------
+const metricColumns = new Set(
+  (db.prepare("PRAGMA table_info(llm_call_metrics)").all() as { name: string }[]).map((row) => row.name),
+);
+const expectedMetricColumns = [
+  "trace_id",
+  "span_id",
+  "parent_span_id",
+  "agent",
+  "mode",
+  "step_type",
+  "model",
+  "input_tokens",
+  "output_tokens",
+  "cached_tokens",
+  "cache_write_tokens",
+  "latency_ms",
+  "tokens_per_second",
+  "cost_usd",
+];
+check(
+  "LLM call metrics table has trace, token, latency and cost columns",
+  expectedMetricColumns.every((column) => metricColumns.has(column)),
+  `missing ${expectedMetricColumns.filter((column) => !metricColumns.has(column)).join(", ")}`,
+);
+
 // --- 1. resolved_at invariants -------------------------------------------
 const unresolvedWithDate = db
   .prepare(

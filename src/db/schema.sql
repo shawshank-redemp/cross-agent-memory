@@ -231,6 +231,35 @@ CREATE TABLE IF NOT EXISTS agent_trace_events (
 );
 CREATE INDEX IF NOT EXISTS idx_trace_events_lookup ON agent_trace_events(customer_id, event_id, mode);
 
+-- Per-model-call observability. Trace/span ids connect a request to its LLM
+-- operation; token, latency, throughput and price values are stored per call
+-- so reports can group by agent and comparison arm without parsing trace text.
+CREATE TABLE IF NOT EXISTS llm_call_metrics (
+  trace_id TEXT NOT NULL,
+  span_id TEXT PRIMARY KEY,
+  parent_span_id TEXT,
+  customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+  event_id TEXT NOT NULL,
+  agent TEXT NOT NULL,
+  mode TEXT NOT NULL CHECK (mode IN ('baseline', 'memory')),
+  step_type TEXT NOT NULL,
+  model TEXT NOT NULL,
+  input_tokens INTEGER NOT NULL,
+  output_tokens INTEGER NOT NULL,
+  cached_tokens INTEGER NOT NULL,
+  cache_write_tokens INTEGER NOT NULL,
+  latency_ms INTEGER NOT NULL,
+  tokens_per_second REAL NOT NULL,
+  cost_usd REAL,
+  status TEXT NOT NULL CHECK (status IN ('success', 'error')),
+  error TEXT,
+  recorded_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_llm_call_metrics_agent_mode
+  ON llm_call_metrics(agent, mode);
+CREATE INDEX IF NOT EXISTS idx_llm_call_metrics_event
+  ON llm_call_metrics(event_id, mode);
+
 -- One row per enrolled customer-event: what the coin was choosing between,
 -- what it chose, and what the agent would have chosen if asked. The witness
 -- columns (agent_preferred_*) are the point of the table as much as the
