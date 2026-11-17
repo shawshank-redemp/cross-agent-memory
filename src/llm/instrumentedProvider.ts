@@ -41,7 +41,7 @@ function recordCall(
   if (!context) return;
   usageTotals.calls += 1;
   if (usage) {
-    const costUsd = computeCost(usage, usage.model);
+    const costUsd = computeCost(usage, usage.pricingModel ?? usage.model);
     usageTotals.inputTokens += usage.inputTokens;
     usageTotals.outputTokens += usage.outputTokens;
     usageTotals.cachedTokens += usage.cachedTokens ?? 0;
@@ -79,7 +79,7 @@ function recordCall(
       cache_write_tokens: usage?.cacheWriteTokens ?? 0,
       latency_ms: latencyMs,
       tokens_per_second: latencyMs > 0 ? ((usage?.outputTokens ?? 0) * 1000) / latencyMs : 0,
-      cost_usd: usage ? computeCost(usage, model) : null,
+      cost_usd: usage ? computeCost(usage, usage.pricingModel ?? model) : null,
       status: error === undefined ? "success" : "error",
       error: error === undefined ? null : error instanceof Error ? error.message : String(error),
       recorded_at: new Date().toISOString(),

@@ -3,6 +3,7 @@ import type { z } from "zod";
 import type { AgentType } from "../types/index.js";
 import { anthropicProvider } from "./anthropicProvider.js";
 import { geminiProvider } from "./geminiProvider.js";
+import { createOllamaProvider } from "./ollamaProvider.js";
 import { LLMNonRetryableError } from "./errors.js";
 import { getLLMUsageTotals, instrumentProvider } from "./instrumentedProvider.js";
 import { mockProvider } from "./mockProvider.js";
@@ -15,6 +16,10 @@ export interface LLMUsage {
   batchDiscount?: number;
   latencyMs: number;
   model: string;
+  // Paid-tier model whose rates price this call for NOTIONAL cost. Lets a
+  // free local model (Ollama) be priced against a named row in pricing.ts
+  // while the metrics row still records the model that actually ran.
+  pricingModel?: string;
 }
 
 export interface LLMCallAttempt {
@@ -73,12 +78,14 @@ export function getLLMProvider(): LLMProvider {
     ? anthropicProvider
     : providerName === "gemini"
       ? geminiProvider
+    : providerName === "ollama"
+      ? createOllamaProvider()
     : providerName === "mock"
       ? mockProvider
       : null;
   if (!provider) {
     throw new Error(
-      `Unsupported LLM_PROVIDER "${providerName}". Supported providers: anthropic, gemini, mock`,
+      `Unsupported LLM_PROVIDER "${providerName}". Supported providers: anthropic, gemini, ollama, mock`,
     );
   }
   const key = `${provider.name}:${provider.model}`;
