@@ -268,10 +268,7 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 export interface PaymentLinkRequest {
-  customerId: string;
   eventId: string;
-  amountPaise: number;
-  description?: string;
 }
 
 export interface PaymentLinkResult {
@@ -305,7 +302,8 @@ export const api = {
   customers: () => getJson<CustomerSummary[]>("/api/customers"),
   customerDetail: (id: string) => getJson<CustomerDetail>(`/api/customers/${id}`),
   comparison: () => getJson<ComparisonReport>("/api/comparison"),
-  createPaymentLink: (body: PaymentLinkRequest) => postJson<PaymentLinkResult>("/api/payment-links", body),
+  createPaymentLink: (eventId: string) =>
+    postJson<PaymentLinkResult>("/api/payment-links", { eventId }),
   trace: (id: string, eventId?: string) =>
     getJson<ReplayTrace>(
       `/api/customers/${id}/trace${eventId ? `?eventId=${encodeURIComponent(eventId)}` : ""}`,

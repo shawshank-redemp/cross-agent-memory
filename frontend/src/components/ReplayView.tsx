@@ -1477,6 +1477,10 @@ function ExecutionStep({
         </p>
       )}
 
+      {event.domain === "cart_abandonment" &&
+        event.detail.status !== "paid" &&
+        ["send_discount", "send_reminder"].includes(decision.action) &&
+        !decision.escalate_to_human && (
       <div className="rp-paylink-card">
         <div className="rp-paylink-top">
           <div>
@@ -1494,16 +1498,14 @@ function ExecutionStep({
           </div>
         </div>
         <div className="rp-paylink-actions">
-          {/* The existing manual, demo-only button — a real Razorpay test-mode
-              call, fired by a click and never automatically. */}
+          {/* Only unpaid cart-abandonment orders qualify; subscriptions use
+              their retry flow and disputes are not customer payment requests. */}
           <SendPaymentLinkButton
-            customerId={trace.customer.customer_id}
             eventId={event.event_id}
-            amountPaise={payable ?? 0}
-            description={`Cart recovery — ${event.event_id}`}
           />
         </div>
       </div>
+      )}
 
       {/* The audit row, read as English rather than as three columns.
           `escalation_reason: null` in particular was actively misleading — it

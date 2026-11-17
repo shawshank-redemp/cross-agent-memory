@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { api, formatPaise, type PaymentLinkResult } from "../api";
+import { api, type PaymentLinkResult } from "../api";
 
 // MANUAL, DEMO-ONLY. Creates a real test-mode Razorpay payment link for one
 // event, so a demo can show the decision producing a genuine artifact rather
@@ -11,15 +11,9 @@ import { api, formatPaise, type PaymentLinkResult } from "../api";
 // src/outcomes/ remains the single source of truth for what a decision was
 // worth. Nothing here feeds it.
 export function SendPaymentLinkButton({
-  customerId,
   eventId,
-  amountPaise,
-  description,
 }: {
-  customerId: string;
   eventId: string;
-  amountPaise: number;
-  description?: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PaymentLinkResult | null>(null);
@@ -30,7 +24,7 @@ export function SendPaymentLinkButton({
     setError(null);
     setResult(null);
     try {
-      setResult(await api.createPaymentLink({ customerId, eventId, amountPaise, description }));
+      setResult(await api.createPaymentLink(eventId));
     } catch (err) {
       // Shown inline rather than thrown or alert()ed — a failed demo click
       // should read as a message on the page, not as a broken app.
@@ -40,20 +34,12 @@ export function SendPaymentLinkButton({
     }
   }
 
-  // Razorpay rejects a non-positive amount, and the zero-value cart the `noise`
-  // scenario plants can reach here when a decision committed no spend. Say so
-  // on the page rather than letting the click fail with a 400.
-  const payable = Number.isInteger(amountPaise) && amountPaise > 0;
-
   return (
     <div className="payment-link-trigger">
-      <button type="button" onClick={send} disabled={loading || !payable}>
+      <button type="button" onClick={send} disabled={loading}>
         {loading ? "Creating link…" : "Send payment link"}
       </button>
-      <span className="muted">
-        {" "}
-        {payable ? `${formatPaise(amountPaise)} · ${eventId}` : "nothing to charge for on this event"}
-      </span>
+      <span className="muted"> · amount derived from the approved cart decision · {eventId}</span>
 
       {/* Inline, on the same row as the amount and event id — the link and its
           plink id are the whole result, and Razorpay's status plus whether the

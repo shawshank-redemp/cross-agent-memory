@@ -10,6 +10,7 @@ import { computeMemoryProfile } from "../memory/profile.js";
 import { isCartEligible, isDisputeEligible, isSubscriptionEligible } from "../db/eligibility.js";
 import { readTraceDetail } from "../agents/trace.js";
 import { getDataStore, type TimelineEvent } from "./dataStore.js";
+import { derivePaymentLinkAmount } from "./paymentLinkAmount.js";
 
 const RAZORPAY_PAYMENT_LINKS_URL = "https://api.razorpay.com/v1/payment_links";
 
@@ -36,10 +37,7 @@ async function fetchLinkByReference(
 }
 
 interface PaymentLinkRequest {
-  customerId?: unknown;
   eventId?: unknown;
-  amountPaise?: unknown;
-  description?: unknown;
 }
 
 // Razorpay returns errors as { error: { description, code, ... } }.
@@ -287,20 +285,80 @@ export function createApp(db: Database.Database) {
   // DECIDED; whether someone later pressed a button to materialise one of those
   // decisions as a link is a demo side effect, not evidence about the decision.
   app.post("/api/payment-links", async (req: Request, res: Response) => {
-    const { customerId, eventId, amountPaise, description } = req.body as PaymentLinkRequest;
+    const { eventId } = (req.body ?? {}) as PaymentLinkRequest;
 
-    if (typeof customerId !== "string" || typeof eventId !== "string") {
-      res.status(400).json({ error: "customerId and eventId are required strings" });
-      return;
-    }
-    if (typeof amountPaise !== "number" || !Number.isInteger(amountPaise) || amountPaise <= 0) {
-      res.status(400).json({ error: "amountPaise must be a positive integer (paise)" });
+    if (typeof eventId !== "string" || eventId.length === 0) {
+      res.status(400).json({ error: "eventId is required as a non-empty string" });
       return;
     }
 
-    const customer = store.customers.find((c) => c.customer_id === customerId);
+    // Payment Links are only appropriate for unpaid cart-abandonment orders:
+    // failed subscription charges need the subscription's retry flow, and
+    // dispute events are claims against an existing payment, not a new charge.
+    const event = db
+      .prepare(
+        `SELECT order_id, customer_id, amount, status
+         FROM cart_abandonment_events WHERE order_id = ?`,
+      )
+      .get(eventId) as
+      | { order_id: string; customer_id: string; amount: number; status: string }
+      | undefined;
+    if (!event || (event.status !== "created" && event.status !== "attempted")) {
+      res.status(404).json({ error: "Payment links are only available for unpaid cart events" });
+      return;
+    }
+
+    const decisionRow = db
+      .prepare(
+        `SELECT action, escalate_to_human, metadata
+         FROM audit_log
+         WHERE event_id = ? AND mode = 'memory' AND entry_type = 'decision'`,
+      )
+      .get(eventId) as
+      | { action: string; escalate_to_human: number | null; metadata: string | null }
+      | undefined;
+    if (
+      !decisionRow ||
+      !["send_discount", "send_reminder"].includes(decisionRow.action) ||
+      decisionRow.escalate_to_human === 1 ||
+      !decisionRow.metadata
+    ) {
+      res.status(409).json({ error: "No payable, approved memory decision exists for this cart event" });
+      return;
+    }
+
+    let metadata: { discount_amount?: unknown };
+    try {
+      metadata = JSON.parse(decisionRow.metadata) as { discount_amount?: unknown };
+    } catch {
+      res.status(409).json({ error: "Stored decision metadata is invalid" });
+      return;
+    }
+    const committedSpendPaise = metadata.discount_amount;
+    if (
+      committedSpendPaise !== null &&
+      (typeof committedSpendPaise !== "number" || !Number.isSafeInteger(committedSpendPaise))
+    ) {
+      res.status(409).json({ error: "Stored decision has an invalid committed spend" });
+      return;
+    }
+
+    let amountPaise: number;
+    try {
+      amountPaise = derivePaymentLinkAmount(
+        event.amount,
+        committedSpendPaise as number | null,
+      );
+    } catch (err) {
+      res.status(409).json({ error: err instanceof Error ? err.message : String(err) });
+      return;
+    }
+
+    const customer = db
+      .prepare("SELECT name, email, contact FROM customers WHERE customer_id = ?")
+      .get(event.customer_id) as { name: string; email: string; contact: string } | undefined;
     if (!customer) {
-      res.status(404).json({ error: `no customer with id ${customerId}` });
+      res.status(404).json({ error: `No customer exists for cart event ${eventId}` });
       return;
     }
 
@@ -332,9 +390,7 @@ export function createApp(db: Database.Database) {
           amount: amountPaise,
           currency: "INR",
           accept_partial: false,
-          description: typeof description === "string" && description.length > 0
-            ? description
-            : "Recovery discount offer",
+          description: `Cart recovery for order ${eventId}`,
           customer: {
             name: customer.name,
             email: customer.email,
