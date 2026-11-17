@@ -13,7 +13,7 @@ import { AGENT_ACTION_POLICY } from "./schema.js";
 import { withClosingInstruction } from "./objective.js";
 import { SIGNAL_REGISTRY } from "./signals/registry.js";
 import type { AgentType, Customer, CustomerMemoryProfile } from "../types/index.js";
-import { decide } from "./claudeClient.js";
+import { decide } from "../llm/provider.js";
 import { SIGNAL_DEFINITIONS } from "./signals/definitions.js";
 import type { AnySignalDefinition } from "./signals/types.js";
 import {

@@ -173,7 +173,7 @@ A single combined number would be unfalsifiable.
 
 ```bash
 npm install
-cp .env.example .env   # add ANTHROPIC_API_KEY
+cp .env.example .env   # add ANTHROPIC_API_KEY; LLM_PROVIDER defaults to anthropic
 ```
 
 ```bash

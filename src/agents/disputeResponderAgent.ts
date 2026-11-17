@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 import type { Customer, DisputeEvent } from "../types/index.js";
-import { decide } from "./claudeClient.js";
+import { decide } from "../llm/provider.js";
 import { baselineUserContent, takePrefetchedBaseline } from "./baselinePrefetch.js";
 import type { z } from "zod";
 import { applyBaselinePolicyWithTrace } from "./enforcement.js";

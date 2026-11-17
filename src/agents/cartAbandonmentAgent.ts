@@ -1,6 +1,6 @@
 import type Database from "better-sqlite3";
 import type { CartAbandonmentEvent, Customer } from "../types/index.js";
-import { decide } from "./claudeClient.js";
+import { decide } from "../llm/provider.js";
 import { baselineUserContent, takePrefetchedBaseline } from "./baselinePrefetch.js";
 import type { z } from "zod";
 import { applyBaselinePolicyWithTrace } from "./enforcement.js";
@@ -62,7 +62,11 @@ export async function decideCartAbandonmentBaseline(
   // not return falls through to a live call. See baselinePrefetch.ts.
   const raw =
     takePrefetchedBaseline<z.infer<typeof CartAbandonmentDecisionSchema>>(event.order_id) ??
-    (await decide(CART_BASELINE_SYSTEM_PROMPT, baselineUserContent(customer, event), CartAbandonmentDecisionSchema));
+    (await decide(
+      CART_BASELINE_SYSTEM_PROMPT,
+      baselineUserContent(customer, event),
+      CartAbandonmentDecisionSchema,
+    ));
   // The UNIVERSAL policy layer runs on the baseline arm too. Without it the
   // control would be the only path where model output reaches the ledger
   // unchecked, which is both a safety gap and a confound — see
