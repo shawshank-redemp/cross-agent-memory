@@ -25,3 +25,6 @@ data/poc/
 
 # Isolated agentic-arm database copies; disposable.
 data/agentic/
+
+# Fresh isolated database for the 40-event three-arm comparison (scripts/compare40.sh); disposable.
+data/compare40/

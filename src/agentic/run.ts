@@ -34,20 +34,45 @@ function die(message: string): never {
   process.exit(1);
 }
 
-function selectEvents(db: ReturnType<typeof openDb>, scenario: string | undefined, limit: number) {
-  const labels = JSON.parse(
-    readFileSync(join(ROOT, "data", "generated", "scenario_labels.json"), "utf-8"),
-  ) as Array<{ customer_id: string; scenario: string }>;
-  const wanted = scenario
-    ? new Set(scenario.split(",").map((s) => s.trim()))
-    : undefined;
-  const customers = new Set(
-    labels.filter((l) => !wanted || wanted.has(l.scenario)).map((l) => l.customer_id),
-  );
-  const rows = db
+// Default: the first `limit` eligible events in time order, after the scenario
+// filter. --stratified spreads the `limit` across every labelled scenario in
+// turn (round-robin, time order within each scenario), so a small sample spans
+// the scenarios instead of whichever ones happen to come first.
+function selectEvents(
+  db: ReturnType<typeof openDb>,
+  scenario: string | undefined,
+  limit: number,
+  stratified: boolean,
+): CartAbandonmentEvent[] {
+  const scenarioOf = loadScenarioByCustomer();
+  const wanted = scenario ? new Set(scenario.split(",").map((s) => s.trim())) : undefined;
+  const rows = (db
     .prepare(`SELECT * FROM cart_abandonment_events WHERE ${CART_ELIGIBLE_SQL} ORDER BY created_at, order_id`)
-    .all() as CartAbandonmentEvent[];
-  return rows.filter((e) => customers.has(e.customer_id)).slice(0, limit);
+    .all() as CartAbandonmentEvent[]).filter((e) => {
+    const sc = scenarioOf.get(e.customer_id);
+    return sc !== undefined && (!wanted || wanted.has(sc));
+  });
+  if (!stratified) return rows.slice(0, limit);
+
+  const bucket = new Map<string, CartAbandonmentEvent[]>();
+  for (const e of rows) {
+    const sc = scenarioOf.get(e.customer_id)!;
+    bucket.set(sc, [...(bucket.get(sc) ?? []), e]);
+  }
+  const names = [...bucket.keys()].sort();
+  const picked: CartAbandonmentEvent[] = [];
+  for (let round = 0; picked.length < limit; round += 1) {
+    let added = false;
+    for (const name of names) {
+      const list = bucket.get(name)!;
+      if (round < list.length && picked.length < limit) {
+        picked.push(list[round]!);
+        added = true;
+      }
+    }
+    if (!added) break;
+  }
+  return picked;
 }
 
 async function main(): Promise<void> {
@@ -72,11 +97,36 @@ async function main(): Promise<void> {
   const limit = Number(arg("--limit") ?? "5");
   if (!Number.isSafeInteger(limit) || limit < 1) die("--limit must be a positive integer");
   const compare = process.argv.includes("--compare");
+  const stratified = process.argv.includes("--stratified");
+  const plan = process.argv.includes("--plan");
 
   const db = openDb(dbPath);
-  const events = selectEvents(db, arg("--scenario"), limit);
+  const events = selectEvents(db, arg("--scenario"), limit, stratified);
   const scenarios = loadScenarioByCustomer();
   if (events.length === 0) die("no eligible cart events match the selection");
+
+  if (plan) {
+    // Selection only. No model is contacted. Use this to check the events and
+    // the call estimate before a real run.
+    const scenarioOf = loadScenarioByCustomer();
+    const perScenario = new Map<string, number>();
+    for (const e of events) {
+      const sc = scenarioOf.get(e.customer_id) ?? "unlabelled";
+      perScenario.set(sc, (perScenario.get(sc) ?? 0) + 1);
+    }
+    // Estimate: about 4 model turns per agentic event (tool turns plus the
+    // submission), and one call each for the baseline and memory arms.
+    const callsPerEvent = compare ? 6 : 4;
+    console.log(`PLAN (no model calls): ${events.length} events, compare=${compare}, stratified=${stratified}`);
+    console.log(`provider=${config.provider} model=${config.model}`);
+    for (const [sc, n] of [...perScenario.entries()].sort()) console.log(`  ${sc.padEnd(30)} ${n}`);
+    console.log(
+      `estimated model calls: ~${events.length * callsPerEvent} ` +
+        `(at ~15 s per call on this machine, about ${Math.round((events.length * callsPerEvent * 15) / 60)} min)`,
+    );
+    db.close();
+    return;
+  }
 
   console.log(`events: ${events.length}, scenario=${arg("--scenario") ?? "all"}, compare=${compare}`);
   console.log(`arm agentic   provider=${config.provider} model=${config.model}`);
