@@ -20,6 +20,7 @@ import {
 import { decideCartAbandonmentAgentic } from "./cartAbandonmentAgentic.js";
 import { resolveCompareConfig } from "./providerGuard.js";
 import { loadScenarioByCustomer, recordArmOutcome } from "./outcomes.js";
+import { recordArmDecision } from "./armRecording.js";
 import { getLLMProvider } from "../llm/provider.js";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
@@ -168,6 +169,16 @@ async function main(): Promise<void> {
 
     if (compare) {
       const baseline = await decideCartAbandonmentBaseline(db, customer, event);
+      // Same writes as the runner: the decision row and any discount row, then the outcome.
+      recordArmDecision(db, {
+        mode: "baseline",
+        customerId: customer.customer_id,
+        agent: "cart_abandonment",
+        eventId: event.order_id,
+        orderId: event.order_id,
+        timestamp: event.created_at,
+        decision: baseline,
+      });
       recordArmOutcome(db, {
         mode: "baseline",
         customerId: customer.customer_id,
@@ -181,6 +192,16 @@ async function main(): Promise<void> {
         `  baseline  decided      action=${baseline.action} spend=${baseline.committed_spend_paise ?? "null"} escalate=${baseline.escalate_to_human}`,
       );
       const memory = await decideCartAbandonmentMemory(db, customer, event);
+      // Same writes as the runner: the decision row and any discount row, then the outcome.
+      recordArmDecision(db, {
+        mode: "memory",
+        customerId: customer.customer_id,
+        agent: "cart_abandonment",
+        eventId: event.order_id,
+        orderId: event.order_id,
+        timestamp: event.created_at,
+        decision: memory,
+      });
       recordArmOutcome(db, {
         mode: "memory",
         customerId: customer.customer_id,
