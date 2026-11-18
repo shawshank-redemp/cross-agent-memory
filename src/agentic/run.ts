@@ -18,6 +18,8 @@ import {
   decideCartAbandonmentMemory,
 } from "../agents/cartAbandonmentAgent.js";
 import { decideCartAbandonmentAgentic } from "./cartAbandonmentAgentic.js";
+import { resolveCompareConfig } from "./providerGuard.js";
+import { getLLMProvider } from "../llm/provider.js";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
 const COMMITTED = join(ROOT, "data", "db", "cross_agent_memory.sqlite");
@@ -53,8 +55,17 @@ async function main(): Promise<void> {
   if (resolve(dbPath) === COMMITTED) {
     die("refusing to run against the committed database.");
   }
-  if (process.env.LLM_PROVIDER && process.env.LLM_PROVIDER !== "ollama") {
-    die(`this command runs on local Ollama only; LLM_PROVIDER is "${process.env.LLM_PROVIDER}".`);
+  const resolved = resolveCompareConfig(process.env);
+  if (!resolved.ok) die(resolved.message);
+  const config = resolved.config;
+  // The baseline and memory arms call the production provider. Check it resolves
+  // to the same provider and model as the agentic arm before any event runs.
+  const production = getLLMProvider();
+  if (production.name !== config.provider || production.model !== config.model) {
+    die(
+      `production provider resolves to ${production.name}/${production.model}, but the agentic arm uses ` +
+        `${config.provider}/${config.model}. Arms must match.`,
+    );
   }
 
   const limit = Number(arg("--limit") ?? "5");
@@ -65,10 +76,13 @@ async function main(): Promise<void> {
   const events = selectEvents(db, arg("--scenario"), limit);
   if (events.length === 0) die("no eligible cart events match the selection");
 
-  console.log(
-    `agentic arm: ${events.length} event(s), scenario=${arg("--scenario") ?? "all"}, ` +
-      `model=${process.env.OLLAMA_MODEL ?? "qwen2.5:7b"}, compare=${compare}\n`,
-  );
+  console.log(`events: ${events.length}, scenario=${arg("--scenario") ?? "all"}, compare=${compare}`);
+  console.log(`arm agentic   provider=${config.provider} model=${config.model}`);
+  if (compare) {
+    console.log(`arm baseline provider=${production.name} model=${production.model}`);
+    console.log(`arm memory   provider=${production.name} model=${production.model}`);
+  }
+  console.log("");
 
   for (const event of events) {
     const customer = db
@@ -76,7 +90,11 @@ async function main(): Promise<void> {
       .get(event.customer_id) as Customer;
     console.log(`[${event.order_id}] ${event.customer_id} amount=${event.amount} paise`);
 
-    const agentic = await decideCartAbandonmentAgentic(db, customer, event);
+    const agentic = await decideCartAbandonmentAgentic(db, customer, event, {
+      model: config.model,
+      baseUrl: config.baseUrl,
+      pricingModel: config.pricingModel,
+    });
     console.log(
       `  agentic   ${agentic.status.padEnd(12)} action=${agentic.action} spend=${agentic.committed_spend_paise ?? "null"} ` +
         `escalate=${agentic.escalate_to_human} investigation_calls=${agentic.investigation_calls} ` +
