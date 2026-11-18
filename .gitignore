@@ -19,3 +19,6 @@ data/smoke/
 
 # Disposable copy of the committed DB used by verify/analyze scripts (scripts/runIsolated.sh).
 data/verify/
+
+# PoC database copy (poc/run.ts); disposable.
+data/poc/

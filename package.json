@@ -23,7 +23,8 @@
     "measure:churn": "sh scripts/runIsolated.sh tsx scripts/measureChurnSignal.ts",
     "verify:prompts": "sh scripts/runIsolated.sh tsx scripts/verifyPromptInvariants.ts",
     "verify:fieldorder": "sh scripts/runIsolated.sh tsx --env-file-if-exists=.env scripts/verifyFieldOrder.ts",
-    "policy:version": "tsx scripts/printPolicyVersion.ts"
+    "policy:version": "tsx scripts/printPolicyVersion.ts",
+    "poc:agent": "tsx --env-file-if-exists=.env poc/run.ts"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
