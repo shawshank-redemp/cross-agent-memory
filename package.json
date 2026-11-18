@@ -27,7 +27,8 @@
     "poc:agent": "LLM_PROVIDER=ollama tsx --env-file-if-exists=.env poc/run.ts",
     "agents:agentic": "LLM_PROVIDER=ollama tsx --env-file-if-exists=.env src/agentic/run.ts",
     "analyze:arms": "sh scripts/runIsolated.sh tsx src/analysis/threeArmReport.ts",
-    "agents:compare40": "sh scripts/compare40.sh"
+    "agents:compare40": "sh scripts/compare40.sh",
+    "analyze:sensitivity": "sh scripts/runIsolated.sh tsx src/analysis/sensitivity.ts"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
