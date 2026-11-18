@@ -45,10 +45,15 @@ function main(): void {
   }
 
   console.log("LLM metrics by agent and arm");
-  if (rows.some((row) => MODEL_PRICES[row.model]?.notional)) {
+  // Any priced row is notional: free-tier Gemini and local Ollama calls cost $0,
+  // and the amount shown is what the same usage would cost at the paid-tier rate
+  // named in src/llm/pricing.ts. Ollama rows reach this path through
+  // OLLAMA_PRICING_MODEL, so their model name does not appear in MODEL_PRICES;
+  // checking the model name alone is what left them unlabelled.
+  if (rows.some((row) => row.cost_usd !== null)) {
     console.log(
-      "Gemini free-tier calls cost $0; Gemini amounts below are notional paid-tier estimates " +
-        "using published Standard rates.",
+      "Costs are NOTIONAL. Gemini free-tier and local Ollama calls cost $0; the amounts below are " +
+        "what the same usage would cost at the paid-tier rates in src/llm/pricing.ts.",
     );
   }
   console.log(
@@ -66,7 +71,7 @@ function main(): void {
     const priced = group.filter((row) => row.cost_usd !== null);
     const costPerRequest =
       priced.length === calls
-        ? `${models.some((model) => MODEL_PRICES[model]?.notional) ? "notional " : ""}` +
+        ? `${priced.length > 0 ? "notional " : ""}` +
           `$${(priced.reduce((sum, row) => sum + row.cost_usd!, 0) / calls).toFixed(6)}`
         : `n/a (${calls - priced.length} unpriced)`;
     const latencies = group.map((row) => row.latency_ms);
