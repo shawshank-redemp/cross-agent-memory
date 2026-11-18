@@ -50,6 +50,44 @@ with opposite expectations.
 
 ---
 
+## Architecture
+
+```mermaid
+flowchart LR
+  E["Event<br/>cart order, subscription failure, dispute"] --> M["Shared memory and signals<br/>as-of profile, policy signals"]
+  M --> A["Agent<br/>cart: LangGraph ReAct, 3 read-only tools<br/>subscription and dispute: one model call"]
+  A --> G["Deterministic guardrails<br/>final authority: caps, blocks, escalation"]
+  G --> X["Action<br/>send, discount, or human review"]
+  X --> K["Metrics and outcomes<br/>llm_call_metrics, audit_log, intervention_outcomes"]
+```
+
+Each decision reads only what was known at the event's own timestamp. The
+model's answer is never the final word: the guardrails clamp, block or escalate
+it before anything is recorded as spent.
+
+**Built**
+
+- Shared customer memory: an as-of profile and an audit log in SQLite.
+- Policy signal registry: brakes, accelerators and routers, each a single file.
+- One LangGraph.js ReAct specialist, for cart abandonment only (the agentic arm).
+  It loops think, tool call, observe, for up to four investigation calls, then
+  submits a validated decision. Tool errors and repeated invalid submissions fall
+  back to human review.
+- Subscription recovery and dispute response: one model call each, with the same
+  guardrails.
+- Deterministic guardrails applied to every arm's decision.
+- Per-call metrics (tokens, latency, notional cost), intervention outcomes, and a
+  three-arm report.
+
+**Not built**
+
+- No supervisor or orchestration between agents.
+- No critic or second-opinion model.
+- No Google ADK. It was evaluated and not used (see `docs/decisions.md`).
+- The ReAct loop exists for cart abandonment only. The other two agents are single-call.
+- No payment integration: outcomes are modelled from a probability table, not observed.
+- No online learning: nothing updates a model from outcomes during a run.
+
 ## Building blocks
 
 | # | Piece | What it is |
