@@ -1,8 +1,8 @@
 # Resume bullets
 
 Each bullet uses only figures from `docs/agentic-vs-memory-results.md` or the
-repository's test suite (95 tests passing). Where a figure depends on the
-synthetic dataset or the local Qwen 7B model, the bullet says so.
+test suite (101 tests passing). Where a figure depends on the synthetic dataset,
+the modelled outcomes, or the local Qwen 7B model, the bullet says so.
 
 - Built a shared customer-memory decision layer for recovery agents: as-of
   profiles, policy signals, and a deterministic guardrail with final say over
@@ -14,11 +14,17 @@ synthetic dataset or the local Qwen 7B model, the bullet says so.
   and a validated final decision that falls back to human review on error.
   Measured on a synthetic dataset with a local Qwen 7B model.
 
-- Compared three decision arms on 40 cart events (baseline, prefetched memory,
-  agentic loop). The agentic loop converted 41.0% against 42.5% for memory at
-  about 4.2 times the tokens per decision (8,091 against 1,908). Synthetic
-  dataset, modelled outcomes, local Qwen 7B model, five events per scenario.
+- Compared a no-memory baseline with a memory-informed arm and an agentic loop on
+  40 cart events. Memory cut discount spend by 47.4%, and the agentic loop by
+  83.5%, at a cost of 27.5 and 29.0 points of modelled conversion. Under the
+  default outcome model the baseline earned the most net, so the spend cut did
+  not pay. A sensitivity check puts the break-even at about a tenth of the
+  assumed discount lift. Synthetic dataset, modelled outcomes, local Qwen 7B
+  model. Five events per scenario cell, so the per-scenario result (memory kept
+  the baseline's 60% conversion on a gaming-pattern cell with 61% less spend)
+  is directional only.
 
-- Recorded tokens, latency and notional cost for every model call, and built a
-  three-arm report and per-decision summary, all reproducible from SQLite
-  without new model calls. Costs are notional: local calls cost $0.
+- Measured the cost of the agentic loop against prefetched memory: 4.2 times the
+  tokens and 3.6 times the notional cost per decision, for no measured gain in
+  conversion (41.0% against 42.5%). Local Qwen 7B on a synthetic dataset; the cost
+  is notional, since local calls cost $0.
