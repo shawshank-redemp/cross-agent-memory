@@ -76,9 +76,9 @@ test("an agentic human-review fallback is counted as a fallback and as an escala
   traceFinal(db, "memory", "send_reminder", null, false);
   agenticDecision(db, "send_reminder", null, true, true);
   const { common, outcomes } = collectArms(db);
-  const agentic = tallyArm(common, "agentic", outcomes);
+  const agentic = tallyArm(common, "agentic", outcomes, () => undefined);
   assert.equal(agentic.fallback, 1);
   assert.equal(agentic.escalated, 1);
-  assert.equal(tallyArm(common, "baseline", outcomes).fallback, 0);
+  assert.equal(tallyArm(common, "baseline", outcomes, () => undefined).fallback, 0);
   db.close();
 });

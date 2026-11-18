@@ -2,23 +2,26 @@
 //
 // Where each arm's final decision comes from, in order:
 //   1. the arm's decision row in audit_log, when the run wrote one (the runner and
-//      the agentic arm do);
+//      the compare command do);
 //   2. otherwise the final decision in its policy_override trace step, which every
-//      decide path writes after the guardrail. Compare runs of baseline and
-//      memory used to rely on this alone, because they wrote no decision row.
-// Spend is the decision's committed_spend_paise, the same for every arm.
-// Outcomes come from intervention_outcomes, recorded by the same rules for all arms.
+//      decide path writes after the guardrail (older compare runs used this alone).
+// Spend is the decision's committed_spend_paise, the same measure for every arm.
 //
-// Only events that ALL THREE arms decided are compared, so every row covers the
-// same events. Scenario labels come from data/generated/scenario_labels.json and
-// are used only here, in the outcome layer. No agent sees them.
+// Net is the scorer's net_revenue (src/outcomes/resolveOutcomes.ts): collected
+// minus discount minus dispute cost minus recurrence cost minus escalation
+// handling. It is recomputed here from the stored decision and the event's own
+// rolls, with the published probabilities. A check confirms the recomputed paid
+// outcome equals the stored intervention outcome for every event.
 //
-// Net is collected - spend - escalation handling (ESCALATION_HANDLING_COST_PAISE
-// per escalated decision), the scoring constant. Sample sizes are small.
+// Only events that ALL THREE arms decided are compared. Scenario labels come from
+// data/generated/scenario_labels.json and are used only here, in the outcome layer.
+// No agent sees them.
 import type Database from "better-sqlite3";
 import { openDb } from "../db/connection.js";
-import { ESCALATION_HANDLING_COST_PAISE } from "../outcomes/probabilities.js";
 import { loadScenarioByCustomer } from "../agentic/outcomes.js";
+import { rollsForEvent } from "../outcomes/resolveOutcomes.js";
+import type { Scenario } from "../data/generator.js";
+import { publishedProbs, scoreWithProbs } from "./armScoring.js";
 
 export type Arm = "baseline" | "memory" | "agentic";
 export const ARMS: Arm[] = ["baseline", "memory", "agentic"];
@@ -43,7 +46,10 @@ export interface CollectedArms {
   common: Array<[string, Map<Arm, ArmDecision>]>;
   // Every (event, arm) decision, whether or not all three arms decided it.
   decisionsByEvent: Map<string, Map<Arm, ArmDecision>>;
+  // Stored intervention outcomes, as recorded by the run.
   outcomes: Map<string, Map<Arm, ArmOutcome>>;
+  // Gross amount of each cart event, in paise.
+  grossByEvent: Map<string, number>;
 }
 
 export function collectArms(db: Database.Database): CollectedArms {
@@ -106,7 +112,6 @@ export function collectArms(db: Database.Database): CollectedArms {
     });
   }
 
-  // Outcomes per (event, arm), recorded by the same rules for every arm.
   const outcomes = new Map<string, Map<Arm, ArmOutcome>>();
   for (const row of db
     .prepare(
@@ -129,10 +134,41 @@ export function collectArms(db: Database.Database): CollectedArms {
     outcomes.set(row.event_id, byArm);
   }
 
+  const grossByEvent = new Map<string, number>();
+  for (const row of db
+    .prepare("SELECT order_id, amount FROM cart_abandonment_events")
+    .all() as Array<{ order_id: string; amount: number }>) {
+    grossByEvent.set(row.order_id, row.amount);
+  }
+
   const common = [...decisionsByEvent.entries()].filter(([, byArm]) =>
     ARMS.every((arm) => byArm.has(arm)),
   );
-  return { common, decisionsByEvent, outcomes };
+  return { common, decisionsByEvent, outcomes, grossByEvent };
+}
+
+// The scorer's result for one arm's decision on one event, with published probabilities.
+export interface ScoredDecision {
+  paid: boolean;
+  net: number;
+  collected: number;
+}
+
+export function scoreArm(
+  eventId: string,
+  decision: ArmDecision,
+  scenario: Scenario,
+  grossAmount: number,
+): ScoredDecision {
+  const outcome = scoreWithProbs({
+    eventId,
+    scenario,
+    grossAmount,
+    decision: { committed_spend_paise: decision.spend > 0 ? decision.spend : null, escalate_to_human: decision.escalated },
+    rolls: rollsForEvent(eventId),
+    probs: publishedProbs(scenario),
+  });
+  return { paid: outcome.paid === true, net: outcome.net_revenue, collected: outcome.money_collected };
 }
 
 type Tally = {
@@ -151,6 +187,7 @@ export function tallyArm(
   rows: Array<[string, Map<Arm, ArmDecision>]>,
   arm: Arm,
   outcomes: Map<string, Map<Arm, ArmOutcome>>,
+  scored: (eventId: string, arm: Arm) => ScoredDecision | undefined,
 ): Tally {
   const t: Tally = {
     n: 0, spend: 0, discounted: 0, escalated: 0, fallback: 0, converted: 0, outcomes: 0, collected: 0, net: 0,
@@ -162,12 +199,17 @@ export function tallyArm(
     if (d.spend > 0) t.discounted += 1;
     if (d.escalated) t.escalated += 1;
     if (d.fallback) t.fallback += 1;
+    // Only events with a stored outcome count toward conversion, collected and net,
+    // as in the runner: a validation fallback is never scored.
     const o = outcomes.get(eventId)?.get(arm);
     if (o) {
       t.outcomes += 1;
       if (o.converted) t.converted += 1;
-      t.collected += o.collected;
-      t.net += o.collected - d.spend - (d.escalated ? ESCALATION_HANDLING_COST_PAISE : 0);
+      const s = scored(eventId, arm);
+      if (s) {
+        t.collected += s.collected;
+        t.net += s.net;
+      }
     }
   }
   return t;
@@ -177,10 +219,40 @@ function pct(numerator: number, denominator: number): string {
   return denominator === 0 ? "n/a" : `${((100 * numerator) / denominator).toFixed(1)}%`;
 }
 
+// Scores every (event, arm) with the published probabilities and checks the paid
+// outcome against the stored one. A mismatch means the stored run and the scorer
+// disagree, and is printed rather than hidden.
+export function scoreAll(collected: CollectedArms, scenarioOf: Map<string, string>) {
+  const scored = new Map<string, Map<Arm, ScoredDecision>>();
+  let checked = 0;
+  let mismatched = 0;
+  for (const [eventId, byArm] of collected.decisionsByEvent) {
+    const gross = collected.grossByEvent.get(eventId);
+    const customer = [...byArm.values()][0]?.customerId;
+    const scenario = customer ? scenarioOf.get(customer) : undefined;
+    if (gross === undefined || scenario === undefined) continue;
+    for (const [arm, decision] of byArm) {
+      const s = scoreArm(eventId, decision, scenario as Scenario, gross);
+      scored.set(eventId, new Map([...(scored.get(eventId) ?? []), [arm, s]]));
+      const stored = collected.outcomes.get(eventId)?.get(arm);
+      if (stored) {
+        checked += 1;
+        if (stored.converted !== s.paid) mismatched += 1;
+      }
+    }
+  }
+  return {
+    scored: (eventId: string, arm: Arm) => scored.get(eventId)?.get(arm),
+    checked,
+    mismatched,
+  };
+}
+
 function main(): void {
   const db = openDb();
-  const { common, decisionsByEvent, outcomes } = collectArms(db);
+  const collected = collectArms(db);
   db.close();
+  const { common, decisionsByEvent, outcomes } = collected;
 
   const perArm = ARMS.map((arm) => {
     const count = [...decisionsByEvent.values()].filter((byArm) => byArm.has(arm)).length;
@@ -196,15 +268,20 @@ function main(): void {
     return;
   }
 
-  const scenarios = loadScenarioByCustomer();
+  const scenarioOf = loadScenarioByCustomer();
+  const { scored, checked, mismatched } = scoreAll(collected, scenarioOf as Map<string, string>);
+  console.log(
+    `Scorer check: ${checked - mismatched} of ${checked} stored outcomes match the recomputed paid outcome` +
+      (mismatched > 0 ? ` (${mismatched} MISMATCHED)` : ""),
+  );
   console.log(`Events decided by all three arms: ${common.length}\n`);
 
-  console.log("OVERALL");
+  console.log("OVERALL (net = scorer net_revenue with published probabilities)");
   console.log(
     "arm       | decisions | discounted | avg discount paise | total discount paise | escalation | human-review fallback | conversion | net paise",
   );
   for (const arm of ARMS) {
-    const t = tallyArm(common, arm, outcomes);
+    const t = tallyArm(common, arm, outcomes, scored);
     console.log(
       `${arm.padEnd(9)} | ${String(t.n).padStart(9)} | ${pct(t.discounted, t.n).padStart(10)} | ` +
         `${(t.spend / t.n).toFixed(0).padStart(18)} | ${String(t.spend).padStart(20)} | ` +
@@ -217,14 +294,14 @@ function main(): void {
   const byScenario = new Map<string, Array<[string, Map<Arm, ArmDecision>]>>();
   for (const entry of common) {
     const customer = entry[1].get("baseline")!.customerId;
-    const scenario = scenarios.get(customer) ?? "unlabelled";
+    const scenario = scenarioOf.get(customer) ?? "unlabelled";
     byScenario.set(scenario, [...(byScenario.get(scenario) ?? []), entry]);
   }
   console.log("scenario                      | arm      | n  | avg discount | escalation | conversion");
   for (const scenario of [...byScenario.keys()].sort()) {
     const rows = byScenario.get(scenario)!;
     for (const arm of ARMS) {
-      const t = tallyArm(rows, arm, outcomes);
+      const t = tallyArm(rows, arm, outcomes, scored);
       console.log(
         `${scenario.padEnd(29)} | ${arm.padEnd(8)} | ${String(t.n).padStart(2)} | ` +
           `${(t.spend / t.n).toFixed(0).padStart(12)} | ${pct(t.escalated, t.n).padStart(10)} | ` +
