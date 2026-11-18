@@ -19,6 +19,7 @@ import {
 } from "../agents/cartAbandonmentAgent.js";
 import { decideCartAbandonmentAgentic } from "./cartAbandonmentAgentic.js";
 import { resolveCompareConfig } from "./providerGuard.js";
+import { loadScenarioByCustomer, recordArmOutcome } from "./outcomes.js";
 import { getLLMProvider } from "../llm/provider.js";
 
 const ROOT = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
@@ -74,6 +75,7 @@ async function main(): Promise<void> {
 
   const db = openDb(dbPath);
   const events = selectEvents(db, arg("--scenario"), limit);
+  const scenarios = loadScenarioByCustomer();
   if (events.length === 0) die("no eligible cart events match the selection");
 
   console.log(`events: ${events.length}, scenario=${arg("--scenario") ?? "all"}, compare=${compare}`);
@@ -100,13 +102,44 @@ async function main(): Promise<void> {
         `escalate=${agentic.escalate_to_human} investigation_calls=${agentic.investigation_calls} ` +
         `model_calls=${agentic.model_calls}${agentic.failure ? ` fallback="${agentic.failure}"` : ""}`,
     );
+    // Same as the runner: a decided event records its intervention outcome.
+    // Fallbacks do not, because the runner's fallback path does not either.
+    if (agentic.status === "decided") {
+      recordArmOutcome(db, {
+        mode: "agentic",
+        customerId: customer.customer_id,
+        eventId: event.order_id,
+        timestamp: event.created_at,
+        grossAmountPaise: event.amount,
+        scenario: scenarios.get(customer.customer_id),
+        decision: agentic,
+      });
+    }
 
     if (compare) {
       const baseline = await decideCartAbandonmentBaseline(db, customer, event);
+      recordArmOutcome(db, {
+        mode: "baseline",
+        customerId: customer.customer_id,
+        eventId: event.order_id,
+        timestamp: event.created_at,
+        grossAmountPaise: event.amount,
+        scenario: scenarios.get(customer.customer_id),
+        decision: baseline,
+      });
       console.log(
         `  baseline  decided      action=${baseline.action} spend=${baseline.committed_spend_paise ?? "null"} escalate=${baseline.escalate_to_human}`,
       );
       const memory = await decideCartAbandonmentMemory(db, customer, event);
+      recordArmOutcome(db, {
+        mode: "memory",
+        customerId: customer.customer_id,
+        eventId: event.order_id,
+        timestamp: event.created_at,
+        grossAmountPaise: event.amount,
+        scenario: scenarios.get(customer.customer_id),
+        decision: memory,
+      });
       console.log(
         `  memory    decided      action=${memory.action} spend=${memory.committed_spend_paise ?? "null"} escalate=${memory.escalate_to_human}`,
       );
