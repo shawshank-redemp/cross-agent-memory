@@ -12,7 +12,7 @@ import { computeMemorySignals, type MemorySignals } from "../agents/signals/regi
 import { enforcePolicy } from "../agents/memoryContext.js";
 import { createLLMValidationHandoff } from "../agents/llmValidationHandoff.js";
 import { POLICY_FINGERPRINT } from "../agents/policy.js";
-import { appendAuditLog, getMemoryProfile } from "../memory/profile.js";
+import { appendAuditLog, getMemoryProfile, recordDiscountUsage } from "../memory/profile.js";
 import { clearTrace } from "../agents/trace.js";
 import { makeInvestigationTools, SUBMIT_DECISION_TOOL, INVESTIGATION_TOOL_NAMES } from "./tools.js";
 import { AgenticMetricsCallback } from "./metricsCallback.js";
@@ -345,6 +345,22 @@ export async function decideCartAbandonmentAgentic(
     },
     timestamp: event.created_at,
   });
+
+  // Same rule as the runner: any committed spend, after enforcement, is recorded
+  // in discount_usage under this arm's mode. Later decisions read that table for
+  // discount history and gaming signals, so an unrecorded discount would be
+  // invisible to them.
+  if (enforced.committed_spend_paise != null) {
+    recordDiscountUsage(db, {
+      customer_id: customer.customer_id,
+      agent: "cart_abandonment",
+      mode: "agentic",
+      amount: enforced.committed_spend_paise,
+      event_id: eventId,
+      order_id: event.order_id,
+      timestamp: event.created_at,
+    });
+  }
 
   return {
     status: "decided",
