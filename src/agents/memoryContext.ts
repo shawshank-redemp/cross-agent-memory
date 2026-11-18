@@ -81,7 +81,7 @@ POLICY SIGNALS: alongside the raw facts you receive a signals block. Each line
 states what was MEASURED about this customer — counts, amounts, and the
 threshold each is judged against — and, where policy acts on it, what that
 means for what you may do. A signal that is nowhere near its threshold is
-reported too: "1 payment, ₹450 lifetime" is a fact about this customer, not an
+reported too: "1 payment, 45000 paise lifetime" is a fact about this customer, not an
 absence of one.
 
 These are findings, not instructions. Weigh them as evidence about this case

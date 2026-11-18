@@ -5,13 +5,15 @@ import { baselineUserContent, takePrefetchedBaseline } from "./baselinePrefetch.
 import type { z } from "zod";
 import { applyBaselinePolicyWithTrace } from "./enforcement.js";
 import type { PolicyOverrideRecord } from "../memory/profile.js";
-import { DISPUTE_COST_MODEL, OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
+import { DISPUTE_COST_MODEL, CONVENTIONS_BLOCK, OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import type { TriggeringEventFacts } from "./policy.js";
 import { DisputeResponderDecisionSchema, type DisputeResponderDecision } from "./schema.js";
 
 export const DISPUTE_BASELINE_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
 ${OBJECTIVE_BLOCK}
+
+${CONVENTIONS_BLOCK}
 ${DISPUTE_COST_MODEL}
 
 You see a single customer and a single dispute event. You have no
@@ -94,6 +96,8 @@ export async function decideDisputeResponderBaseline(
 
 export const DISPUTE_MEMORY_SYSTEM_PROMPT = `You are Razorpay's Dispute Responder agent.
 ${OBJECTIVE_BLOCK}
+
+${CONVENTIONS_BLOCK}
 ${DISPUTE_COST_MODEL}
 
 Actions — pick exactly one:

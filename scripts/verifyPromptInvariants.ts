@@ -4,7 +4,8 @@
 // whether the agent can see the customer's shared history. That claim is only
 // true if everything else in the prompt is identical, so it is checked here
 // rather than trusted. No API calls.
-import { CLOSING_INSTRUCTION, DISPUTE_COST_MODEL, OBJECTIVE_BLOCK } from "../src/agents/objective.js";
+import { CLOSING_INSTRUCTION, CONVENTIONS_BLOCK, DISPUTE_COST_MODEL, OBJECTIVE_BLOCK } from "../src/agents/objective.js";
+import { buildMemoryGlossaryBlock } from "../src/agents/memoryContext.js";
 import { CART_BASELINE_SYSTEM_PROMPT, CART_MEMORY_SYSTEM_PROMPT } from "../src/agents/cartAbandonmentAgent.js";
 import {
   SUBSCRIPTION_BASELINE_SYSTEM_PROMPT,
@@ -71,6 +72,19 @@ check(
 
 // 4. The closing instruction is shared, and non-trivial.
 check("closing instruction is non-empty and shared", CLOSING_INSTRUCTION.length > 20);
+
+// Units and reply length: identical wording in every prompt of every agent, in
+// both arms, so the comparison cannot differ on these instructions.
+for (const agent of Object.keys(BASELINE_PROMPTS) as Array<keyof typeof BASELINE_PROMPTS>) {
+  check(`${agent}: baseline prompt contains CONVENTIONS_BLOCK verbatim`, BASELINE_PROMPTS[agent].includes(CONVENTIONS_BLOCK));
+  check(`${agent}: memory prompt contains CONVENTIONS_BLOCK verbatim`, MEMORY_PROMPTS[agent].includes(CONVENTIONS_BLOCK));
+  check(`${agent}: memory prompt names no rupee amounts`, !/₹/.test(MEMORY_PROMPTS[agent]));
+}
+// The memory glossary is appended to the memory prompt at runtime, so the static
+// constants above do not contain it. Check it directly.
+check("memory glossary names no rupee amounts", !/₹/.test(buildMemoryGlossaryBlock()));
+check("conventions state the unit as paise", /paise/.test(CONVENTIONS_BLOCK));
+check("conventions cap reasoning at two sentences", /at most two sentences/.test(CONVENTIONS_BLOCK));
 
 // 5. The memory arm's extra content must be memory-specific only. Anything the
 //    baseline lacks BESIDES history is a confound.

@@ -122,6 +122,18 @@ A recovery that needed no discount beats one that did — but a sale never
 recovered is worse than either.`;
 
 // Appended AFTER the data in the user message, in BOTH arms, for the same
+// Units and reply length. Kept OUT of OBJECTIVE_BLOCK, which must never name a
+// currency unit: verifyPromptInvariants forbids it. Interpolated into all six
+// prompts (three agents x two arms) with identical wording, for the same reason
+// the objective is shared: a difference here would be a difference between the
+// arms that has nothing to do with memory.
+//
+// Units were previously unstated. A 7B model read an order amount of 350000
+// (paise) as "350,000 INR" because nothing said otherwise.
+export const CONVENTIONS_BLOCK = `Units: every monetary amount in this request is in paise, where 100 paise is 1 rupee. That includes every monetary field in the case data (for example amount, amount_paid, amount_due, plan_amount, or any field whose name ends in _amount) and every committed_spend_paise value you return. Work in paise and do not convert to rupees.
+
+Length: keep the reasoning field to at most two sentences. State the reason for the action, not the full argument for it.`;
+
 // reason OBJECTIVE_BLOCK is shared: it is arm-neutral task framing, and a
 // difference in it would be a difference between the arms that has nothing to
 // do with memory. Data first, instruction last — the model reads the case

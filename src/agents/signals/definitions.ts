@@ -33,10 +33,11 @@ function computeDisputeCautionLevel(ctx: SignalContext): DisputeCautionLevel {
   return "none";
 }
 
-// Rupees, for the measurements below. Amounts are stored in paise everywhere
-// else; a model reading "₹450" understands it faster than "45000 paise".
-function rupees(paise: number): string {
-  return `₹${Math.round(paise / 100).toLocaleString("en-IN")}`;
+// Paise, the unit every amount in the case data uses. The signals state
+// amounts in the same unit as the event JSON, so the model never has to convert
+// between two currencies in one prompt.
+function money(paise: number): string {
+  return `${Math.round(paise).toLocaleString("en-US")} paise`;
 }
 
 // What each caution level MEANS, without stating what policy does about it —
@@ -65,9 +66,9 @@ const disputeCautionLevel: SignalDefinition<DisputeCautionLevel> = {
     const detail =
       filed === 0
         ? "no disputes on record"
-        : `${filed} dispute(s) filed, ${rupees(ctx.profile.total_disputed_amount)} total` +
+        : `${filed} dispute(s) filed, ${money(ctx.profile.total_disputed_amount)} total` +
           ` (${n.unresolved} unresolved, ${n.customer_adverse} decided against them` +
-          `${n.customer_adverse > 0 ? ` worth ${rupees(ctx.profile.adverse_disputed_amount)}` : ""})`;
+          `${n.customer_adverse > 0 ? ` worth ${money(ctx.profile.adverse_disputed_amount)}` : ""})`;
     return `${value} — ${DISPUTE_LEVEL_MEANING[value]}. ${detail}.`;
   },
   effects(value) {
@@ -165,7 +166,7 @@ const discountsGrantedByThisAgent: SignalDefinition<number> = {
     const spent = discountsInWindow(ctx, ctx.agent).reduce((sum, d) => sum + d.amount, 0);
     return value === 0
       ? `none — this agent has committed no margin to this customer in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days`
-      : `${value} discount(s) worth ${rupees(spent)} in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days`;
+      : `${value} discount(s) worth ${money(spent)} in the last ${DISCOUNT_HISTORY_LOOKBACK_DAYS} days`;
   },
   effects: () => ({}),
 };
@@ -260,9 +261,9 @@ const crossAgentSpendLimitReached: SignalDefinition<boolean> = {
     const spent = discountsInWindow(ctx).reduce((sum, d) => sum + d.amount, 0);
     const allowance = crossAgentSpendAllowancePaise(ctx);
     return (
-      `${rupees(spent)} of a ${rupees(allowance)} allowance used across ALL agents in the last ` +
-      `${DISCOUNT_HISTORY_LOOKBACK_DAYS} days. The allowance is the greater of ${rupees(CROSS_AGENT_SPEND_FLOOR_PAISE)} ` +
-      `or ${Math.round(CROSS_AGENT_SPEND_SHARE_OF_LIFETIME_PAID * 100)}% of the ${rupees(ctx.profile.total_paid_amount)} ` +
+      `${money(spent)} of a ${money(allowance)} allowance used across ALL agents in the last ` +
+      `${DISCOUNT_HISTORY_LOOKBACK_DAYS} days. The allowance is the greater of ${money(CROSS_AGENT_SPEND_FLOOR_PAISE)} ` +
+      `or ${Math.round(CROSS_AGENT_SPEND_SHARE_OF_LIFETIME_PAID * 100)}% of the ${money(ctx.profile.total_paid_amount)} ` +
       `this customer has paid us. No single agent can see this total.`
     );
   },
@@ -364,8 +365,8 @@ const provenPayer: SignalDefinition<boolean> = {
     ctx.profile.total_paid_amount >= MIN_LIFETIME_PAID_PAISE,
   measure: (ctx) =>
     `${ctx.profile.successful_payment_count} successful payment(s) across all domains, ` +
-    `${rupees(ctx.profile.total_paid_amount)} lifetime ` +
-    `(established means ${MIN_SUCCESSFUL_PAYMENTS}+ payments and ${rupees(MIN_LIFETIME_PAID_PAISE)}+)`,
+    `${money(ctx.profile.total_paid_amount)} lifetime ` +
+    `(established means ${MIN_SUCCESSFUL_PAYMENTS}+ payments and ${money(MIN_LIFETIME_PAID_PAISE)}+)`,
   effects: (value) => (value ? { discountCapPercent: PROVEN_PAYER_DISCOUNT_CAP_PERCENT } : {}),
 };
 

@@ -5,13 +5,15 @@ import { baselineUserContent, takePrefetchedBaseline } from "./baselinePrefetch.
 import type { z } from "zod";
 import { applyBaselinePolicyWithTrace } from "./enforcement.js";
 import type { PolicyOverrideRecord } from "../memory/profile.js";
-import { OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
+import { CONVENTIONS_BLOCK, OBJECTIVE_BLOCK, withClosingInstruction } from "./objective.js";
 import { decideWithMemory, type WithMemoryAudit } from "./memoryContext.js";
 import type { TriggeringEventFacts } from "./policy.js";
 import { CartAbandonmentDecisionSchema, type CartAbandonmentDecision } from "./schema.js";
 
 export const CART_BASELINE_SYSTEM_PROMPT = `You are Razorpay's Cart Abandonment recovery agent.
 ${OBJECTIVE_BLOCK}
+
+${CONVENTIONS_BLOCK}
 
 You see a single customer and a single order event. You have no cross-customer
 history or pattern data for this customer — this decision stands alone, and you
@@ -92,6 +94,8 @@ export async function decideCartAbandonmentBaseline(
 
 export const CART_MEMORY_SYSTEM_PROMPT = `You are Razorpay's Cart Abandonment recovery agent.
 ${OBJECTIVE_BLOCK}
+
+${CONVENTIONS_BLOCK}
 
 Actions — pick exactly one:
 - "send_discount": offer a discount to recover the cart. committed_spend_paise
