@@ -16,3 +16,6 @@ dist/
 
 # Isolated smoke-test databases (smoke:gemini); disposable.
 data/smoke/
+
+# Disposable copy of the committed DB used by verify/analyze scripts (scripts/runIsolated.sh).
+data/verify/
