@@ -29,6 +29,22 @@ function main(): void {
        ORDER BY agent, mode`,
     )
     .all() as MetricRow[];
+  // Decisions and tool calls come from the audit log, not from the metrics rows:
+  // one decision has several model calls, and tool calls are counted per
+  // decision. The agentic arm records investigation_calls in decision metadata.
+  // Other arms record none, so they report 0.
+  const decisionCounts = new Map<string, { decisions: number; toolCalls: number }>();
+  for (const row of db
+    .prepare(
+      `SELECT agent, mode, COUNT(*) AS decisions,
+              COALESCE(SUM(CAST(json_extract(metadata, '$.investigation_calls') AS INTEGER)), 0) AS tool_calls
+       FROM audit_log
+       WHERE entry_type = 'decision' AND mode IS NOT NULL
+       GROUP BY agent, mode`,
+    )
+    .all() as Array<{ agent: string; mode: string; decisions: number; tool_calls: number }>) {
+    decisionCounts.set(`${row.agent}|${row.mode}`, { decisions: row.decisions, toolCalls: row.tool_calls });
+  }
   db.close();
 
   if (rows.length === 0) {
@@ -58,7 +74,8 @@ function main(): void {
   }
   console.log(
     "agent | arm | models | calls | total tokens (in/out) | avg tokens/call | cached/read-write tokens | " +
-      "cost/request USD (notional where marked) | p50/p95 latency ms | avg output tokens/sec",
+      "cost/request USD (notional where marked) | p50/p95 latency ms | avg output tokens/sec | " +
+      "tool calls per decision",
   );
   for (const [key, group] of groups) {
     const [agent, mode] = key.split("|") as [string, string];
@@ -77,11 +94,14 @@ function main(): void {
     const latencies = group.map((row) => row.latency_ms);
     const avgTokensPerSecond =
       group.reduce((sum, row) => sum + row.tokens_per_second, 0) / calls;
+    const dc = decisionCounts.get(key);
+    const toolsPerDecision =
+      dc && dc.decisions > 0 ? `${(dc.toolCalls / dc.decisions).toFixed(2)} (${dc.decisions} decisions)` : "n/a";
     console.log(
       `${agent} | ${mode} | ${models.join(",")} | ${calls} | ${inputTokens}/${outputTokens} | ` +
         `${((inputTokens + outputTokens) / calls).toFixed(1)} | ${cachedTokens}/${cacheWriteTokens} | ` +
         `${costPerRequest} | ${percentile(latencies, 0.5)}/${percentile(latencies, 0.95)} | ` +
-        `${avgTokensPerSecond.toFixed(1)}`,
+        `${avgTokensPerSecond.toFixed(1)} | ${toolsPerDecision}`,
     );
   }
 }
