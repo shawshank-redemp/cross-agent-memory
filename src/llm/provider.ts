@@ -39,7 +39,7 @@ export interface LLMCallContext {
   customerId: string;
   eventId: string;
   agent: AgentType;
-  mode: "baseline" | "memory";
+  mode: "baseline" | "memory" | "agentic";
   stepType: string;
   traceId?: string;
   parentSpanId?: string | null;

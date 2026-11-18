@@ -31,7 +31,7 @@ export interface AppendAuditLogInput {
   entry_type: AuditEntryType;
   action: string;
   reasoning: string;
-  mode?: "baseline" | "memory";
+  mode?: "baseline" | "memory" | "agentic";
   event_id?: string;
   // Null on a memory_read row — reading memory decides nothing.
   escalate_to_human?: boolean;
@@ -89,7 +89,7 @@ export interface RecordDiscountUsageInput {
   agent: AgentType;
   // Scopes this discount to one comparison run — see schema.sql's note on
   // discount_usage. Must match the mode of the run recording it.
-  mode: "baseline" | "memory";
+  mode: "baseline" | "memory" | "agentic";
   amount: number;
   // The triggering event's id in its own table. Always present — order_id
   // below is cart-only.
@@ -136,7 +136,7 @@ export function recordDiscountUsage(db: Database.Database, input: RecordDiscount
 function readDiscountUsageHistory(
   db: Database.Database,
   customerId: string,
-  mode: "baseline" | "memory",
+  mode: "baseline" | "memory" | "agentic",
   asOf?: string,
 ): DiscountUsageRecord[] {
   const rows = db
@@ -273,7 +273,7 @@ export const INTERVENTION_OBSERVATION_LAG_DAYS = 3;
 function readInterventionOutcomes(
   db: Database.Database,
   customerId: string,
-  mode: "baseline" | "memory",
+  mode: "baseline" | "memory" | "agentic",
   asOf?: string,
 ): InterventionOutcomeSummary[] {
   const rows = db
@@ -314,7 +314,7 @@ function readInterventionOutcomes(
 export interface RecordInterventionOutcomeInput {
   customerId: string;
   agent: AgentType;
-  mode: "baseline" | "memory";
+  mode: "baseline" | "memory" | "agentic";
   eventId: string;
   action: string;
   committedSpendPaise: number | null;
@@ -548,7 +548,7 @@ function readDisputeStats(db: Database.Database, customerId: string, asOf?: stri
 function readAuditLog(
   db: Database.Database,
   customerId: string,
-  mode: "baseline" | "memory",
+  mode: "baseline" | "memory" | "agentic",
   asOf?: string,
 ): AuditLogEntry[] {
   const rows = db
@@ -592,7 +592,7 @@ function readAuditLog(
 export function computeMemoryProfile(
   db: Database.Database,
   customerId: string,
-  mode: "baseline" | "memory",
+  mode: "baseline" | "memory" | "agentic",
   asOf?: string,
 ): CustomerMemoryProfile {
   const disputes = readDisputeStats(db, customerId, asOf);
@@ -621,7 +621,7 @@ export interface GetMemoryProfileOptions {
   // scopes discount_usage_history/audit_log so this run only sees its own
   // mode's prior decisions, never the other comparison run's.
   requestedBy: AgentType | "system";
-  mode: "baseline" | "memory";
+  mode: "baseline" | "memory" | "agentic";
   reason: string;
   // The triggering event's own timestamp — see computeMemoryProfile's asOf.
   asOf: string;

@@ -3,7 +3,7 @@ import { MODEL_PRICES } from "../llm/pricing.js";
 
 interface MetricRow {
   agent: string;
-  mode: "baseline" | "memory";
+  mode: "baseline" | "memory" | "agentic";
   model: string;
   input_tokens: number;
   output_tokens: number;

@@ -6,7 +6,7 @@ export interface TraceContext {
   customerId: string;
   eventId: string;
   agent: AgentType;
-  mode: "baseline" | "memory";
+  mode: "baseline" | "memory" | "agentic";
   stepOrder: number; // caller increments
 }
 
@@ -93,7 +93,7 @@ export function emitTrace(
 // the stored trace exactly the last run's trace, with no stale tail.
 export function clearTrace(
   db: Database.Database,
-  scope: { eventId: string; mode: "baseline" | "memory" },
+  scope: { eventId: string; mode: "baseline" | "memory" | "agentic" },
 ): void {
   db.prepare("DELETE FROM agent_trace_events WHERE event_id = ? AND mode = ?").run(scope.eventId, scope.mode);
 }

@@ -1,5 +1,6 @@
 // Scratch verification of the schema-cleanup invariants. Reads the loaded DB
 // and the generated batch; makes no API calls and writes nothing.
+import Database from "better-sqlite3";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { openDb } from "../src/db/connection.js";
@@ -292,6 +293,39 @@ check(
   partitionBreaks.length === 0,
   `${partitionBreaks.length} mismatches`,
 );
+
+// --- mode enumeration ----------------------------------------------------
+// The third arm, "agentic", must be accepted by every table that carries mode,
+// and a value outside the set must still be rejected. Checked against an
+// in-memory copy of schema.sql so it does not depend on the loaded batch.
+console.log("  -- mode enumeration --");
+const modeDb = new Database(":memory:");
+modeDb.exec(readFileSync(join(import.meta.dirname, "..", "src", "db", "schema.sql"), "utf-8"));
+modeDb.prepare(
+  `INSERT INTO customers (customer_id, name, email, contact, signup_date, plan_tier)
+   VALUES ('cust_mode', 'Mode', 'mode@example.com', '+910000000000', '2026-01-01', 'basic')`,
+).run();
+const accepts = (mode: string): boolean => {
+  try {
+    modeDb
+      .prepare(
+        `INSERT INTO llm_call_metrics
+         (trace_id, span_id, parent_span_id, customer_id, event_id, agent, mode, step_type,
+          model, input_tokens, output_tokens, cached_tokens, cache_write_tokens, latency_ms,
+          tokens_per_second, cost_usd, status, error, recorded_at)
+         VALUES ('t', ?, NULL, 'cust_mode', 'e', 'cart_abandonment', ?, 'final',
+          'm', 0, 0, 0, 0, 0, 0, NULL, 'success', NULL, '2026-01-01T00:00:00Z')`,
+      )
+      .run(`span_${mode}_${Math.random()}`, mode);
+    return true;
+  } catch {
+    return false;
+  }
+};
+check("llm_call_metrics accepts mode 'agentic'", accepts("agentic"));
+check("llm_call_metrics accepts mode 'baseline' and 'memory'", accepts("baseline") && accepts("memory"));
+check("llm_call_metrics still rejects an unknown mode", !accepts("supervisor"));
+modeDb.close();
 
 db.close();
 console.log(failures === 0 ? "\nAll checks passed." : `\n${failures} check(s) FAILED.`);

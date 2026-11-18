@@ -107,7 +107,7 @@ interface DecisionRecord extends DecisionLike {
 // Loud rather than fatal — a mid-batch throw would discard real progress, and
 // the count is reported at the end of the run.
 function assertBaselineCitesNoMemory(
-  mode: "baseline" | "memory",
+  mode: "baseline" | "memory" | "agentic",
   decision: DecisionLike,
   customerId: string,
   eventId: string,
@@ -163,7 +163,7 @@ function parseResume(): boolean {
 // audit_log is authoritative rather than the partial file: it is written inside
 // the same synchronous step as the decision itself, so it cannot be ahead of or
 // behind what actually happened.
-function loadAlreadyDecided(db: Database.Database, mode: "baseline" | "memory"): Set<string> {
+function loadAlreadyDecided(db: Database.Database, mode: "baseline" | "memory" | "agentic"): Set<string> {
   const rows = db
     .prepare("SELECT DISTINCT event_id FROM audit_log WHERE mode = ? AND entry_type = 'decision' AND event_id IS NOT NULL")
     .all(mode) as { event_id: string }[];
@@ -357,7 +357,7 @@ export interface RunAgentBatchParams {
     customerById: Map<string, Customer>,
     db: Database.Database,
   ) => Promise<void>;
-  mode: "baseline" | "memory";
+  mode: "baseline" | "memory" | "agentic";
   outputFile: string;
   decide: (item: TaggedEvent, customer: Customer, db: Database.Database) => Promise<DecisionLike>;
 }
