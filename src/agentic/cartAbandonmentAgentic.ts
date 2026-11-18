@@ -72,7 +72,7 @@ const AgenticState = Annotation.Root({
 
 type State = typeof AgenticState.State;
 
-function systemPrompt(): string {
+export function systemPrompt(): string {
   return `You are Razorpay's Cart Abandonment recovery agent, working as an investigator.
 ${OBJECTIVE_BLOCK}
 
@@ -82,8 +82,15 @@ How to work:
 - You have read-only tools for this one customer and this one order: ${INVESTIGATION_TOOL_NAMES.join(", ")}.
   You may use at most ${MAX_INVESTIGATION_CALLS} of them. Use only what you need.
 - When you have enough, call submit_decision exactly once. Do not answer in plain text.
-- The decision is checked by policy after you submit it. Policy can clamp a discount or
-  block it, so choose the least expensive action that will work.`;
+
+On discounts:
+- The discount_limit_paise from check_discount_policy is a LIMIT, not a target. Policy
+  clamps any discount above it. It is not a suggested amount.
+- Do not offer the limit by default. Choose the SMALLEST committed_spend_paise that is
+  likely to recover this cart. Many carts recover with a reminder, and a small discount
+  covers most of the rest. The limit is a rarely-needed ceiling.
+- Choose a discount only when the customer's evidence says a plain reminder is unlikely
+  to work. A reminder costs nothing, so it is the default when the case is unclear.`;
 }
 
 function caseText(customer: Customer, event: CartAbandonmentEvent): string {

@@ -31,6 +31,13 @@ export const INVESTIGATION_TOOL_NAMES = [
   "check_discount_policy",
 ] as const;
 
+// The limit is labelled as a limit, in the tool output the model reads. This is the
+// guard against the agent treating the ceiling as the amount to offer.
+export const DISCOUNT_LIMIT_NOTE =
+  "discount_limit_paise is a hard LIMIT enforced by policy, not a recommended amount. " +
+  "Any discount above it is clamped. Choose the smallest discount likely to recover the cart, " +
+  "which is usually well below the limit. blocks_discount means no discount may be offered.";
+
 export function makeInvestigationTools(ctx: AgenticToolContext) {
   const readProfile = (): CustomerMemoryProfile =>
     getMemoryProfile(ctx.db, ctx.customer.customer_id, {
@@ -82,17 +89,17 @@ export function makeInvestigationTools(ctx: AgenticToolContext) {
       return JSON.stringify({
         order_amount_paise: amount,
         cap_percent: capPercent,
-        max_discount_paise: spendCeilingPaise(amount, capPercent),
+        discount_limit_paise: spendCeilingPaise(amount, capPercent),
         blocks_discount: resolved.blocksDiscount,
         forces_escalation: resolved.forcesEscalation,
         suppresses_outreach: resolved.suppressesOutreach,
-        note: "Dry run of the enforcement rules. A discount above max_discount_paise is clamped, and blocks_discount forces a non-spend action.",
+        note: DISCOUNT_LIMIT_NOTE,
       });
     },
     {
       name: "check_discount_policy",
       description:
-        "Dry run of the enforcement rules for this order. Returns the discount ceiling in paise and whether policy blocks a discount. It changes nothing.",
+        "Returns the discount LIMIT in paise that policy would enforce for this order, and whether policy blocks a discount. The limit is a ceiling, not a target. It changes nothing.",
       schema: z.object({}),
     },
   );
