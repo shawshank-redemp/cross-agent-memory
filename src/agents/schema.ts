@@ -63,13 +63,13 @@ export type EscalationReason = (typeof ESCALATION_REASONS)[number];
 // (see CONVENTIONS_BLOCK) and the schema enforces the same bound. Measured before the change: 455 output tokens per memory-arm call
 // and 311 per baseline call.
 //
-// .max(400) on reasoning, added deliberately. Two sentences fit comfortably
+// .max(600) on reasoning, added deliberately. Two sentences fit comfortably
 // within it. The earlier decision was "no .max()": under constrained decoding a
 // hard cap truncates mid-string or fails validation, costing a retry. That was
 // observed with a 7B local model, whose reasoning ran past the 2048-token
 // output cap in 2 of 3 smoke calls. A cap the model can see in the prompt
 // ("at most two sentences") is what keeps it under the limit, so the two are
-// set together. A value over 400 characters now fails validation and routes to
+// set together. A value over 600 characters now fails validation and routes to
 // human review, which is the same path as any other malformed output.
 // max_tokens (2048) and the stop_reason === "max_tokens" throw still backstop it.
 //
@@ -83,7 +83,7 @@ function decisionSchema<T extends readonly [string, ...string[]]>(actions: T) {
     reasoning: z
       .string()
       .min(20, "reasoning must be a real explanation, not a placeholder")
-      .max(400, "reasoning must be at most two sentences (400 characters)")
+      .max(600, "reasoning must be at most two sentences (600 characters)")
       .describe(
         "Think here FIRST, before choosing an action: weigh what this case is, what the objective and constraints imply, and which response is the least expensive one that will actually work. At most two sentences, and state the reason, not the full argument for it. The action below should follow from this reasoning, not be explained by it after the fact.",
       ),
