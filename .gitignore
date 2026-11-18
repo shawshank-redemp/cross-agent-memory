@@ -22,3 +22,6 @@ data/verify/
 
 # PoC database copy (poc/run.ts); disposable.
 data/poc/
+
+# Isolated agentic-arm database copies; disposable.
+data/agentic/

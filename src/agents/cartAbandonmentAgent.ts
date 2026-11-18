@@ -46,7 +46,7 @@ suspicious pattern, something that does not add up).`;
 // ONE mapping, used by BOTH arms: the baseline needs the event amount to apply
 // the universal spend ceiling, and inventing a second mapping for it is how the
 // two arms would quietly start describing the same event differently.
-function eventFacts(event: CartAbandonmentEvent): Omit<TriggeringEventFacts, "agent" | "timestamp"> {
+export function eventFacts(event: CartAbandonmentEvent): Omit<TriggeringEventFacts, "agent" | "timestamp"> {
   return {
     amount: event.amount,
     paymentAttempted: event.attempts >= 1,
